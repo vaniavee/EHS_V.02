@@ -14,13 +14,21 @@
             <option value="Pending">Pending</option>
             <option value="Revise">Revise</option>
           </select>
-          <div style="display:flex;flex-direction:column;gap:2px;flex:1 1 130px;">
-            <label style="margin:0;font-size:11px;">Dari Tanggal</label>
-            <input id="mon-filter-from" type="date">
-          </div>
-          <div style="display:flex;flex-direction:column;gap:2px;flex:1 1 130px;">
-            <label style="margin:0;font-size:11px;">Sampai Tanggal</label>
-            <input id="mon-filter-to" type="date">
+          <div class="date-group">
+            <div class="date-wrapper">
+              <label>Dari Tanggal</label>
+              <div class="date-picker">
+                <input id="mon-filter-from" type="text" readonly placeholder="Pilih tanggal" onclick="toggleDatePicker('from')">
+                <div class="date-popup" id="mon-filter-from-popup"></div>
+              </div>
+            </div>
+            <div class="date-wrapper">
+              <label>Sampai Tanggal</label>
+              <div class="date-picker">
+                <input id="mon-filter-to" type="text" readonly placeholder="Pilih tanggal" onclick="toggleDatePicker('to')">
+                <div class="date-popup" id="mon-filter-to-popup"></div>
+              </div>
+            </div>
           </div>
           <button class="btn-primary" style="margin:0;width:auto;padding:10px 16px;" onclick="applyMonitorFilter()">Terapkan</button>
           <button class="btn-ghost" style="width:auto;padding:10px 16px;" onclick="resetMonitorFilter()">Reset</button>
@@ -43,9 +51,95 @@
 </div>
 
 <style>
-  .filter-row { display: flex; flex-wrap: wrap; gap: 8px; }
-  .filter-row select, .filter-row input[type="date"] {
-    width: auto; flex: 1 1 130px; padding: 9px 10px; font-size: 13px;
+  .filter-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+  .filter-row select,
+  .filter-row .date-picker input {
+    width: 160px;
+    flex: 0 0 160px;
+    padding: 7px 10px;
+    font-size: 13px;
+    height: 36px;
+    min-height: 36px;
+    line-height: 18px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+  .date-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 160px;
+  }
+  .date-wrapper label { margin: 0; font-size: 11px; }
+  .date-picker { position: relative; }
+  .date-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .date-popup {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 240px;
+    padding: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    z-index: 20;
+  }
+  .date-popup.active { display: block; }
+  .date-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .date-popup-header button {
+    border: none;
+    background: transparent;
+    color: var(--green-900);
+    cursor: pointer;
+    font-size: 18px;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    border-radius: 8px;
+  }
+  .date-popup-header button:hover { background: var(--surface-2); }
+  .date-popup-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    font-size: 12px;
+  }
+  .date-popup-grid span {
+    text-align: center;
+    line-height: 24px;
+    color: var(--muted);
+  }
+  .date-popup-grid button {
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    width: 100%;
+    height: 28px;
+    cursor: pointer;
+  }
+  .date-popup-grid button:hover { background: var(--surface-2); }
+  .date-popup-grid button.selected {
+    background: var(--green-900);
+    color: #fff;
+  }
+  .filter-row button {
+    margin: 0;
+    flex: 0 0 auto;
   }
   .table-wrap { overflow-x: auto; background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); margin-top: 14px; }
   .data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
@@ -85,6 +179,11 @@
     applyMonitorFilter();
   }
 
+  function getDateValue(id) {
+    const input = document.getElementById(id);
+    return input.dataset.value || '';
+  }
+
   function applyMonitorFilter() {
     document.getElementById('monitor-tbody').innerHTML = '<tr><td class="sub">Memuat...</td></tr>';
     google.script.run
@@ -94,9 +193,103 @@
         nik: monitorCurrentNik, type: monitorCurrentType,
         divisi: document.getElementById('mon-filter-divisi').value,
         status: document.getElementById('mon-filter-status').value,
-        dateFrom: document.getElementById('mon-filter-from').value,
-        dateTo: document.getElementById('mon-filter-to').value
+        dateFrom: getDateValue('mon-filter-from'),
+        dateTo: getDateValue('mon-filter-to')
       });
+  }
+
+  let datePickerState = {
+    from: new Date(),
+    to: new Date()
+  };
+
+  function toggleDatePicker(field) {
+    const popup = document.getElementById('mon-filter-' + field + '-popup');
+    const active = popup.classList.toggle('active');
+    if (active) {
+      renderDatePopup(field);
+      closeOtherDatePopup(field);
+    }
+  }
+
+  function closeOtherDatePopup(openField) {
+    ['from', 'to'].forEach(function(field) {
+      if (field !== openField) {
+        document.getElementById('mon-filter-' + field + '-popup').classList.remove('active');
+      }
+    });
+  }
+
+  function closeDatePopups() {
+    ['from', 'to'].forEach(function(field) {
+      document.getElementById('mon-filter-' + field + '-popup').classList.remove('active');
+    });
+  }
+
+  document.addEventListener('click', function(event) {
+    if (!event.target.closest('.date-picker')) {
+      closeDatePopups();
+    }
+  });
+
+  function renderDatePopup(field) {
+    const popup = document.getElementById('mon-filter-' + field + '-popup');
+    const stateDate = datePickerState[field];
+    const year = stateDate.getFullYear();
+    const month = stateDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startDay = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    let html = '<div class="date-popup-header">'
+      + '<button type="button" onclick="changeMonth(\'' + field + '\', -1)">&lsaquo;</button>'
+      + '<div>' + firstDay.toLocaleString('default', { month: 'long' }) + ' ' + year + '</div>'
+      + '<button type="button" onclick="changeMonth(\'' + field + '\', 1)">&rsaquo;</button>'
+      + '</div>';
+    html += '<div class="date-popup-grid">';
+    ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(function(day) {
+      html += '<span>' + day + '</span>';
+    });
+    for (let i = 0; i < startDay; i++) {
+      html += '<span></span>';
+    }
+    const currentValue = document.getElementById('mon-filter-' + field).dataset.value;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const iso = formatIsoDate(date);
+      const selected = currentValue === iso ? ' selected' : '';
+      html += '<button type="button" class="' + selected + '" onclick="selectDate(\'' + field + '\', ' + year + ', ' + month + ', ' + day + ')">' + day + '</button>';
+    }
+    html += '</div>';
+    popup.innerHTML = html;
+  }
+
+  function changeMonth(field, offset) {
+    const state = datePickerState[field];
+    state.setMonth(state.getMonth() + offset);
+    renderDatePopup(field);
+  }
+
+  function selectDate(field, year, month, day) {
+    const input = document.getElementById('mon-filter-' + field);
+    const selectedDate = new Date(year, month, day);
+    input.value = formatDisplayDate(selectedDate);
+    input.dataset.value = formatIsoDate(selectedDate);
+    closeDatePopups();
+  }
+
+  function formatIsoDate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + d;
+  }
+
+  function formatDisplayDate(date) {
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = date.getFullYear();
+    return d + '/' + m + '/' + y;
   }
 
 function renderMonitorTable(rows) {
