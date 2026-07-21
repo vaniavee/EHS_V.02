@@ -1,0 +1,171 @@
+<!-- AdminMonitor.html -->
+<div id="monitor-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2 id="monitor-title">Pantau Task</h2>
+
+  <div class="split-layout">
+    <div style="flex:1;">
+      <div class="card" style="padding:14px;">
+        <div class="filter-row">
+          <select id="mon-filter-divisi"><option value="">Semua Divisi</option></select>
+          <select id="mon-filter-status">
+            <option value="">Semua Status</option>
+            <option value="Approved">Approved</option>
+            <option value="Pending">Pending</option>
+            <option value="Revise">Revise</option>
+          </select>
+          <div style="display:flex;flex-direction:column;gap:2px;flex:1 1 130px;">
+            <label style="margin:0;font-size:11px;">Dari Tanggal</label>
+            <input id="mon-filter-from" type="date">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px;flex:1 1 130px;">
+            <label style="margin:0;font-size:11px;">Sampai Tanggal</label>
+            <input id="mon-filter-to" type="date">
+          </div>
+          <button class="btn-primary" style="margin:0;width:auto;padding:10px 16px;" onclick="applyMonitorFilter()">Terapkan</button>
+          <button class="btn-ghost" style="width:auto;padding:10px 16px;" onclick="resetMonitorFilter()">Reset</button>
+        </div>
+        <p class="sub" id="monitor-count" style="margin:10px 0 0;"></p>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table" id="monitor-table">
+          <thead><tr id="monitor-thead"></tr></thead>
+          <tbody id="monitor-tbody"><tr><td class="sub">Memuat...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="split-detail" id="monitor-detail" style="flex:1;max-width:420px;">
+      <p class="sub" style="padding:20px;">Klik baris dengan status Pending untuk melakukan review.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .filter-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .filter-row select, .filter-row input[type="date"] {
+    width: auto; flex: 1 1 130px; padding: 9px 10px; font-size: 13px;
+  }
+  .table-wrap { overflow-x: auto; background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); margin-top: 14px; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
+  .data-table th {
+    text-align: left; padding: 10px 12px; background: var(--green-900); color: #fff;
+    font-weight: 700; position: sticky; top: 0;
+  }
+  .data-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .data-table tr:hover td { background: var(--surface-2); }
+</style>
+
+<script>
+  let monitorCurrentNik = null;
+  let monitorCurrentType = null;
+
+  function initAdminMonitor(nik, type) {
+    monitorCurrentNik = nik;
+    monitorCurrentType = type;
+    const titles = { health: 'Pantau Health Task', energy: 'Pantau Energy Task', bmi: 'Data BMI Karyawan' };
+    document.getElementById('monitor-title').textContent = titles[type];
+
+    google.script.run
+      .withSuccessHandler(function(divisiList) {
+        const sel = document.getElementById('mon-filter-divisi');
+        sel.innerHTML = '<option value="">Semua Divisi</option>' + divisiList.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
+      })
+      .getDistinctDivisions();
+
+    applyMonitorFilter();
+  }
+
+  function resetMonitorFilter() {
+    document.getElementById('mon-filter-divisi').value = '';
+    document.getElementById('mon-filter-status').value = '';
+    document.getElementById('mon-filter-from').value = '';
+    document.getElementById('mon-filter-to').value = '';
+    applyMonitorFilter();
+  }
+
+  function applyMonitorFilter() {
+    document.getElementById('monitor-tbody').innerHTML = '<tr><td class="sub">Memuat...</td></tr>';
+    google.script.run
+      .withSuccessHandler(renderMonitorTable)
+      .withFailureHandler(function(err) { alert(err.message || String(err)); })
+      .getMonitorDataFiltered({
+        nik: monitorCurrentNik, type: monitorCurrentType,
+        divisi: document.getElementById('mon-filter-divisi').value,
+        status: document.getElementById('mon-filter-status').value,
+        dateFrom: document.getElementById('mon-filter-from').value,
+        dateTo: document.getElementById('mon-filter-to').value
+      });
+  }
+
+function renderMonitorTable(rows) {
+  document.getElementById('monitor-count').textContent = rows.length + ' data ditemukan';
+  const thead = document.getElementById('monitor-thead');
+  const tbody = document.getElementById('monitor-tbody');
+
+  if (monitorCurrentType === 'bmi') {
+    thead.innerHTML = '<th>Tanggal</th><th>NIK</th><th>Nama</th><th>Divisi</th><th>BMI</th><th>Kategori</th><th>Poin</th>';
+    tbody.innerHTML = rows.length ? rows.map(function(r) {
+      return '<tr><td>' + r.Timestamp + '</td><td>' + r.NIK + '</td><td>' + r.Nama + '</td><td>' + r.Divisi +
+        '</td><td>' + r.BMI + '</td><td>' + r.Kategori_BMI + '</td><td>' + r.Points + '</td></tr>';
+    }).join('') : '<tr><td colspan="7" class="sub">Tidak ada data.</td></tr>';
+  } else {
+    thead.innerHTML = '<th>Tanggal</th><th>NIK</th><th>Nama</th><th>Divisi</th><th>Task</th><th>Status</th><th>Poin</th>';
+    tbody.innerHTML = rows.length ? rows.map(function(r) {
+      const clickable = r.Status === 'Pending' && r.ReferenceId;
+      const rowStyle = clickable ? 'cursor:pointer;' : '';
+      const onclick = clickable ? 'onclick=\'openMonitorReview(' + JSON.stringify(r) + ')\'' : '';
+      return '<tr style="' + rowStyle + '" ' + onclick + '><td>' + r.Timestamp + '</td><td>' + r.NIK + '</td><td>' + r.Nama + '</td><td>' + r.Divisi +
+        '</td><td>' + r.TaskId + '</td><td><span class="badge-status ' + r.Status + '">' + r.Status + '</span></td><td>' + r.Points + '</td></tr>';
+    }).join('') : '<tr><td colspan="7" class="sub">Tidak ada data.</td></tr>';
+  }
+}
+
+function openMonitorReview(row) {
+  let detailHtml = '';
+  if (row.Detail) {
+    try {
+      const parsed = JSON.parse(row.Detail);
+      detailHtml = '<div class="card" style="padding:12px;margin-top:10px;">' +
+        Object.keys(parsed).map(function(k) {
+          const val = parsed[k];
+          return '<div class="report-meta"><b>' + k + ':</b> ' + (Array.isArray(val) ? val.join(', ') : val) + '</div>';
+        }).join('') +
+      '</div>';
+    } catch (e) {}
+  }
+
+  document.getElementById('monitor-detail').innerHTML =
+    '<div style="padding:20px;">' +
+      '<span class="badge-status Pending">' + row.Pillar + '</span> <b style="font-size:18px;">' + row.TaskId + '</b>' +
+      '<p class="report-meta">' + row.Nama + ' (' + row.NIK + ') · ' + row.Divisi + '</p>' +
+      '<p class="report-meta">' + row.Timestamp + ' · ' + row.Points + ' poin</p>' +
+      '<p style="margin-top:10px;">' + (row.Note || '') + '</p>' +
+      detailHtml +
+      (row.BuktiUrl ? '<img src="' + row.BuktiUrl + '" style="width:100%;border-radius:12px;margin-top:10px;">' : '<p class="sub" style="margin-top:10px;">Tidak ada foto bukti.</p>') +
+      '<label style="margin-top:14px;">Feedback (untuk revisi)</label>' +
+      '<input type="text" id="monitor-fb" placeholder="Tulis feedback...">' +
+      '<div style="display:flex;gap:8px;margin-top:10px;">' +
+        '<button class="btn-primary" style="margin:0;" onclick="approveMonitorReview(\'' + row.ReferenceId + '\')">Setujui</button>' +
+        '<button class="btn-primary btn-danger" style="margin:0;" onclick="reviseMonitorReview(\'' + row.ReferenceId + '\')">Minta Revisi</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function approveMonitorReview(ref) {
+  google.script.run
+    .withSuccessHandler(function(res) { alert(res.message); applyMonitorFilter(); })
+    .withFailureHandler(function(err) { alert(err.message || String(err)); })
+    .approveHealthClaim({ adminNik: monitorCurrentNik, referenceId: ref });
+}
+
+function reviseMonitorReview(ref) {
+  const fb = document.getElementById('monitor-fb').value.trim();
+  if (!fb) { alert('Isi feedback dulu.'); return; }
+  google.script.run
+    .withSuccessHandler(function(res) { alert(res.message); applyMonitorFilter(); })
+    .withFailureHandler(function(err) { alert(err.message || String(err)); })
+    .reviseHealthClaim({ adminNik: monitorCurrentNik, referenceId: ref, feedback: fb });
+}
+</script>

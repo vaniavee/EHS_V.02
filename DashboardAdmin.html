@@ -1,0 +1,634 @@
+<div id="admin-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Kelola Master Data</h2>
+
+  <div class="pill-group" style="margin-bottom:16px;flex-wrap:wrap;">
+    <div class="pill active" data-tab="task" onclick="switchAdminTab('task')">Task</div>
+    <div class="pill" data-tab="campaign" onclick="switchAdminTab('campaign')">Campaign</div>
+    <div class="pill" data-tab="akun" onclick="switchAdminTab('akun')">Akun</div>
+    <div class="pill" data-tab="klaim" onclick="switchAdminTab('klaim')">Klaim</div>
+    <div class="pill" data-tab="kabag" onclick="switchAdminTab('kabag')">Kabag/Supervisor</div>
+    <div class="pill" data-tab="quiz" onclick="switchAdminTab('quiz')">Quiz</div>
+  </div>
+
+  <!-- ===================== TAB: TASK ===================== -->
+  <div id="admin-tab-task">
+    <div class="card">
+      <p class="section-title" style="margin-top:0;">Tambah / Edit Task</p>
+      <label>Task ID</label>
+      <input id="task-id" placeholder="Contoh: H05">
+      <label>Pillar</label>
+      <select id="task-pillar"><option>Health</option><option>Safety</option><option>Energy</option></select>
+      <label>Judul</label>
+      <input id="task-title" placeholder="Contoh: Konimex Move Harian">
+      <label>Deskripsi</label>
+      <textarea id="task-desc"></textarea>
+      <label>Poin</label>
+      <input id="task-points" type="number">
+      <label>Frequency Type</label>
+      <select id="task-freqtype">
+        <option value="daily">daily</option><option value="weekly">weekly</option>
+        <option value="monthly">monthly</option><option value="quarterly">quarterly</option>
+        <option value="campaign_once">campaign_once</option><option value="season_once">season_once</option>
+      </select>
+      <label>Frequency Limit</label>
+      <input id="task-freqlimit" type="number" value="1">
+      <label>Campaign ID (opsional — pilih media yang mau ditautkan ke task ini)</label>
+      <select id="task-campaignid">
+        <option value="">- Tidak ada media -</option>
+      </select>
+      <label>Validation</label>
+      <select id="task-validation">
+        <option value="auto">auto</option><option value="semiauto">semiauto</option>
+        <option value="verifier">verifier</option><option value="panel">panel</option>
+      </select>
+      <label>Status</label>
+      <select id="task-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+      <button class="btn-primary" onclick="saveTask()">Simpan Task</button>
+    </div>
+
+    <p class="section-title">Daftar Task</p>
+    <div id="task-list"></div>
+  </div>
+
+  <!-- ===================== TAB: CAMPAIGN ===================== -->
+  <div id="admin-tab-campaign" style="display:none;">
+    <div class="card">
+      <p class="section-title" style="margin-top:0;">Tambah / Edit Campaign</p>
+      <label>Campaign ID</label>
+      <input id="camp-id" placeholder="Contoh: E01 (samakan dengan TaskId kalau untuk 1 task)">
+      <label>Judul</label>
+      <input id="camp-title" placeholder="Contoh: Video Pembuka Kampanye Efisiensi Energi">
+      <label>Jenis Media</label>
+      <select id="camp-mediatype">
+        <option value="Video">Video</option>
+        <option value="Poster">Poster</option>
+        <option value="Sticker">Sticker</option>
+        <option value="Banner">Banner</option>
+        <option value="Microlearning">Microlearning</option>
+      </select>
+      <label>Link Media (Google Drive/YouTube, harus "Anyone with link")</label>
+      <input id="camp-url" placeholder="https://drive.google.com/file/d/....">
+      <label>Tagline</label>
+      <input id="camp-tagline" placeholder="Contoh: Kerja Cerdas, Proses Optimal, Energi Terkendali">
+      <label>Deskripsi</label>
+      <textarea id="camp-desc"></textarea>
+      <label>Poin Survey</label>
+      <input id="camp-surveypoints" type="number" value="5">
+      <label>Poin Self Evaluation</label>
+      <input id="camp-selfevalpoints" type="number" value="2">
+      <label>Status</label>
+      <select id="camp-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+      <button class="btn-primary" onclick="saveCampaign()">Simpan Campaign</button>
+    </div>
+
+    <p class="section-title">Daftar Campaign</p>
+    <div id="campaign-list"></div>
+  </div>
+
+  <!-- ===================== TAB: AKUN ===================== -->
+  <div id="admin-tab-akun" style="display:none;">
+    <div class="card">
+      <p class="section-title" style="margin-top:0;">Tambah / Edit Akun</p>
+      <label>NIK</label>
+      <input id="akun-nik" placeholder="Contoh: 00181">
+      <label>Nama</label>
+      <input id="akun-nama" placeholder="Contoh: Budi Santoso">
+      <label>Divisi</label>
+      <input id="akun-divisi" placeholder="Contoh: Production">
+      <label>No. WA (opsional)</label>
+      <input id="akun-nowa" placeholder="Contoh: 081234567890">
+      <label>Status Admin</label>
+      <select id="akun-isadmin"><option value="FALSE">Bukan Admin</option><option value="TRUE">Admin</option></select>
+      <label>Status Supervisor</label>
+      <select id="akun-issupervisor"><option value="FALSE">Bukan Supervisor</option><option value="TRUE">Supervisor</option></select>
+      <label>Divisi Diawasi (khusus Supervisor, pisah koma)</label>
+      <input id="akun-divisidiawasi" placeholder="Contoh: Production,Teknik Food">
+      <label>Status Aktif</label>
+      <select id="akun-active"><option value="Yes">Aktif</option><option value="No">Nonaktif</option></select>
+      <button class="btn-primary" onclick="saveAkun()">Simpan Akun</button>
+    </div>
+
+    <p class="section-title">Daftar Akun</p>
+    <div id="akun-list"></div>
+  </div>
+
+  <!-- ===================== TAB: KLAIM ===================== -->
+  <div id="admin-tab-klaim" style="display:none;">
+    <div class="card">
+      <label>Filter NIK (opsional, kosongkan untuk lihat semua)</label>
+      <div style="display:flex;gap:8px;">
+        <input id="klaim-filter-nik" placeholder="Contoh: 00180" style="flex:1;">
+        <button class="btn-primary" style="width:auto;margin:0;padding:0 16px;" onclick="loadKlaimList()">Cari</button>
+      </div>
+    </div>
+    <p class="section-title">Riwayat Klaim Terbaru (maks 100)</p>
+    <div id="klaim-list"></div>
+  </div>
+
+  <!-- ===================== TAB: KABAG ===================== -->
+  <div id="admin-tab-kabag" style="display:none;">
+    <div class="card">
+      <p class="section-title" style="margin-top:0;">Jadikan Kabag/Supervisor</p>
+      <label>NIK</label>
+      <input id="kabag-nik" placeholder="NIK karyawan (existing atau baru)">
+      <label>Nama</label>
+      <input id="kabag-nama">
+      <label>Divisi (tempat kerja)</label>
+      <input id="kabag-divisi">
+      <label>Divisi yang Diawasi (pisah koma kalau lebih dari satu)</label>
+      <input id="kabag-diawasi" placeholder="Contoh: Production,Teknik Food">
+      <button class="btn-primary" onclick="saveKabag()">Simpan sebagai Kabag</button>
+    </div>
+
+    <p class="section-title">Daftar Kabag/Supervisor Saat Ini</p>
+    <div id="kabag-list"></div>
+  </div>
+
+  <!-- ===================== TAB: QUIZ ===================== -->
+  <div id="admin-tab-quiz" style="display:none;">
+    <div class="card">
+      <p class="section-title" style="margin-top:0;">Tambah / Edit Soal Quiz</p>
+      <label>Quiz ID</label>
+      <input id="quiz-id" placeholder="Contoh: QD01-1">
+      <label>Task ID (harus task bertipe Quiz, misal QD01)</label>
+      <input id="quiz-taskid" placeholder="Contoh: QD01">
+      <label>Pertanyaan</label>
+      <textarea id="quiz-question"></textarea>
+      <label>Pilihan A</label>
+      <input id="quiz-optiona">
+      <label>Pilihan B</label>
+      <input id="quiz-optionb">
+      <label>Pilihan C</label>
+      <input id="quiz-optionc">
+      <label>Pilihan D</label>
+      <input id="quiz-optiond">
+      <label>Jawaban Benar</label>
+      <select id="quiz-correct">
+        <option value="A">A</option><option value="B">B</option>
+        <option value="C">C</option><option value="D">D</option>
+      </select>
+      <label>Penjelasan (opsional)</label>
+      <textarea id="quiz-explanation"></textarea>
+      <label>Status</label>
+      <select id="quiz-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+      <button class="btn-primary" onclick="saveQuiz()">Simpan Soal</button>
+    </div>
+
+    <div class="card" style="margin-top:0;">
+      <label>Filter Task ID (kosongkan untuk lihat semua)</label>
+      <div style="display:flex;gap:8px;">
+        <input id="quiz-filter-taskid" placeholder="Contoh: QD01" style="flex:1;">
+        <button class="btn-primary" style="width:auto;margin:0;padding:0 16px;" onclick="loadQuizList()">Cari</button>
+      </div>
+    </div>
+
+    <p class="section-title">Daftar Soal</p>
+    <div id="quiz-list"></div>
+  </div>
+</div>
+
+<div id="toast-admin" class="toast"></div>
+
+<script>
+  let adminCurrentNik = null;
+
+  function initAdminDashboard(nik) {
+    adminCurrentNik = nik;
+    switchAdminTab('task');
+  }
+
+  function switchAdminTab(tab) {
+    document.querySelectorAll('#admin-page .pill').forEach(function(p) {
+      p.classList.toggle('active', p.dataset.tab === tab);
+    });
+    document.getElementById('admin-tab-task').style.display = tab === 'task' ? '' : 'none';
+    document.getElementById('admin-tab-campaign').style.display = tab === 'campaign' ? '' : 'none';
+    document.getElementById('admin-tab-akun').style.display = tab === 'akun' ? '' : 'none';
+    document.getElementById('admin-tab-klaim').style.display = tab === 'klaim' ? '' : 'none';
+    document.getElementById('admin-tab-kabag').style.display = tab === 'kabag' ? '' : 'none';
+    document.getElementById('admin-tab-quiz').style.display = tab === 'quiz' ? '' : 'none';
+  
+    if (tab === 'task') { loadTaskList(); loadCampaignOptions(); }
+    else if (tab === 'campaign') loadCampaignList();
+    else if (tab === 'akun') loadAkunList();
+    else if (tab === 'klaim') loadKlaimList();
+    else if (tab === 'quiz') loadQuizList();
+    else loadKabagList();
+  }
+
+  // ---------- TASK ----------
+  function loadTaskList() {
+    google.script.run
+      .withSuccessHandler(renderTaskList)
+      .withFailureHandler(showAdminError)
+      .getAdminMasterData({ nik: adminCurrentNik, masterType: 'task' });
+  }
+
+  function renderTaskList(tasks) {
+    document.getElementById('task-list').innerHTML = tasks.map(function(t) {
+      return '<div class="report-item">' +
+        '<b>' + t.TaskId + '</b> · ' + t.Pillar + ' · ' + t.Title +
+        '<div class="report-meta">' + t.Points + ' poin · ' + t.FrequencyType + ' · ' + t.Status + '</div>' +
+        '<div style="margin-top:8px;">' +
+          '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editTask(' + JSON.stringify(t) + ')\'>Edit</button>' +
+          '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteTask(\'' + t.TaskId + '\')">Hapus</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  function editTask(t) {
+    document.getElementById('task-id').value = t.TaskId;
+    document.getElementById('task-pillar').value = t.Pillar;
+    document.getElementById('task-title').value = t.Title;
+    document.getElementById('task-desc').value = t.Description;
+    document.getElementById('task-points').value = t.Points;
+    document.getElementById('task-freqtype').value = t.FrequencyType;
+    document.getElementById('task-freqlimit').value = t.FrequencyLimit;
+    document.getElementById('task-validation').value = t.Validation;
+    document.getElementById('task-status').value = t.Status;
+    document.getElementById('task-campaignid').value = t.CampaignId || '';
+  }
+
+  function saveTask() {
+    const record = {
+      TaskId: document.getElementById('task-id').value.trim(),
+      Pillar: document.getElementById('task-pillar').value,
+      Category: '', Level: '',
+      Title: document.getElementById('task-title').value.trim(),
+      Points: Number(document.getElementById('task-points').value),
+      Description: document.getElementById('task-desc').value.trim(),
+      FrequencyType: document.getElementById('task-freqtype').value,
+      FrequencyLimit: Number(document.getElementById('task-freqlimit').value),
+      Validation: document.getElementById('task-validation').value,
+      Status: document.getElementById('task-status').value,
+      SeasonId: 'S01',
+      CampaignId: document.getElementById('task-campaignid').value.trim()
+    };
+    if (!record.TaskId || !record.Title) { showAdminToast('Task ID & Judul wajib diisi.', 'error'); return; }
+
+    google.script.run
+      .withSuccessHandler(function(res) { showAdminToast('Task ' + res.action + '.', 'success'); loadTaskList(); })
+      .withFailureHandler(showAdminError)
+      .saveMasterRecord({ nik: adminCurrentNik, masterType: 'task', record: record });
+  }
+
+  function deleteTask(taskId) {
+    if (!confirm('Hapus task ' + taskId + '?')) return;
+    google.script.run
+      .withSuccessHandler(function() { showAdminToast('Task dihapus.', 'success'); loadTaskList(); })
+      .withFailureHandler(showAdminError)
+      .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'task', id: taskId });
+  }
+
+  // ---------- CAMPAIGN ----------
+  function loadCampaignList() {
+    google.script.run
+      .withSuccessHandler(renderCampaignList)
+      .withFailureHandler(showAdminError)
+      .getAdminMasterData({ nik: adminCurrentNik, masterType: 'campaign' });
+  }
+
+  function renderCampaignList(campaigns) {
+    document.getElementById('campaign-list').innerHTML = campaigns.map(function(c) {
+      return '<div class="report-item">' +
+        '<b>' + c.CampaignId + '</b> · ' + c.MediaType + ' · ' + c.Title +
+        '<div class="report-meta">' + c.SurveyPoints + ' poin survey · ' + c.Status + '</div>' +
+        '<div style="margin-top:8px;">' +
+          '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editCampaign(' + JSON.stringify(c) + ')\'>Edit</button>' +
+          '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteCampaign(\'' + c.CampaignId + '\')">Hapus</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  function editCampaign(c) {
+    document.getElementById('camp-id').value = c.CampaignId;
+    document.getElementById('camp-title').value = c.Title;
+    document.getElementById('camp-mediatype').value = c.MediaType;
+    document.getElementById('camp-url').value = c.MediaUrl;
+    document.getElementById('camp-tagline').value = c.Tagline;
+    document.getElementById('camp-desc').value = c.Description;
+    document.getElementById('camp-surveypoints').value = c.SurveyPoints;
+    document.getElementById('camp-selfevalpoints').value = c.SelfEvalPoints;
+    document.getElementById('camp-status').value = c.Status;
+  }
+
+  function saveCampaign() {
+    const record = {
+      CampaignId: document.getElementById('camp-id').value.trim(),
+      Title: document.getElementById('camp-title').value.trim(),
+      MediaType: document.getElementById('camp-mediatype').value,
+      MediaUrl: document.getElementById('camp-url').value.trim(),
+      Tagline: document.getElementById('camp-tagline').value.trim(),
+      Description: document.getElementById('camp-desc').value.trim(),
+      SubmissionMode: 'Keduanya',
+      MinExposureSeconds: 0,
+      SurveyPoints: Number(document.getElementById('camp-surveypoints').value || 5),
+      SelfEvalPoints: Number(document.getElementById('camp-selfevalpoints').value || 2),
+      Status: document.getElementById('camp-status').value,
+      SeasonId: 'S01'
+    };
+    if (!record.CampaignId || !record.Title || !record.MediaUrl) {
+      showAdminToast('Campaign ID, Judul, dan Link Media wajib diisi.', 'error'); return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(res) { showAdminToast('Campaign ' + res.action + '.', 'success'); loadCampaignList(); })
+      .withFailureHandler(showAdminError)
+      .saveMasterRecord({ nik: adminCurrentNik, masterType: 'campaign', record: record });
+  }
+
+  function deleteCampaign(campaignId) {
+    if (!confirm('Hapus campaign ' + campaignId + '?')) return;
+    google.script.run
+      .withSuccessHandler(function() { showAdminToast('Campaign dihapus.', 'success'); loadCampaignList(); })
+      .withFailureHandler(showAdminError)
+      .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'campaign', id: campaignId });
+  }
+
+  // ---------- AKUN ----------
+  function loadAkunList() {
+    google.script.run
+      .withSuccessHandler(renderAkunList)
+      .withFailureHandler(showAdminError)
+      .getAllUsers({ nik: adminCurrentNik });
+  }
+
+  function renderAkunList(users) {
+    document.getElementById('akun-list').innerHTML = users.map(function(u) {
+      const roleTags = (String(u.IsAdmin).toUpperCase() === 'TRUE' ? 'Admin ' : '') +
+        (String(u.IsSupervisor).toUpperCase() === 'TRUE' ? 'Supervisor' : '');
+      return '<div class="report-item">' +
+        '<b>' + u.Nama + '</b> (' + u.NIK + ') · ' + u.Divisi +
+        (roleTags ? ' · <span class="badge-status Approved">' + roleTags.trim() + '</span>' : '') +
+        (String(u.Active).toLowerCase() === 'no' ? ' · <span class="badge-status Revise">Nonaktif</span>' : '') +
+        '<div style="margin-top:8px;">' +
+          '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editAkun(' + JSON.stringify(u) + ')\'>Edit</button>' +
+          '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteAkun(\'' + u.NIK + '\')">Hapus</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  function editAkun(u) {
+    document.getElementById('akun-nik').value = u.NIK;
+    document.getElementById('akun-nama').value = u.Nama;
+    document.getElementById('akun-divisi').value = u.Divisi;
+    document.getElementById('akun-nowa').value = u.No_WA;
+    document.getElementById('akun-isadmin').value = String(u.IsAdmin).toUpperCase() === 'TRUE' ? 'TRUE' : 'FALSE';
+    document.getElementById('akun-issupervisor').value = String(u.IsSupervisor).toUpperCase() === 'TRUE' ? 'TRUE' : 'FALSE';
+    document.getElementById('akun-divisidiawasi').value = u.DivisiDiawasi;
+    document.getElementById('akun-active').value = String(u.Active).toLowerCase() === 'no' ? 'No' : 'Yes';
+  }
+
+  function saveAkun() {
+    const record = {
+      NIK: document.getElementById('akun-nik').value.trim(),
+      Nama: document.getElementById('akun-nama').value.trim(),
+      Divisi: document.getElementById('akun-divisi').value.trim(),
+      No_WA: document.getElementById('akun-nowa').value.trim(),
+      IsAdmin: document.getElementById('akun-isadmin').value,
+      IsSupervisor: document.getElementById('akun-issupervisor').value,
+      DivisiDiawasi: document.getElementById('akun-divisidiawasi').value.trim(),
+      IsRegistered: 'No',
+      Active: document.getElementById('akun-active').value
+    };
+    if (!record.NIK || !record.Nama || !record.Divisi) {
+      showAdminToast('NIK, Nama, dan Divisi wajib diisi.', 'error'); return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(res) { showAdminToast('Akun ' + res.action + '.', 'success'); loadAkunList(); })
+      .withFailureHandler(showAdminError)
+      .saveUserRecord({ nik: adminCurrentNik, record: record });
+  }
+
+  function deleteAkun(targetNik) {
+    if (!confirm('Hapus akun NIK ' + targetNik + '? Riwayat poin lama tidak akan terhapus, tapi akun ini tidak bisa login lagi.')) return;
+    google.script.run
+      .withSuccessHandler(function() { showAdminToast('Akun dihapus.', 'success'); loadAkunList(); })
+      .withFailureHandler(showAdminError)
+      .deleteUserRecord({ nik: adminCurrentNik, targetNik: targetNik });
+  }
+
+  // ---------- KLAIM ----------
+  function loadKlaimList() {
+    const nikFilter = document.getElementById('klaim-filter-nik').value.trim();
+    document.getElementById('klaim-list').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(renderKlaimList)
+      .withFailureHandler(showAdminError)
+      .listAllTaskClaimsForAdmin({ nik: adminCurrentNik, nikFilter: nikFilter });
+  }
+
+  function renderKlaimList(claims) {
+    const el = document.getElementById('klaim-list');
+    if (!claims.length) { el.innerHTML = '<p class="sub">Tidak ada klaim ditemukan.</p>'; return; }
+
+    el.innerHTML = claims.map(function(c) {
+      return '<div class="report-item">' +
+        '<span class="badge-status ' + c.Status + '">' + c.Status + '</span> ' +
+        '<b>' + c.TaskId + '</b> · ' + c.Nama + ' (' + c.NIK + ')' +
+        '<div class="report-meta">' + c.Timestamp + ' · ' + c.Points + ' poin</div>' +
+        '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">' +
+          '<input type="number" id="klaim-newpoints-' + c.ReferenceId + '" placeholder="Poin baru" style="width:100px;flex:none;padding:8px 10px;">' +
+          '<button class="btn-ghost" style="width:auto;padding:8px 12px;" onclick="adjustKlaim(\'' + c.ReferenceId + '\')">Koreksi Poin</button>' +
+          '<button class="btn-danger" style="width:auto;padding:8px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteKlaim(\'' + c.ReferenceId + '\')">Hapus Klaim</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  function adjustKlaim(referenceId) {
+    const input = document.getElementById('klaim-newpoints-' + referenceId);
+    const newPoints = input.value;
+    if (newPoints === '') { showAdminToast('Isi poin baru dulu.', 'error'); return; }
+
+    google.script.run
+      .withSuccessHandler(function(res) { showAdminToast(res.message, 'success'); loadKlaimList(); })
+      .withFailureHandler(showAdminError)
+      .adjustTaskClaim({ adminNik: adminCurrentNik, referenceId: referenceId, newPoints: Number(newPoints) });
+  }
+
+  function deleteKlaim(referenceId) {
+    if (!confirm('Hapus klaim ini? Poin yang sudah masuk akan dibatalkan otomatis.')) return;
+    google.script.run
+      .withSuccessHandler(function(res) { showAdminToast(res.message, 'success'); loadKlaimList(); })
+      .withFailureHandler(showAdminError)
+      .deleteTaskClaim({ adminNik: adminCurrentNik, referenceId: referenceId });
+  }
+
+  // ---------- KABAG ----------
+  function loadKabagList() {
+    google.script.run
+      .withSuccessHandler(function(users) {
+        const kabags = users.filter(function(u) { return String(u.IsSupervisor).toUpperCase() === 'TRUE'; });
+        document.getElementById('kabag-list').innerHTML = kabags.map(function(u) {
+          return '<div class="report-item"><b>' + u.Nama + '</b> (' + u.NIK + ')' +
+            '<div class="report-meta">Mengawasi: ' + u.DivisiDiawasi + '</div></div>';
+        }).join('') || '<p class="sub">Belum ada Kabag/Supervisor.</p>';
+      })
+      .withFailureHandler(showAdminError)
+      .getAllUsers({ nik: adminCurrentNik });
+  }
+
+  function saveKabag() {
+    const nik = document.getElementById('kabag-nik').value.trim();
+    const nama = document.getElementById('kabag-nama').value.trim();
+    const divisi = document.getElementById('kabag-divisi').value.trim();
+    const diawasi = document.getElementById('kabag-diawasi').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+
+    if (!nik || !nama || !divisi || !diawasi.length) { showAdminToast('Semua kolom wajib diisi.', 'error'); return; }
+
+    google.script.run
+      .withSuccessHandler(function(res) { showAdminToast(res.action + ': ' + res.nik, 'success'); loadKabagList(); })
+      .withFailureHandler(showAdminError)
+      .addOrPromoteSupervisor({ adminNik: adminCurrentNik, nik: nik, nama: nama, divisi: divisi, divisiDiawasi: diawasi });
+  }
+
+  // ---------- BANTUAN ----------
+  function loadBantuanList() {
+    document.getElementById('bantuan-list').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(renderBantuanList)
+      .withFailureHandler(showAdminError)
+      .listAllHelpRequests({ nik: adminCurrentNik, statusFilter: document.getElementById('bantuan-filter-status').value });
+  }
+
+  function renderBantuanList(requests) {
+    const el = document.getElementById('bantuan-list');
+    if (!requests.length) { el.innerHTML = '<p class="sub">Tidak ada pertanyaan.</p>'; return; }
+
+    el.innerHTML = requests.map(function(r) {
+      const statusClass = r.Status === 'Answered' ? 'Approved' : 'Pending';
+      const answerBox = r.Status === 'Answered'
+        ? '<p class="report-meta" style="margin-top:6px;">Jawaban: ' + r.Answer + ' (oleh ' + r.AnsweredBy + ')</p>'
+        : '<div class="feedback-box"><input type="text" id="ans-' + r.RequestId + '" placeholder="Tulis jawaban..."><button class="btn-ghost" onclick="answerBantuan(\'' + r.RequestId + '\')">Kirim</button></div>';
+
+      return '<div class="report-item">' +
+        '<span class="badge-status ' + statusClass + '">' + r.Status + '</span> ' +
+        '<b>' + r.Nama + '</b> (' + r.NIK + ')' +
+        '<div class="report-meta">' + r.Timestamp + '</div>' +
+        '<p style="margin-top:6px;">' + r.Question + '</p>' +
+        answerBox +
+      '</div>';
+    }).join('');
+  }
+
+  function answerBantuan(requestId) {
+    const answer = document.getElementById('ans-' + requestId).value.trim();
+    if (!answer) { showAdminToast('Tulis jawaban dulu.', 'error'); return; }
+
+    google.script.run
+      .withSuccessHandler(function(res) { showAdminToast(res.message, 'success'); loadBantuanList(); })
+      .withFailureHandler(showAdminError)
+      .answerHelpRequest({ adminNik: adminCurrentNik, requestId: requestId, answer: answer });
+  }
+
+  // ---------- SHARED ----------
+  function showAdminToast(msg, type) {
+    const t = document.getElementById('toast-admin');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    if (type !== 'error') setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+  function showAdminError(err) { showAdminToast(err.message || String(err), 'error'); }
+
+  function loadQuizList() {
+  google.script.run
+    .withSuccessHandler(function(quizzes) {
+      const filter = document.getElementById('quiz-filter-taskid').value.trim();
+      const filtered = filter ? quizzes.filter(function(q) { return q.TaskId === filter; }) : quizzes;
+      renderQuizList(filtered);
+    })
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'quiz' });
+}
+
+function renderQuizList(quizzes) {
+  document.getElementById('quiz-list').innerHTML = quizzes.map(function(q) {
+    return '<div class="report-item">' +
+      '<b>' + q.QuizId + '</b> · Task: ' + q.TaskId + ' · ' + q.Status +
+      '<div class="report-meta">' + q.Question + '</div>' +
+      '<div class="report-meta">Jawaban benar: ' + q.CorrectOption + '</div>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editQuiz(' + JSON.stringify(q) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteQuiz(\'' + q.QuizId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editQuiz(q) {
+  document.getElementById('quiz-id').value = q.QuizId;
+  document.getElementById('quiz-taskid').value = q.TaskId;
+  document.getElementById('quiz-question').value = q.Question;
+  document.getElementById('quiz-optiona').value = q.OptionA;
+  document.getElementById('quiz-optionb').value = q.OptionB;
+  document.getElementById('quiz-optionc').value = q.OptionC;
+  document.getElementById('quiz-optiond').value = q.OptionD;
+  document.getElementById('quiz-correct').value = q.CorrectOption;
+  document.getElementById('quiz-explanation').value = q.Explanation;
+  document.getElementById('quiz-status').value = q.Status;
+}
+
+function saveQuiz() {
+  const record = {
+    QuizId: document.getElementById('quiz-id').value.trim(),
+    TaskId: document.getElementById('quiz-taskid').value.trim(),
+    Question: document.getElementById('quiz-question').value.trim(),
+    OptionA: document.getElementById('quiz-optiona').value.trim(),
+    OptionB: document.getElementById('quiz-optionb').value.trim(),
+    OptionC: document.getElementById('quiz-optionc').value.trim(),
+    OptionD: document.getElementById('quiz-optiond').value.trim(),
+    CorrectOption: document.getElementById('quiz-correct').value,
+    Explanation: document.getElementById('quiz-explanation').value.trim(),
+    Status: document.getElementById('quiz-status').value
+  };
+  if (!record.QuizId || !record.TaskId || !record.Question) {
+    showAdminToast('Quiz ID, Task ID, dan Pertanyaan wajib diisi.', 'error'); return;
+  }
+
+  const lastTaskId = record.TaskId; // simpan sebelum reset, supaya Task ID tetap terisi untuk soal berikutnya
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      showAdminToast('Soal ' + res.action + '. Silakan tambah soal berikutnya untuk Task yang sama.', 'success');
+      resetQuizForm(lastTaskId);
+      loadQuizList();
+    })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'quiz', record: record });
+}
+
+function resetQuizForm(keepTaskId) {
+  document.getElementById('quiz-id').value = '';
+  document.getElementById('quiz-taskid').value = keepTaskId || '';
+  document.getElementById('quiz-question').value = '';
+  document.getElementById('quiz-optiona').value = '';
+  document.getElementById('quiz-optionb').value = '';
+  document.getElementById('quiz-optionc').value = '';
+  document.getElementById('quiz-optiond').value = '';
+  document.getElementById('quiz-correct').value = 'A';
+  document.getElementById('quiz-explanation').value = '';
+  document.getElementById('quiz-status').value = 'Active';
+}
+
+function deleteQuiz(quizId) {
+  if (!confirm('Hapus soal ' + quizId + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Soal dihapus.', 'success'); loadQuizList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'quiz', id: quizId });
+}
+
+function loadCampaignOptions() {
+  google.script.run
+    .withSuccessHandler(function(options) {
+      const sel = document.getElementById('task-campaignid');
+      const currentVal = sel.value; // simpan pilihan yang sedang aktif (kalau lagi edit)
+      sel.innerHTML = '<option value="">- Tidak ada media -</option>' +
+        options.map(function(o) { return '<option value="' + o.id + '">' + o.id + ' — ' + o.title + '</option>'; }).join('');
+      sel.value = currentVal;
+    })
+    .withFailureHandler(showAdminError)
+    .getCampaignOptions({ nik: adminCurrentNik });
+}
+</script>

@@ -1,0 +1,98 @@
+<div id="dashboard-page">
+  <div class="dash-header">
+    <div>
+      <p class="dash-greeting" id="dash-greeting">Halo!</p>
+      <p class="dash-role" id="dash-role"></p>
+    </div>
+    <button class="btn-ghost btn-logout" onclick="logout()">Keluar</button>
+  </div>
+
+  <div class="card dash-summary">
+    <div class="dash-badge" id="dash-badge">🌱</div>
+    <div>
+      <p class="dash-points" id="dash-points">0 Poin</p>
+      <p class="dash-tier" id="dash-tier">Perintis · Rank #-</p>
+    </div>
+  </div>
+
+  <p class="section-title">Menu Utama</p>
+  <div class="menu-grid" id="menu-grid"></div>
+</div>
+
+<style>
+  .dash-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 16px; }
+  .dash-greeting { font-size: 18px; font-weight: 800; color: var(--green-900); margin: 0; }
+  .dash-role { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+  .btn-logout { padding: 8px 14px; font-size: 12px; border-radius: 10px; margin: 0; width: auto; }
+  .dash-summary { display: flex; align-items: center; gap: 14px; background: var(--green-900); color: #fff; }
+  .dash-badge { font-size: 34px; }
+  .dash-points { font-size: 22px; font-weight: 800; margin: 0; }
+  .dash-tier { font-size: 12px; opacity: 0.85; margin: 2px 0 0; }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--muted); margin: 20px 0 10px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .menu-item {
+    background: var(--surface); border-radius: 16px; padding: 16px 12px;
+    text-align: center; box-shadow: var(--shadow); cursor: pointer;
+  }
+  .menu-item .icon { font-size: 26px; display: block; margin-bottom: 6px; }
+  .menu-item .label { font-size: 13px; font-weight: 700; color: var(--ink); }
+</style>
+
+<script>
+  function loadDashboard(nik) {
+    google.script.run
+      .withSuccessHandler(renderDashboard)
+      .withFailureHandler(function(err) { alert(err.message || String(err)); })
+      .getDashboardSummary({ nik: nik });
+  }
+
+  function renderDashboard(summary) {
+    const u = summary.user;
+    document.getElementById('dash-greeting').textContent = 'Halo, ' + u.nama + '!';
+    document.getElementById('dash-role').textContent =
+      u.isAdmin ? 'Admin EHS · ' + u.divisi :
+      (u.isSupervisor ? 'Kabag/Supervisor · ' + u.divisi : u.divisi);
+
+    document.getElementById('dash-badge').textContent = summary.badge.icon;
+    document.getElementById('dash-points').textContent = summary.totalPoints + ' Poin';
+    document.getElementById('dash-tier').textContent =
+      summary.badge.name + ' · Rank #' + summary.rank +
+      (summary.badge.next ? ' · ' + (summary.badge.next - summary.totalPoints) + ' poin lagi naik tier' : '');
+
+    renderMenu(u);
+  }
+
+  function renderMenu(user) {
+    let items;
+
+  if (user.isAdmin) {
+    items = [
+      { icon: '🚶', label: 'Pantau Health Task', page: 'health-monitor' },
+      { icon: '⚡', label: 'Pantau Energy Task', page: 'energy-monitor' },
+      { icon: '⚖️', label: 'Data BMI Karyawan', page: 'bmi-monitor' },
+      { icon: '📋', label: 'Review Safety', page: 'safety-review' },
+      { icon: '❓', label: 'Kelola Pertanyaan', page: 'admin-help' },
+      { icon: '⚙️', label: 'Kelola Master Data', page: 'admin' },
+      { icon: '🏆', label: 'Leaderboard', page: 'leaderboard' },
+      { icon: '💬', label: 'Bantuan', page: 'help' },
+    ];
+    } else {
+      items = [
+        { icon: '🚶', label: 'Health Task', page: 'health' },
+        { icon: '⚡', label: 'Energy Task', page: 'energy' },
+        { icon: '⚖️', label: 'Measure Your Body', page: 'bmi' },
+        { icon: '🦺', label: 'Lapor Safety', page: 'safety-report', show: user.canSubmitSafetyReport },
+        { icon: '🏆', label: 'Leaderboard', page: 'leaderboard' },
+        { icon: '💬', label: 'Bantuan', page: 'help' }
+      ];
+    }
+
+    const grid = document.getElementById('menu-grid');
+    grid.innerHTML = items.filter(function(i) { return i.show !== false; }).map(function(i) {
+      return '<div class="menu-item" onclick="navigateTo(\'' + i.page + '\')">' +
+        '<span class="icon">' + i.icon + '</span>' +
+        '<span class="label">' + i.label + '</span>' +
+      '</div>';
+    }).join('');
+  }
+</script>

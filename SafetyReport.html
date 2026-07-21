@@ -1,0 +1,176 @@
+<div id="safety-form-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Lapor Safety</h2>
+  <p class="sub">Isi laporan Safety Talk, Safety Walk, atau kondisi bahaya untuk divisi yang Anda awasi.</p>
+
+  <div class="card">
+    <label>Jenis Laporan</label>
+    <div class="pill-group" id="jenis-pills">
+      <div class="pill active" data-value="ST">Safety Talk</div>
+      <div class="pill" data-value="SW">Safety Walk</div>
+      <div class="pill" data-value="Hazard">Kondisi Bahaya</div>
+    </div>
+
+    <label>Divisi yang Dilaporkan</label>
+    <select id="divisi-select"></select>
+
+    <label>Deskripsi</label>
+    <textarea id="deskripsi" placeholder="Jelaskan singkat apa yang dilakukan/ditemukan..."></textarea>
+
+    <div id="severity-block" style="display:none;">
+      <label>Tingkat Keparahan</label>
+      <div class="pill-group" id="severity-pills">
+        <div class="pill" data-value="Low">Rendah</div>
+        <div class="pill" data-value="Medium">Sedang</div>
+        <div class="pill" data-value="High">Tinggi</div>
+      </div>
+    </div>
+
+    <label>Bukti (foto)</label>
+    <input id="bukti-file" type="file" accept="image/*" capture="environment">
+
+    <button class="btn-primary" id="safety-submit-btn" onclick="submitSafetyReportForm()">Kirim Laporan</button>
+  </div>
+</div>
+
+<p class="section-title">Riwayat Laporan Saya</p>
+<div id="my-reports-list"><p class="sub">Memuat...</p></div>
+
+<div id="toast-safety-report" class="toast"></div>
+
+<script>
+  let safetyCurrentNik = null;
+  let safetySelectedJenis = 'ST';
+  let safetySelectedSeverity = 'Low';
+
+  function initSafetyReportForm(nik) {
+    safetyCurrentNik = nik;
+    safetySelectedJenis = 'ST';
+    safetySelectedSeverity = 'Low';
+    document.getElementById('deskripsi').value = '';
+    document.getElementById('bukti-file').value = '';
+    document.getElementById('severity-block').style.display = 'none';
+    document.querySelectorAll('#jenis-pills .pill').forEach(function(p, idx) {
+      p.classList.toggle('active', idx === 0);
+    });
+
+    const sel = document.getElementById('divisi-select');
+    sel.innerHTML = '<option value="">Memuat divisi...</option>';
+
+    google.script.run
+      .withSuccessHandler(function(divisiList) {
+        if (!divisiList || !divisiList.length) {
+          sel.innerHTML = '<option value="">Tidak ada divisi terdaftar</option>';
+          showSafetyReportToast('Anda belum punya divisi yang diawasi. Hubungi Admin EHS.', 'error');
+          return;
+        }
+        sel.innerHTML = divisiList.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
+      })
+      .withFailureHandler(function(err) {
+        sel.innerHTML = '<option value="">Gagal memuat divisi</option>';
+        showSafetyReportToast(err.message || String(err), 'error');
+      })
+      .getDivisiDiawasiForUser(nik);
+
+    loadMySafetyReports();
+  }
+
+  document.querySelectorAll('#jenis-pills .pill').forEach(function(el) {
+    el.addEventListener('click', function() {
+      document.querySelectorAll('#jenis-pills .pill').forEach(function(p) { p.classList.remove('active'); });
+      el.classList.add('active');
+      safetySelectedJenis = el.dataset.value;
+      document.getElementById('severity-block').style.display = safetySelectedJenis === 'Hazard' ? 'block' : 'none';
+    });
+  });
+
+  document.querySelectorAll('#severity-pills .pill').forEach(function(el) {
+    el.addEventListener('click', function() {
+      document.querySelectorAll('#severity-pills .pill').forEach(function(p) { p.classList.remove('active'); });
+      el.classList.add('active');
+      safetySelectedSeverity = el.dataset.value;
+    });
+  });
+
+  function loadMySafetyReports() {
+    google.script.run
+      .withSuccessHandler(renderMyReports)
+      .withFailureHandler(showSafetyReportError)
+      .getMySafetyReports({ nik: safetyCurrentNik });
+  }
+
+  function renderMyReports(reports) {
+    const el = document.getElementById('my-reports-list');
+    if (!reports.length) { el.innerHTML = '<p class="sub">Belum ada laporan.</p>'; return; }
+
+    el.innerHTML = reports.map(function(r) {
+      const feedbackBlock = r.AdminFeedback
+        ? '<div class="report-meta" style="color:var(--danger);margin-top:4px;">Feedback Admin: ' + r.AdminFeedback + '</div>'
+        : '';
+      return '<div class="card" style="padding:12px;">' +
+        '<span class="badge-status ' + r.Status + '">' + r.Status + '</span> ' +
+        '<b>' + r.JenisLaporan + '</b> · ' + r.DivisiDilaporkan +
+        '<div class="report-meta">' + r.Timestamp + '</div>' +
+        feedbackBlock +
+      '</div>';
+    }).join('');
+  }
+
+  function fileToBase64_(file) {
+    return new Promise(function(resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function() { resolve(reader.result.split(',')[1]); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function submitSafetyReportForm() {
+    const btn = document.getElementById('safety-submit-btn');
+    const deskripsi = document.getElementById('deskripsi').value.trim();
+    if (!deskripsi) { showSafetyReportToast('Deskripsi wajib diisi.', 'error'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Mengirim...';
+
+    const payload = {
+      nik: safetyCurrentNik,
+      jenisLaporan: safetySelectedJenis,
+      divisiDilaporkan: document.getElementById('divisi-select').value,
+      deskripsi: deskripsi,
+      severity: safetySelectedSeverity
+    };
+
+    const fileInput = document.getElementById('bukti-file');
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      payload.buktiBase64 = await fileToBase64_(file);
+      payload.buktiMime = file.type;
+      payload.buktiFileName = file.name;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false; btn.textContent = 'Kirim Laporan';
+        showSafetyReportToast(res.message, 'success');
+        document.getElementById('deskripsi').value = '';
+        fileInput.value = '';
+        loadMySafetyReports();
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false; btn.textContent = 'Kirim Laporan';
+        showSafetyReportToast(err.message || String(err), 'error');
+      })
+      .submitSafetyReport(payload);
+  }
+
+  function showSafetyReportToast(msg, type) {
+    const t = document.getElementById('toast-safety-report');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    if (type !== 'error') {
+      setTimeout(function() { t.className = 'toast'; }, 3500);
+    }
+  }
+  function showSafetyReportError(err) { showSafetyReportToast(err.message || String(err), 'error'); }
+</script>

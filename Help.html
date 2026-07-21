@@ -1,0 +1,249 @@
+<div id="help-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Bantuan</h2>
+  <p class="sub">FAQ aplikasi, atau kirim pertanyaan langsung ke Admin EHS.</p>
+
+  <div class="pill-group" style="margin-bottom:14px;flex-wrap:wrap;">
+    <div class="pill active" data-cat="all" onclick="filterFaq_('all')">Semua</div>
+    <div class="pill" data-cat="Login" onclick="filterFaq_('Login')">Login</div>
+    <div class="pill" data-cat="Task" onclick="filterFaq_('Task')">Task</div>
+    <div class="pill" data-cat="Survey" onclick="filterFaq_('Survey')">Survey</div>
+    <div class="pill" data-cat="Poin" onclick="filterFaq_('Poin')">Poin</div>
+    <div class="pill" data-cat="BMI" onclick="filterFaq_('BMI')">BMI</div>
+  </div>
+
+  <div id="faq-list"><p class="sub">Memuat FAQ...</p></div>
+
+  <!-- ===== Bagian untuk USER biasa ===== -->
+  <div id="help-user-section" style="display:none;">
+    <p class="section-title">Belum Terjawab? Tanya Admin</p>
+    <div class="card">
+      <label>Pertanyaan Anda</label>
+      <textarea id="help-question" placeholder="Tulis pertanyaan Anda di sini..."></textarea>
+      <button class="btn-primary" id="help-submit-btn" onclick="submitHelpQuestion()">Kirim ke Admin</button>
+    </div>
+
+    <p class="section-title">Riwayat Pertanyaan Saya</p>
+    <div id="my-help-list"><p class="sub">Memuat...</p></div>
+  </div>
+
+  <!-- ===== Bagian untuk ADMIN ===== -->
+  <div id="help-admin-section" style="display:none;">
+    <p class="section-title">Tambah / Edit FAQ</p>
+    <div class="card">
+      <label>FAQ ID</label>
+      <input id="faq-id" placeholder="Contoh: FAQ09">
+      <label>Kategori</label>
+      <select id="faq-category">
+        <option value="Login">Login</option>
+        <option value="Task">Task</option>
+        <option value="Survey">Survey</option>
+        <option value="Poin">Poin</option>
+        <option value="BMI">BMI</option>
+      </select>
+      <label>Pertanyaan</label>
+      <textarea id="faq-question"></textarea>
+      <label>Jawaban</label>
+      <textarea id="faq-answer"></textarea>
+      <label>Status</label>
+      <select id="faq-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+      <button class="btn-primary" onclick="saveFaq()">Simpan FAQ</button>
+    </div>
+
+    <p class="section-title">Kelola Semua FAQ</p>
+    <div id="faq-admin-list"></div>
+  </div>
+</div>
+
+<style>
+  .faq-item {
+    background: var(--surface); border-radius: 14px; padding: 14px;
+    margin-bottom: 8px; box-shadow: var(--shadow); cursor: pointer;
+  }
+  .faq-question { font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .faq-answer { color: var(--muted); font-size: 13px; margin-top: 8px; display: none; }
+  .faq-item.open .faq-answer { display: block; }
+  .faq-caret { transition: transform 0.15s; }
+  .faq-item.open .faq-caret { transform: rotate(180deg); }
+</style>
+
+<div id="toast-help" class="toast"></div>
+
+<script>
+  let helpCurrentNik = null;
+  let helpIsAdmin = false;
+  let helpFaqData = [];
+
+  function initHelpPage(nik, isAdmin) {
+    helpCurrentNik = nik;
+    helpIsAdmin = !!isAdmin;
+
+    document.getElementById('help-user-section').style.display = helpIsAdmin ? 'none' : 'block';
+    document.getElementById('help-admin-section').style.display = helpIsAdmin ? 'block' : 'none';
+
+    if (helpIsAdmin) {
+      resetFaqForm();
+      loadFaqAdminList();
+    } else {
+      document.getElementById('help-question').value = '';
+      loadMyHelpRequests_();
+    }
+
+    loadFaqDisplayList();
+  }
+
+  // --- FAQ tampil (semua user, termasuk Admin bisa lihat juga) ---
+  function loadFaqDisplayList() {
+    google.script.run
+      .withSuccessHandler(function(faqs) { helpFaqData = faqs; renderFaqList_('all'); })
+      .withFailureHandler(showHelpError)
+      .getFaqList();
+  }
+
+  function filterFaq_(cat) {
+    document.querySelectorAll('.pill[data-cat]').forEach(function(p) { p.classList.toggle('active', p.dataset.cat === cat); });
+    renderFaqList_(cat);
+  }
+
+  function renderFaqList_(cat) {
+    const filtered = cat === 'all' ? helpFaqData : helpFaqData.filter(function(f) { return f.Category === cat || f.category === cat; });
+    const el = document.getElementById('faq-list');
+    if (!filtered.length) { el.innerHTML = '<p class="sub">Tidak ada FAQ di kategori ini.</p>'; return; }
+
+    el.innerHTML = filtered.map(function(f, idx) {
+      const q = f.Question || f.question;
+      const a = f.Answer || f.answer;
+      return '<div class="faq-item" id="faq-view-' + idx + '" onclick="toggleFaq_(' + idx + ')">' +
+        '<div class="faq-question">' + q + ' <span class="faq-caret">▾</span></div>' +
+        '<div class="faq-answer">' + a + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function toggleFaq_(idx) {
+    document.getElementById('faq-view-' + idx).classList.toggle('open');
+  }
+
+  // --- Bagian USER: kirim pertanyaan ---
+  function submitHelpQuestion() {
+    const question = document.getElementById('help-question').value.trim();
+    if (!question) { showHelpToast('Tulis pertanyaan dulu.', 'error'); return; }
+
+    const btn = document.getElementById('help-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim...';
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false; btn.textContent = 'Kirim ke Admin';
+        showHelpToast(res.message, 'success');
+        document.getElementById('help-question').value = '';
+        loadMyHelpRequests_();
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false; btn.textContent = 'Kirim ke Admin';
+        showHelpToast(err.message || String(err), 'error');
+      })
+      .submitHelpRequest({ nik: helpCurrentNik, question: question });
+  }
+
+  function loadMyHelpRequests_() {
+    google.script.run
+      .withSuccessHandler(renderMyHelpList_)
+      .withFailureHandler(showHelpError)
+      .getMyHelpRequests({ nik: helpCurrentNik });
+  }
+
+  function renderMyHelpList_(requests) {
+    const el = document.getElementById('my-help-list');
+    if (!requests.length) { el.innerHTML = '<p class="sub">Belum pernah mengirim pertanyaan.</p>'; return; }
+
+    el.innerHTML = requests.map(function(r) {
+      const statusClass = r.Status === 'Answered' ? 'Approved' : 'Pending';
+      return '<div class="card" style="padding:14px;">' +
+        '<span class="badge-status ' + statusClass + '">' + (r.Status === 'Answered' ? 'Terjawab' : 'Menunggu') + '</span>' +
+        '<p style="margin:8px 0 0;font-weight:700;">' + r.Question + '</p>' +
+        '<p class="report-meta">' + r.Timestamp + '</p>' +
+        (r.Answer ? '<p style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);">' + r.Answer + '</p>' : '') +
+      '</div>';
+    }).join('');
+  }
+
+  // --- Bagian ADMIN: kelola FAQ ---
+  function loadFaqAdminList() {
+    google.script.run
+      .withSuccessHandler(renderFaqAdminList)
+      .withFailureHandler(showHelpError)
+      .getAdminMasterData({ nik: helpCurrentNik, masterType: 'faq' });
+  }
+
+  function renderFaqAdminList(faqs) {
+    document.getElementById('faq-admin-list').innerHTML = faqs.map(function(f) {
+      return '<div class="report-item">' +
+        '<span class="badge-status ' + (f.Status === 'Active' ? 'Approved' : 'Revise') + '">' + f.Status + '</span> ' +
+        '<b>' + f.FaqId + '</b> · ' + f.Category +
+        '<div class="report-meta" style="margin-top:4px;">' + f.Question + '</div>' +
+        '<div style="margin-top:8px;">' +
+          '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editFaq(' + JSON.stringify(f) + ')\'>Edit</button>' +
+          '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteFaq(\'' + f.FaqId + '\')">Hapus</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  function editFaq(f) {
+    document.getElementById('faq-id').value = f.FaqId;
+    document.getElementById('faq-category').value = f.Category;
+    document.getElementById('faq-question').value = f.Question;
+    document.getElementById('faq-answer').value = f.Answer;
+    document.getElementById('faq-status').value = f.Status;
+  }
+
+  function resetFaqForm() {
+    document.getElementById('faq-id').value = '';
+    document.getElementById('faq-category').value = 'Login';
+    document.getElementById('faq-question').value = '';
+    document.getElementById('faq-answer').value = '';
+    document.getElementById('faq-status').value = 'Active';
+  }
+
+  function saveFaq() {
+    const record = {
+      FaqId: document.getElementById('faq-id').value.trim(),
+      Category: document.getElementById('faq-category').value,
+      Question: document.getElementById('faq-question').value.trim(),
+      Answer: document.getElementById('faq-answer').value.trim(),
+      Status: document.getElementById('faq-status').value
+    };
+    if (!record.FaqId || !record.Question || !record.Answer) {
+      showHelpToast('FAQ ID, Pertanyaan, dan Jawaban wajib diisi.', 'error'); return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        showHelpToast('FAQ ' + res.action + '.', 'success');
+        resetFaqForm();
+        loadFaqAdminList();
+        loadFaqDisplayList();
+      })
+      .withFailureHandler(showHelpError)
+      .saveMasterRecord({ nik: helpCurrentNik, masterType: 'faq', record: record });
+  }
+
+  function deleteFaq(faqId) {
+    if (!confirm('Hapus FAQ ' + faqId + '?')) return;
+    google.script.run
+      .withSuccessHandler(function() {
+        showHelpToast('FAQ dihapus.', 'success');
+        loadFaqAdminList();
+        loadFaqDisplayList();
+      })
+      .withFailureHandler(showHelpError)
+      .deleteMasterRecord({ nik: helpCurrentNik, masterType: 'faq', id: faqId });
+  }
+
+  function showHelpToast(msg, type) {
+    const t = document.getElementById('toast-help');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    if (type !== 'error') setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+  function showHelpError(err) { showHelpToast(err.message || String(err), 'error'); }
+</script>

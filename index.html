@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('SharedStyles'); ?>
+</head>
+<body>
+  <div id="view-login"><?!= include('Login'); ?></div>
+  <div id="view-dashboard" style="display:none;"><?!= include('DashboardUser'); ?></div>
+  <div id="view-bmi" style="display:none;"><?!= include('BmiForm'); ?></div>
+  <div id="view-safety-report" style="display:none;"><?!= include('SafetyReport'); ?></div>
+  <div id="view-safety-review" style="display:none;"><?!= include('SafetyReviewQueue'); ?></div>
+  <div id="view-admin" style="display:none;"><?!= include('DashboardAdmin'); ?></div>
+  <div id="view-monitor" style="display:none;"><?!= include('AdminMonitor'); ?></div>
+  <div id="view-health" style="display:none;"><?!= include('HealthTask'); ?></div>
+  <div id="view-energy" style="display:none;"><?!= include('EnergyTask'); ?></div>
+  <div id="view-miniproject" style="display:none;"><?!= include('MiniProjectForm'); ?></div>
+  <div id="view-leaderboard" style="display:none;"><?!= include('LeaderboardPage'); ?></div>
+  <div id="view-help" style="display:none;"><?!= include('Help'); ?></div>
+  <div id="view-admin-help" style="display:none;"><?!= include('AdminHelpQueue'); ?></div>
+  <div id="view-register" style="display:none;"><?!= include('Register'); ?></div>
+
+  <script>
+    let EHS_CURRENT_NIK = null;
+    const EHS_VIEWS = ['login', 'register', 'dashboard', 'bmi', 'safety-report', 'safety-review', 'admin', 'monitor', 'health', 'energy', 'miniproject', 'leaderboard', 'help', 'admin-help']; // 'task-review'
+    //let EHS_CURRENT_NIK = null;
+    let EHS_CURRENT_IS_ADMIN = false;
+
+    function showView(name) {
+      EHS_VIEWS.forEach(function(v) {
+        document.getElementById('view-' + v).style.display = (v === name) ? '' : 'none';
+      });
+    }
+
+    function boot() {
+      const savedNik = localStorage.getItem('ehs_nik');
+      if (savedNik) {
+        verifyAndEnterDashboard(savedNik, true);
+      } else {
+        showView('login');
+      }
+    }
+
+    function verifyAndEnterDashboard(nik, silent) {
+      google.script.run
+        .withSuccessHandler(function(user) {
+          EHS_CURRENT_NIK = user.nik;
+          EHS_CURRENT_IS_ADMIN = user.isAdmin;
+          localStorage.setItem('ehs_nik', user.nik);
+          showView('dashboard');
+          loadDashboard(user.nik);
+        })
+        .withFailureHandler(function(err) {
+          localStorage.removeItem('ehs_nik');
+          showView('login');
+          if (!silent) loginShowError(err.message || String(err));
+        })
+        .loginUser({ nik: nik });
+    }
+
+    function logout() {
+      localStorage.removeItem('ehs_nik');
+      EHS_CURRENT_NIK = null;
+      showView('login');
+    }
+
+    /**
+     * Router pusat — dipanggil dari klik menu di DashboardUser.html.
+     * Setiap halaman tujuan punya fungsi init sendiri (didefinisikan
+     * di file HTML masing-masing) yang menerima NIK user yang sedang login.
+     */
+    function navigateTo(page) {
+      if (page === 'bmi') { showView('bmi'); initBmiForm(EHS_CURRENT_NIK); return; }
+      if (page === 'health') { showView('health'); initHealthTask(EHS_CURRENT_NIK); return; }
+      if (page === 'energy') { showView('energy'); initEnergyTask(EHS_CURRENT_NIK); return; }
+      if (page === 'safety-report') { showView('safety-report'); initSafetyReportForm(EHS_CURRENT_NIK); return; }
+      if (page === 'safety-review') { showView('safety-review'); initSafetyReviewQueue(EHS_CURRENT_NIK); return; }
+      if (page === 'admin') { showView('admin'); initAdminDashboard(EHS_CURRENT_NIK); return; }
+      if (page === 'health-monitor') { showView('monitor'); initAdminMonitor(EHS_CURRENT_NIK, 'health'); return; }
+      if (page === 'energy-monitor') { showView('monitor'); initAdminMonitor(EHS_CURRENT_NIK, 'energy'); return; }
+      if (page === 'bmi-monitor') { showView('monitor'); initAdminMonitor(EHS_CURRENT_NIK, 'bmi'); return; }
+      if (page === 'leaderboard') { showView('leaderboard'); initLeaderboardPage(EHS_CURRENT_NIK); return; }
+      if (page === 'help') { showView('help'); initHelpPage(EHS_CURRENT_NIK); return; }
+      if (page === 'admin-help') { showView('admin-help'); initAdminHelpQueue(EHS_CURRENT_NIK); return; }
+      if (page === 'help') { showView('help'); initHelpPage(EHS_CURRENT_NIK, EHS_CURRENT_IS_ADMIN); return; }
+      //if (page === 'task-review') { showView('task-review'); initTaskReviewQueue(EHS_CURRENT_NIK); return; }
+      alert('Halaman "' + page + '" akan dibuat di tahap berikutnya.');
+    }
+
+    
+    function backToDashboard() {
+      showView('dashboard');
+      loadDashboard(EHS_CURRENT_NIK);
+    }
+
+    boot();
+  </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<div id="adminhelp-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Kelola Pertanyaan Bantuan</h2>
+  <p class="sub">Jawab pertanyaan yang dikirim karyawan lewat halaman Bantuan.</p>
+
+  <div class="card">
+    <label>Filter Status</label>
+    <select id="adminhelp-filter-status" onchange="loadAdminHelpList()">
+      <option value="">Semua</option>
+      <option value="Pending">Menunggu</option>
+      <option value="Answered">Terjawab</option>
+    </select>
+  </div>
+  <div id="adminhelp-list"></div>
+</div>
+
+<div id="toast-adminhelp" class="toast"></div>
+
+<script>
+  let adminHelpCurrentNik = null;
+
+  function initAdminHelpQueue(nik) {
+    adminHelpCurrentNik = nik;
+    loadAdminHelpList();
+  }
+
+  function loadAdminHelpList() {
+    document.getElementById('adminhelp-list').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(renderAdminHelpList)
+      .withFailureHandler(showAdminHelpError)
+      .listAllHelpRequests({ nik: adminHelpCurrentNik, statusFilter: document.getElementById('adminhelp-filter-status').value });
+  }
+
+  function renderAdminHelpList(requests) {
+    const el = document.getElementById('adminhelp-list');
+    if (!requests.length) { el.innerHTML = '<p class="sub">Tidak ada pertanyaan.</p>'; return; }
+
+    el.innerHTML = requests.map(function(r) {
+      const statusClass = r.Status === 'Answered' ? 'Approved' : 'Pending';
+      const answerBox = r.Status === 'Answered'
+        ? '<p class="report-meta" style="margin-top:6px;">Jawaban: ' + r.Answer + ' (oleh ' + r.AnsweredBy + ')</p>'
+        : '<div class="feedback-box"><input type="text" id="ans-' + r.RequestId + '" placeholder="Tulis jawaban..."><button class="btn-ghost" onclick="answerAdminHelp(\'' + r.RequestId + '\')">Kirim</button></div>';
+
+      return '<div class="report-item">' +
+        '<span class="badge-status ' + statusClass + '">' + r.Status + '</span> ' +
+        '<b>' + r.Nama + '</b> (' + r.NIK + ')' +
+        '<div class="report-meta">' + r.Timestamp + '</div>' +
+        '<p style="margin-top:6px;">' + r.Question + '</p>' +
+        answerBox +
+      '</div>';
+    }).join('');
+  }
+
+  function answerAdminHelp(requestId) {
+    const answer = document.getElementById('ans-' + requestId).value.trim();
+    if (!answer) { showAdminHelpToast('Tulis jawaban dulu.', 'error'); return; }
+
+    google.script.run
+      .withSuccessHandler(function(res) { showAdminHelpToast(res.message, 'success'); loadAdminHelpList(); })
+      .withFailureHandler(showAdminHelpError)
+      .answerHelpRequest({ adminNik: adminHelpCurrentNik, requestId: requestId, answer: answer });
+  }
+
+  function showAdminHelpToast(msg, type) {
+    const t = document.getElementById('toast-adminhelp');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    if (type !== 'error') setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+  function showAdminHelpError(err) { showAdminHelpToast(err.message || String(err), 'error'); }
+</script>

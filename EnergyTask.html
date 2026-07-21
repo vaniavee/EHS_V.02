@@ -1,0 +1,274 @@
+<div id="energy-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Energy Task</h2>
+  <p class="sub">Klaim poin dari aktivitas konservasi energi Anda.</p>
+
+  <div id="energy-task-list"><p class="sub">Memuat...</p></div>
+</div>
+
+<div id="energy-modal-overlay" class="modal-overlay">
+  <div id="energy-modal-box" class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 id="energy-modal-title" style="margin:0;">Isi Data</h3>
+      <button class="btn-ghost" style="width:auto;padding:6px 12px;" onclick="closeEnergyModal()">✕</button>
+    </div>
+    <div id="energy-modal-body"></div>
+    <button class="btn-primary" id="energy-modal-submit-btn" onclick="submitEnergyModal()">Kirim</button>
+  </div>
+</div>
+
+<div id="toast-energy" class="toast"></div>
+
+<script>
+  let energyCurrentNik = null;
+  let energyCurrentTask = null;
+  let energySurveyQuestions = [];
+
+  function initEnergyTask(nik) {
+    energyCurrentNik = nik;
+    loadEnergyTasks();
+  }
+
+  function loadEnergyTasks() {
+    document.getElementById('energy-task-list').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(renderEnergyTasks)
+      .withFailureHandler(function(err) { showEnergyToast(err.message || String(err), 'error'); })
+      .getTasksForUser({ nik: energyCurrentNik, pillar: 'Energy' });
+  }
+
+  function renderEnergyTasks(tasks) {
+    const el = document.getElementById('energy-task-list');
+    if (!tasks.length) { el.innerHTML = '<p class="sub">Belum ada task Energy aktif.</p>'; return; }
+
+    el.innerHTML = tasks.map(function(t) {
+      const quota = t.used + '/' + t.limit + ' (' + t.frequencyType + ')';
+      const disabled = t.available ? '' : 'disabled';
+      const buttonLabel = t.available ? actionLabelForTask_(t.taskId) : 'Kuota Habis';
+      const reasonLine = !t.available && t.reason
+        ? '<div class="report-meta" style="color:var(--danger);margin-top:4px;">' + t.reason + '</div>' : '';
+
+      return '<div class="card" style="padding:14px;margin-bottom:10px;">' +
+        '<b>' + t.title + '</b>' +
+        '<div class="report-meta">' + t.description + '</div>' +
+        '<div class="report-meta">Kuota: ' + quota + ' · ' + t.points + ' poin</div>' +
+        reasonLine +
+        '<button class="btn-primary" style="margin-top:10px;" ' + disabled + ' onclick=\'openEnergyTaskAction(' + JSON.stringify(t) + ')\'>' + buttonLabel + '</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function actionLabelForTask_(taskId) {
+    if (taskId.indexOf('SURVEY') === 0 || taskId === 'E01') return 'Isi Survey';
+    if (taskId === 'E03') return 'Isi Data Project';
+    if (taskId.indexOf('QD') === 0 || taskId.indexOf('QW') === 0) return 'Kerjakan Quiz';
+    return 'Isi Data';
+  }
+
+  /**
+   * Router utama: E03 (Mini Project) punya halaman sendiri karena
+   * formnya panjang (before/after foto). Task lain pakai modal.
+   */
+  function openEnergyTaskAction(task) {
+    if (task.taskId === 'E03') {
+      showView('miniproject');
+      initMiniProjectForm(energyCurrentNik);
+      return;
+    }
+    if (task.taskId.indexOf('QD') === 0 || task.taskId.indexOf('QW') === 0) {
+      openQuizModal_(task);
+      return;
+    }
+    openSurveyModal_(task); // default: E01 dan task Awareness lain
+  }
+
+  // --- QUIZ ---
+  function openQuizModal_(task) {
+    energyCurrentTask = task;
+    document.getElementById('energy-modal-title').textContent = task.title;
+    document.getElementById('energy-modal-body').innerHTML = '<p class="sub">Memuat soal...</p>';
+    document.getElementById('energy-modal-overlay').classList.add('show');
+
+    google.script.run
+      .withSuccessHandler(function(questions) {
+        if (!questions.length) {
+          document.getElementById('energy-modal-body').innerHTML = '<p class="sub">Belum ada soal untuk quiz ini.</p>';
+          return;
+        }
+        document.getElementById('energy-modal-body').innerHTML = questions.map(function(q, idx) {
+          return '<div class="quiz-question-block">' +
+            '<label>' + (idx + 1) + '. ' + q.question + '</label>' +
+            '<div class="quiz-options-vertical" data-quiz-id="' + q.quizId + '">' +
+              Object.keys(q.options).map(function(k) {
+                return '<div class="quiz-option-row" data-value="' + k + '" onclick="selectQuizOption_(this)">' +
+                  '<span class="quiz-option-letter">' + k + '</span>' +
+                  '<span class="quiz-option-text">' + q.options[k] + '</span>' +
+                '</div>';
+              }).join('') +
+            '</div>' +
+          '</div>';
+        }).join('');
+      })
+      .withFailureHandler(function(err) { showEnergyToast(err.message || String(err), 'error'); })
+      .getQuizForTask({ taskId: task.taskId });
+  }
+
+  function selectQuizOption_(el) {
+    const group = el.parentElement;
+    group.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
+    el.classList.add('active');
+  }
+
+  // --- SURVEY MEDIA AWARENESS ---
+  function openSurveyModal_(task) {
+    energyCurrentTask = task;
+    document.getElementById('energy-modal-title').textContent = task.title;
+    document.getElementById('energy-modal-body').innerHTML = '<p class="sub">Memuat survey...</p>';
+    document.getElementById('energy-modal-overlay').classList.add('show');
+
+  if (!task.campaignId) {
+    // Task tanpa CampaignId sama sekali -> langsung tampilkan form tanpa kartu media
+    google.script.run
+      .withSuccessHandler(function(questions) { renderSurveyForm_(null, questions); })
+      .withFailureHandler(function(err) { showEnergyToast(err.message || String(err), 'error'); })
+      .getSurveyQuestions();
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(campaign) {
+      google.script.run
+        .withSuccessHandler(function(questions) { renderSurveyForm_(campaign, questions); })
+        .withFailureHandler(function(err) { showEnergyToast(err.message || String(err), 'error'); })
+        .getSurveyQuestions();
+    })
+    .withFailureHandler(function() {
+      google.script.run
+        .withSuccessHandler(function(questions) { renderSurveyForm_(null, questions); })
+        .withFailureHandler(function(err) { showEnergyToast(err.message || String(err), 'error'); })
+        .getSurveyQuestions();
+    })
+    .getCampaignById({ campaignId: task.campaignId });
+}
+
+  function renderSurveyForm_(campaign, questions) {
+    let html = '';
+
+    if (campaign) {
+      html += '<div class="card" style="padding:14px;margin-bottom:14px;">' +
+        '<span class="badge-status Approved" style="margin-bottom:6px;display:inline-block;">' + campaign.MediaType + '</span>' +
+        '<p style="font-weight:700;margin:4px 0;">' + campaign.Title + '</p>' +
+        (campaign.Tagline ? '<p class="sub" style="margin:0 0 10px;">' + campaign.Tagline + '</p>' : '') +
+        '<a href="' + campaign.MediaUrl + '" target="_blank" rel="noopener">' +
+          '<button type="button" class="btn-primary" style="margin:0;">Buka Media</button>' +
+        '</a>' +
+      '</div>';
+    }
+
+    html += '<label>Mode Pengisian</label>' +
+      '<div class="pill-group" id="survey-mode-pills">' +
+        '<div class="pill active" data-value="Individu" onclick="selectSurveyMode_(this)">Individu</div>' +
+        '<div class="pill" data-value="Kelompok" onclick="selectSurveyMode_(this)">Kelompok</div>' +
+      '</div>' +
+      '<div id="survey-kelompok-wrap" style="display:none;">' +
+        '<label>NIK Anggota Kelompok Lainnya (tidak perlu isi NIK Anda sendiri, pisah koma)</label>' +
+        '<input id="survey-anggota" placeholder="Contoh: 00181, 00182">' +
+      '</div>';
+
+    if (!questions.length) {
+      html += '<p class="sub" style="margin-top:16px;">Belum ada pertanyaan survey untuk campaign ini.</p>';
+    } else {
+      questions.forEach(function(q) {
+        html += '<label style="margin-top:16px;">' + q.QuestionText + '</label>' +
+          '<div class="pill-group" data-question-id="' + q.QuestionId + '">' +
+            [1,2,3,4,5].map(function(n) {
+              return '<div class="pill" data-value="' + n + '" onclick="selectLikert_(this)">' + n + '</div>';
+            }).join('') +
+          '</div>';
+      });
+    }
+
+    document.getElementById('energy-modal-body').innerHTML = html;
+  }
+
+  function selectSurveyMode_(el) {
+    document.querySelectorAll('#survey-mode-pills .pill').forEach(function(p) { p.classList.remove('active'); });
+    el.classList.add('active');
+    document.getElementById('survey-kelompok-wrap').style.display = el.dataset.value === 'Kelompok' ? 'block' : 'none';
+  }
+  function selectLikert_(el) {
+    const group = el.parentElement;
+    group.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
+    el.classList.add('active');
+  }
+
+  function closeEnergyModal() {
+    document.getElementById('energy-modal-overlay').classList.remove('show');
+  }
+
+  function submitEnergyModal() {
+    const taskId = energyCurrentTask.taskId;
+    if (taskId.indexOf('QD') === 0 || taskId.indexOf('QW') === 0) { submitQuizModal_(); return; }
+    submitSurveyModal_();
+  }
+
+  function submitQuizModal_() {
+    const answers = {};
+    document.querySelectorAll('#energy-modal-body [data-quiz-id]').forEach(function(group) {
+      const active = group.querySelector('.pill.active');
+      if (active) answers[group.dataset.quizId] = active.dataset.value;
+    });
+    const btn = document.getElementById('energy-modal-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim...';
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false; btn.textContent = 'Kirim';
+        closeEnergyModal();
+        showEnergyToast(res.message, 'success');
+        loadEnergyTasks();
+      })
+      .withFailureHandler(function(err) { btn.disabled = false; btn.textContent = 'Kirim'; showEnergyToast(err.message || String(err), 'error'); })
+      .submitQuizAnswers({ nik: energyCurrentNik, taskId: energyCurrentTask.taskId, answers: answers });
+  }
+
+  function submitSurveyModal_() {
+    const mode = document.querySelector('#survey-mode-pills .pill.active').dataset.value;
+    const jawaban = {};
+    let allAnswered = true;
+    document.querySelectorAll('#energy-modal-body [data-question-id]').forEach(function(group) {
+      const active = group.querySelector('.pill.active');
+      if (!active) allAnswered = false;
+      jawaban[group.dataset.questionId] = active ? active.dataset.value : null;
+    });
+    if (!allAnswered) { showEnergyToast('Jawab semua pertanyaan dulu.', 'error'); return; }
+
+    const anggota = mode === 'Kelompok'
+      ? document.getElementById('survey-anggota').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean)
+      : [];
+
+    const btn = document.getElementById('energy-modal-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim...';
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false; btn.textContent = 'Kirim';
+        closeEnergyModal();
+        showEnergyToast(res.message, 'success');
+        loadEnergyTasks();
+      })
+      .withFailureHandler(function(err) { btn.disabled = false; btn.textContent = 'Kirim'; showEnergyToast(err.message || String(err), 'error'); })
+      .submitAwarenessSurvey({
+        nik: energyCurrentNik,
+        taskId: energyCurrentTask.taskId,        // <- untuk logika poin/kuota
+        campaignId: energyCurrentTask.campaignId, // <- cuma untuk referensi media
+        mode: mode, anggotaKelompok: anggota, jawaban: jawaban
+      });
+  }
+
+  function showEnergyToast(msg, type) {
+    const t = document.getElementById('toast-energy');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    if (type !== 'error') setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+</script>

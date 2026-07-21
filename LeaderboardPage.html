@@ -1,0 +1,117 @@
+<div id="leaderboard-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Leaderboard</h2>
+  <p class="sub">Peringkat poin Season aktif.</p>
+
+  <div class="pill-group" style="margin-bottom:12px;">
+    <div class="pill active" data-pillar="" onclick="switchLeaderboardPillar('')">Gabungan</div>
+    <div class="pill" data-pillar="Health" onclick="switchLeaderboardPillar('Health')">Health</div>
+    <div class="pill" data-pillar="Safety" onclick="switchLeaderboardPillar('Safety')">Safety</div>
+    <div class="pill" data-pillar="Energy" onclick="switchLeaderboardPillar('Energy')">Energy</div>
+  </div>
+
+  <div class="card" style="padding:12px;margin-bottom:12px;">
+    <label style="margin:0 0 6px;">Filter Divisi</label>
+    <select id="lb-filter-divisi" onchange="loadLeaderboard()">
+      <option value="">Semua Divisi</option>
+    </select>
+  </div>
+
+  <div id="leaderboard-list"><p class="sub">Memuat...</p></div>
+</div>
+
+<style>
+  .lb-row {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface); border-radius: 14px; padding: 12px 14px;
+    margin-bottom: 8px; box-shadow: var(--shadow);
+  }
+  .lb-row.me { border: 2px solid var(--green-900); }
+  .lb-rank {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: var(--green-900); flex-shrink: 0;
+  }
+  .lb-rank.top1 { background: var(--gold); color: var(--green-900); }
+  .lb-rank.top2 { background: #d9e6d4; }
+  .lb-rank.top3 { background: #efd6b8; }
+  .lb-info { flex: 1; min-width: 0; }
+  .lb-name { font-weight: 700; font-size: 14px; margin: 0; }
+  .lb-meta { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+  .lb-points { text-align: right; flex-shrink: 0; }
+  .lb-points b { font-size: 15px; color: var(--green-900); }
+  .lb-badge-icon { font-size: 18px; }
+</style>
+
+<div id="toast-leaderboard" class="toast"></div>
+
+<script>
+  let lbCurrentNik = null;
+  let lbCurrentPillar = '';
+
+  function initLeaderboardPage(nik) {
+    lbCurrentNik = nik;
+    lbCurrentPillar = '';
+    document.querySelectorAll('#leaderboard-page .pill').forEach(function(p, idx) {
+      p.classList.toggle('active', idx === 0);
+    });
+
+    google.script.run
+      .withSuccessHandler(function(divisiList) {
+        const sel = document.getElementById('lb-filter-divisi');
+        sel.innerHTML = '<option value="">Semua Divisi</option>' +
+          divisiList.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
+      })
+      .withFailureHandler(function(err) { showLeaderboardToast(err.message || String(err), 'error'); })
+      .getDistinctDivisions();
+
+    loadLeaderboard();
+  }
+
+  function switchLeaderboardPillar(pillar) {
+    lbCurrentPillar = pillar;
+    document.querySelectorAll('#leaderboard-page .pill').forEach(function(p) {
+      p.classList.toggle('active', p.dataset.pillar === pillar);
+    });
+    loadLeaderboard();
+  }
+
+  function loadLeaderboard() {
+    document.getElementById('leaderboard-list').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(renderLeaderboard)
+      .withFailureHandler(function(err) { showLeaderboardToast(err.message || String(err), 'error'); })
+      .getLeaderboardFiltered({
+        pillar: lbCurrentPillar,
+        divisi: document.getElementById('lb-filter-divisi').value,
+        limit: 50
+      });
+  }
+
+  function renderLeaderboard(rows) {
+    const el = document.getElementById('leaderboard-list');
+    if (!rows.length) { el.innerHTML = '<p class="sub">Belum ada data poin untuk filter ini.</p>'; return; }
+
+    el.innerHTML = rows.map(function(r) {
+      const isMe = r.nik === lbCurrentNik;
+      const rankClass = r.rank === 1 ? 'top1' : (r.rank === 2 ? 'top2' : (r.rank === 3 ? 'top3' : ''));
+      return '<div class="lb-row' + (isMe ? ' me' : '') + '">' +
+        '<div class="lb-rank ' + rankClass + '">' + r.rank + '</div>' +
+        '<div class="lb-info">' +
+          '<p class="lb-name">' + r.nama + (isMe ? ' (Anda)' : '') + '</p>' +
+          '<p class="lb-meta">' + r.divisi + '</p>' +
+        '</div>' +
+        '<div class="lb-points">' +
+          '<span class="lb-badge-icon">' + r.badge.icon + '</span> <b>' + r.points + '</b>' +
+          '<p class="lb-meta" style="margin:0;">' + r.badge.name + '</p>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function showLeaderboardToast(msg, type) {
+    const t = document.getElementById('toast-leaderboard');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    if (type !== 'error') setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+</script>

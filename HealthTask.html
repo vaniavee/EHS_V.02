@@ -1,0 +1,256 @@
+<div id="health-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Health Task</h2>
+  <p class="sub">Klaim poin dari aktivitas Health harian/mingguan Anda.</p>
+
+  <div id="health-task-list"><p class="sub">Memuat...</p></div>
+</div>
+
+<div id="health-modal-overlay" class="modal-overlay">
+  <div id="health-modal-box" class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 id="health-modal-title" style="margin:0;">Isi Data</h3>
+      <button class="btn-ghost" style="width:auto;padding:6px 12px;" onclick="closeHealthModal()">✕</button>
+    </div>
+    <div id="health-modal-body"></div>
+    <button class="btn-primary" id="health-modal-submit-btn" onclick="submitHealthModal()">Kirim</button>
+  </div>
+</div>
+
+<div id="toast-health" class="toast"></div>
+
+<script>
+  let healthCurrentNik = null;
+  let healthCurrentTask = null;
+  let healthModalFile = null;
+
+  const WALK_ROUTES = {
+    'Farmasi': [
+      { id: 'farmasi-1', label: 'Rute 1 (370 m | ± 5 menit)' },
+      { id: 'farmasi-2', label: 'Rute 2 (500 m | ± 6–7 menit)' },
+      { id: 'farmasi-3', label: 'Rute 3 (710 m | ± 9 menit)' }
+    ],
+    'Natpro': [
+      { id: 'natpro-1', label: 'Rute 1 (290 m | ± 4–5 menit)' },
+      { id: 'natpro-2', label: 'Rute 2 (480 m | ± 6-7 menit)' }
+    ],
+    'Food': [
+      { id: 'food-1', label: 'Rute 1 (300 m | ± 4–5 menit)' },
+      { id: 'food-2', label: 'Rute 2 (700 m | ± 8 menit)' },
+      { id: 'food-3', label: 'Rute 3 (860 m | ± 10 menit)' }
+    ]
+  };
+  const ROUTE_IMAGE_PLACEHOLDER = {
+    'Farmasi': null, 'Natpro': null, 'Food': null
+  };
+
+  function initHealthTask(nik) {
+    healthCurrentNik = nik;
+    loadHealthTasks();
+  }
+
+  function loadHealthTasks() {
+    document.getElementById('health-task-list').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(renderHealthTasks)
+      .withFailureHandler(function(err) { showHealthToast(err.message || String(err), 'error'); })
+      .getTasksForUser({ nik: healthCurrentNik, pillar: 'Health' });
+  }
+
+  function renderHealthTasks(tasks) {
+    const el = document.getElementById('health-task-list');
+    if (!tasks.length) { el.innerHTML = '<p class="sub">Belum ada task Health aktif.</p>'; return; }
+
+    el.innerHTML = tasks.map(function(t) {
+      const quota = t.used + '/' + t.limit + ' (' + t.frequencyType + ')';
+      const disabled = t.available ? '' : 'disabled';
+      const buttonLabel = t.available ? 'Isi Data' : 'Kuota Habis';
+      const reasonLine = !t.available && t.reason
+        ? '<div class="report-meta" style="color:var(--danger);margin-top:4px;">' + t.reason + '</div>' : '';
+
+      return '<div class="card" style="padding:14px;margin-bottom:10px;">' +
+        '<b>' + t.title + '</b>' +
+        '<div class="report-meta">' + t.description + '</div>' +
+        '<div class="report-meta">Kuota: ' + quota + ' · ' + t.points + ' poin' + '</div>' +
+        reasonLine +
+        '<button class="btn-primary" style="margin-top:10px;" ' + disabled + ' onclick=\'openHealthModal(' + JSON.stringify(t) + ')\'>' + buttonLabel + '</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function openHealthModal(task) {
+    healthCurrentTask = task;
+    healthModalFile = null;
+    document.getElementById('health-modal-title').textContent = task.title;
+    document.getElementById('health-modal-body').innerHTML = buildHealthModalForm_(task.taskId);
+    document.getElementById('health-modal-overlay').classList.add('show');
+
+    if (task.taskId === 'H01') {
+      document.querySelectorAll('#km-freq-pills .pill').forEach(function(el) {
+        el.addEventListener('click', function() {
+          document.querySelectorAll('#km-freq-pills .pill').forEach(function(p) { p.classList.remove('active'); });
+          el.classList.add('active');
+          document.getElementById('km-freq-lainnya-wrap').style.display = el.dataset.value === 'lainnya' ? 'block' : 'none';
+        });
+      });
+    }
+  }
+
+  function closeHealthModal() {
+    document.getElementById('health-modal-overlay').classList.remove('show');
+  }
+
+  function buildHealthModalForm_(taskId) {
+    if (taskId === 'H01') return buildKonimexMoveForm_();
+    if (taskId === 'H02') return buildTppForm_();
+    if (taskId === 'H03') return buildExerciseMandiriForm_();
+    if (taskId === 'H04') return buildWalkChallengeForm_();
+    return '<p class="sub">Task ini belum punya form detail.</p>';
+  }
+
+  function buildKonimexMoveForm_() {
+    return '<label>Checklist Nutrisi Harian (boleh pilih lebih dari 1)</label>' +
+      '<div id="km-checklist">' +
+        checkboxRow_('km-c1', 'Selalu minum air putih sebelum makan') +
+        checkboxRow_('km-c2', 'Belum melakukan pengaturan nutrisi harian') +
+        checkboxRow_('km-c3', 'Porsi makan terdiri dari 50% sayur, 25% protein, 25% karbohidrat') +
+      '</div>' +
+      '<label>Frekuensi Senam Hari Ini</label>' +
+      '<div class="pill-group" id="km-freq-pills">' +
+        pillOption_('1', '1x') + pillOption_('2', '2x') + pillOption_('3', '3x') + pillOption_('lainnya', 'Lainnya') +
+      '</div>' +
+      '<div id="km-freq-lainnya-wrap" style="display:none;">' +
+        '<label>Sebutkan frekuensi</label><input id="km-freq-lainnya" type="text" placeholder="Contoh: 4x">' +
+      '</div>';
+  }
+
+  function buildTppForm_() {
+    return '<label>Jenis Aktivitas (boleh pilih lebih dari 1)</label>' +
+      '<div id="tpp-activities">' +
+        checkboxRow_('tpp-senam', 'Senam') + checkboxRow_('tpp-jogging', 'Jogging') +
+        checkboxRow_('tpp-yoga', 'Yoga') + checkboxRow_('tpp-gym', 'Gym') +
+      '</div>' +
+      '<label>Bukti Foto Aktivitas</label>' +
+      '<input id="health-bukti-file" type="file" accept="image/*" capture="environment">';
+  }
+
+  function buildExerciseMandiriForm_() {
+    return '<label>Jenis Exercise</label>' +
+      '<input id="em-jenis" type="text" placeholder="Contoh: Berenang, Bersepeda">' +
+      '<label>Bukti Foto Aktivitas</label>' +
+      '<input id="health-bukti-file" type="file" accept="image/*" capture="environment">';
+  }
+
+  function buildWalkChallengeForm_() {
+    let html = '<label>Pilih Rute (boleh lebih dari 1)</label>';
+    Object.keys(WALK_ROUTES).forEach(function(complexName) {
+      const img = ROUTE_IMAGE_PLACEHOLDER[complexName];
+      html += '<div class="card" style="padding:10px;margin-bottom:8px;">' +
+        '<b>' + complexName + '</b>' +
+        (img
+          ? '<img src="' + img + '" style="width:100%;border-radius:10px;margin:6px 0;">'
+          : '<div style="width:100%;height:100px;background:var(--surface-2);border-radius:10px;margin:6px 0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;">Gambar rute ' + complexName + ' (belum diupload)</div>');
+      WALK_ROUTES[complexName].forEach(function(r) {
+        html += checkboxRow_('route-' + r.id, r.label);
+      });
+      html += '</div>';
+    });
+    html += '<label>Jumlah Putaran</label><input id="wc-putaran" type="number" placeholder="Contoh: 2">' +
+      '<label>Durasi Aktivitas (menit)</label><input id="wc-durasi" type="number" placeholder="Contoh: 15">' +
+      '<label>Jumlah Langkah</label><input id="wc-langkah" type="number" placeholder="Contoh: 1500">' +
+      '<label>Bukti Foto Aktivitas</label>' +
+      '<input id="health-bukti-file" type="file" accept="image/*" capture="environment">';
+    return html;
+  }
+
+  function checkboxRow_(id, label) {
+    return '<label style="display:flex;align-items:center;gap:8px;font-weight:400;margin:8px 0;">' +
+      '<input type="checkbox" id="' + id + '" style="width:auto;"> ' + label + '</label>';
+  }
+  function pillOption_(value, label) {
+    return '<div class="pill" data-value="' + value + '">' + label + '</div>';
+  }
+
+  async function submitHealthModal() {
+    const taskId = healthCurrentTask.taskId;
+    const detail = {};
+    let buktiFileInput = document.getElementById('health-bukti-file');
+
+    if (taskId === 'H01') {
+      detail.checklist = [];
+      if (document.getElementById('km-c1').checked) detail.checklist.push('Selalu minum air putih sebelum makan');
+      if (document.getElementById('km-c2').checked) detail.checklist.push('Belum melakukan pengaturan nutrisi harian');
+      if (document.getElementById('km-c3').checked) detail.checklist.push('Porsi makan seimbang');
+      const activePill = document.querySelector('#km-freq-pills .pill.active');
+      detail.frekuensiSenam = activePill && activePill.dataset.value === 'lainnya'
+        ? document.getElementById('km-freq-lainnya').value.trim()
+        : (activePill ? activePill.dataset.value : '');
+    } else if (taskId === 'H02') {
+      detail.aktivitas = [];
+      if (document.getElementById('tpp-senam').checked) detail.aktivitas.push('Senam');
+      if (document.getElementById('tpp-jogging').checked) detail.aktivitas.push('Jogging');
+      if (document.getElementById('tpp-yoga').checked) detail.aktivitas.push('Yoga');
+      if (document.getElementById('tpp-gym').checked) detail.aktivitas.push('Gym');
+      if (!detail.aktivitas.length) { showHealthToast('Pilih minimal 1 jenis aktivitas.', 'error'); return; }
+    } else if (taskId === 'H03') {
+      detail.jenisExercise = document.getElementById('em-jenis').value.trim();
+      if (!detail.jenisExercise) { showHealthToast('Jenis exercise wajib diisi.', 'error'); return; }
+    } else if (taskId === 'H04') {
+      detail.rute = [];
+      Object.keys(WALK_ROUTES).forEach(function(cx) {
+        WALK_ROUTES[cx].forEach(function(r) {
+          const cb = document.getElementById('route-' + r.id);
+          if (cb && cb.checked) detail.rute.push(cx + ' - ' + r.label);
+        });
+      });
+      detail.jumlahPutaran = Number(document.getElementById('wc-putaran').value || 0);
+      detail.durasiMenit = Number(document.getElementById('wc-durasi').value || 0);
+      detail.jumlahLangkah = Number(document.getElementById('wc-langkah').value || 0);
+      if (!detail.rute.length) { showHealthToast('Pilih minimal 1 rute.', 'error'); return; }
+      if (!detail.jumlahPutaran) { showHealthToast('Jumlah putaran wajib diisi.', 'error'); return; }
+    }
+
+    const payload = { nik: healthCurrentNik, taskId: taskId, detail: detail };
+
+    if (buktiFileInput && buktiFileInput.files.length > 0) {
+      const file = buktiFileInput.files[0];
+      payload.buktiBase64 = await fileToBase64Health_(file);
+      payload.buktiMime = file.type;
+      payload.buktiFileName = file.name;
+    } else if (taskId !== 'H01') {
+      showHealthToast('Foto bukti wajib dilampirkan.', 'error'); return;
+    }
+
+    const btn = document.getElementById('health-modal-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim...';
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false; btn.textContent = 'Kirim';
+        closeHealthModal();
+        showHealthToast(res.message, res.status === 'Approved' ? 'success' : 'success');
+        loadHealthTasks();
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false; btn.textContent = 'Kirim';
+        showHealthToast(err.message || String(err), 'error');
+      })
+      .submitHealthTaskDetailed(payload);
+  }
+
+  function fileToBase64Health_(file) {
+    return new Promise(function(resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function() { resolve(reader.result.split(',')[1]); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function showHealthToast(msg, type) {
+    const t = document.getElementById('toast-health');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    if (type !== 'error') setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+</script>

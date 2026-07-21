@@ -1,0 +1,135 @@
+<div id="review-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Review Laporan Safety</h2>
+
+  <div class="filter-row" style="margin-bottom:12px;">
+    <select id="rv-filter-status">
+      <option value="">Semua Status</option>
+      <option value="Pending">Pending</option>
+      <option value="Approved">Approved</option>
+      <option value="Revise">Revise</option>
+    </select>
+    <select id="rv-filter-jenis">
+      <option value="">ST & SW</option>
+      <option value="ST">Safety Talk</option>
+      <option value="SW">Safety Walk</option>
+      <option value="Hazard">Kondisi Bahaya</option>
+    </select>
+    <button class="btn-primary" style="margin:0;width:auto;padding:10px 16px;" onclick="loadSafetyQueue()">Terapkan</button>
+  </div>
+
+  <div class="split-layout">
+    <div class="split-list" id="report-list"><p class="sub">Memuat...</p></div>
+    <div class="split-detail" id="report-detail">
+      <p class="sub" style="padding:20px;">Pilih laporan di sebelah kiri untuk melihat detail.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .split-layout { display: flex; gap: 14px; align-items: flex-start; }
+  .split-list { flex: 1 1 320px; max-width: 360px; max-height: 70vh; overflow-y: auto; }
+  .split-detail { flex: 2 1 400px; background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); min-height: 300px; }
+  .report-row {
+    background: var(--surface); border-radius: 14px; padding: 12px; margin-bottom: 8px;
+    box-shadow: var(--shadow); cursor: pointer; border: 2px solid transparent;
+  }
+  .report-row.active { border-color: var(--green-900); }
+  @media (max-width: 720px) {
+    .split-layout { flex-direction: column; }
+    .split-list { max-width: 100%; max-height: 260px; }
+  }
+</style>
+
+<div id="toast-safety-review" class="toast"></div>
+
+<script>
+  let reviewCurrentNik = null;
+  let reviewAllReports = [];
+  let reviewSelectedRef = null;
+
+  function initSafetyReviewQueue(nik) {
+    reviewCurrentNik = nik;
+    loadSafetyQueue();
+  }
+
+  function loadSafetyQueue() {
+    document.getElementById('report-list').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(function(reports) { reviewAllReports = reports; renderSafetyList(reports); })
+      .withFailureHandler(showSafetyReviewError)
+      .listAllSafetyReports({
+        nik: reviewCurrentNik,
+        status: document.getElementById('rv-filter-status').value,
+        jenis: document.getElementById('rv-filter-jenis').value
+      });
+  }
+
+  function renderSafetyList(reports) {
+    const el = document.getElementById('report-list');
+    if (!reports.length) { el.innerHTML = '<p class="sub">Tidak ada laporan.</p>'; return; }
+
+    el.innerHTML = reports.map(function(r) {
+      const activeClass = r.ReferenceId === reviewSelectedRef ? 'active' : '';
+      return '<div class="report-row ' + activeClass + '" onclick="selectReport(\'' + r.ReferenceId + '\')">' +
+        '<span class="badge-status ' + r.Status + '">' + r.Status + '</span> <b>' + r.JenisLaporan + '</b>' +
+        '<div class="report-meta">' + r.DivisiDilaporkan + ' · ' + r.SupervisorNama + '</div>' +
+        '<div class="report-meta">' + r.Timestamp + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function selectReport(referenceId) {
+    reviewSelectedRef = referenceId;
+    renderSafetyList(reviewAllReports); // re-render biar highlight active pindah
+    const r = reviewAllReports.find(function(x) { return x.ReferenceId === referenceId; });
+    renderDetail(r);
+  }
+
+  function renderDetail(r) {
+    const severityLine = r.JenisLaporan === 'Hazard' ? '<p><b>Keparahan:</b> ' + r.Severity + '</p>' : '';
+    const actionButtons = r.Status === 'Pending'
+      ? '<div style="display:flex;gap:8px;margin-top:14px;">' +
+          '<button class="btn-primary" style="margin:0;" onclick="approveSafety(\'' + r.ReferenceId + '\')">Setujui</button>' +
+          '<button class="btn-primary btn-danger" style="margin:0;" onclick="reviseSafety(\'' + r.ReferenceId + '\')">Minta Revisi</button>' +
+        '</div>' +
+        '<div class="feedback-box"><input type="text" id="fb-detail" placeholder="Tulis feedback...">' +
+          '<button class="btn-ghost" onclick="sendFeedbackDetail(\'' + r.ReferenceId + '\')">Kirim</button></div>'
+      : (r.AdminFeedback ? '<p class="report-meta" style="color:var(--danger);">Feedback: ' + r.AdminFeedback + '</p>' : '');
+
+    document.getElementById('report-detail').innerHTML =
+      '<div style="padding:20px;">' +
+        '<span class="badge-status ' + r.Status + '">' + r.Status + '</span> <b style="font-size:18px;">' + r.JenisLaporan + '</b>' +
+        '<p class="report-meta">' + r.DivisiDilaporkan + ' · Oleh ' + r.SupervisorNama + ' (' + r.SupervisorNik + ')</p>' +
+        '<p class="report-meta">' + r.Timestamp + '</p>' +
+        severityLine +
+        '<p style="margin-top:10px;">' + r.Deskripsi + '</p>' +
+        (r.BuktiUrl ? '<img src="' + r.BuktiUrl + '" style="width:100%;border-radius:12px;margin-top:10px;">' : '') +
+        actionButtons +
+      '</div>';
+  }
+
+  function approveSafety(ref) {
+    google.script.run.withSuccessHandler(function(res){ showSafetyReviewToast(res.message,'success'); loadSafetyQueue(); })
+      .withFailureHandler(showSafetyReviewError).approveSafetyReport({ adminNik: reviewCurrentNik, referenceId: ref });
+  }
+  function reviseSafety(ref) {
+    const fb = document.getElementById('fb-detail').value.trim();
+    if (!fb) { showSafetyReviewToast('Isi feedback dulu.', 'error'); return; }
+    google.script.run.withSuccessHandler(function(res){ showSafetyReviewToast(res.message,'success'); loadSafetyQueue(); })
+      .withFailureHandler(showSafetyReviewError).reviseSafetyReport({ adminNik: reviewCurrentNik, referenceId: ref, feedback: fb });
+  }
+  function sendFeedbackDetail(ref) {
+    const fb = document.getElementById('fb-detail').value.trim();
+    if (!fb) return;
+    google.script.run.withSuccessHandler(function(){ showSafetyReviewToast('Feedback terkirim.','success'); })
+      .withFailureHandler(showSafetyReviewError).giveAdminFeedback({ adminNik: reviewCurrentNik, referenceId: ref, feedback: fb });
+  }
+
+  function showSafetyReviewToast(msg, type) {
+    const t = document.getElementById('toast-safety-review');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    if (type !== 'error') setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+  function showSafetyReviewError(err) { showSafetyReviewToast(err.message || String(err), 'error'); }
+</script>

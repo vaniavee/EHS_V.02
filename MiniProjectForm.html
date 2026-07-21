@@ -1,0 +1,88 @@
+<div id="mp-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Mini Project Improvement</h2>
+  <p class="sub">Ceritakan perbaikan kecil yang sudah Anda lakukan di area kerja.</p>
+
+  <div class="card">
+    <label>Judul Project</label>
+    <input id="mp-judul" placeholder="Contoh: Matikan Kompresor Idle Saat Jam Istirahat">
+
+    <label>Area Kerja</label>
+    <input id="mp-area" placeholder="Contoh: Line Produksi 2">
+
+    <label>Masalah yang Ditemukan</label>
+    <textarea id="mp-masalah" placeholder="Apa pemborosan/inefisiensi yang Anda lihat?"></textarea>
+
+    <label>Tindakan Perbaikan</label>
+    <textarea id="mp-tindakan" placeholder="Apa yang Anda lakukan untuk memperbaikinya?"></textarea>
+
+    <label>Estimasi Dampak (opsional)</label>
+    <input id="mp-dampak" placeholder="Contoh: Hemat ±2 jam listrik/hari">
+
+    <label>Anggota Tim (opsional, pisah koma jika lebih dari 1)</label>
+    <input id="mp-anggota" placeholder="Contoh: NIK1, NIK2">
+
+    <label>Foto Before</label>
+    <input id="mp-foto-before" type="file" accept="image/*" capture="environment">
+
+    <label>Foto After</label>
+    <input id="mp-foto-after" type="file" accept="image/*" capture="environment">
+
+    <button class="btn-primary" id="mp-submit-btn" onclick="submitMiniProjectForm()">Kirim Project</button>
+  </div>
+</div>
+
+<div id="toast-mp" class="toast"></div>
+
+<script>
+  let mpCurrentNik = null;
+  function initMiniProjectForm(nik) { mpCurrentNik = nik; }
+
+  function fileToBase64Mp_(file) {
+    return new Promise(function(resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function() { resolve(reader.result.split(',')[1]); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function submitMiniProjectForm() {
+    const judul = document.getElementById('mp-judul').value.trim();
+    const area = document.getElementById('mp-area').value.trim();
+    const masalah = document.getElementById('mp-masalah').value.trim();
+    const tindakan = document.getElementById('mp-tindakan').value.trim();
+    if (!judul || !area || !masalah || !tindakan) { showMpToast('Kolom wajib belum lengkap.', 'error'); return; }
+
+    const btn = document.getElementById('mp-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim...';
+
+    const payload = {
+      nik: mpCurrentNik, judulProject: judul, areaKerja: area,
+      deskripsiMasalah: masalah, tindakanPerbaikan: tindakan,
+      estimasiDampak: document.getElementById('mp-dampak').value.trim(),
+      anggotaTim: document.getElementById('mp-anggota').value.split(',').map(function(s){return s.trim();}).filter(Boolean)
+    };
+
+    const before = document.getElementById('mp-foto-before');
+    const after = document.getElementById('mp-foto-after');
+    if (before.files.length) { payload.fotoBeforeBase64 = await fileToBase64Mp_(before.files[0]); payload.fotoBeforeMime = before.files[0].type; }
+    if (after.files.length) { payload.fotoAfterBase64 = await fileToBase64Mp_(after.files[0]); payload.fotoAfterMime = after.files[0].type; }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false; btn.textContent = 'Kirim Project';
+        showMpToast(res.message, 'success');
+        ['mp-judul','mp-area','mp-masalah','mp-tindakan','mp-dampak','mp-anggota'].forEach(function(id){ document.getElementById(id).value=''; });
+        before.value = ''; after.value = '';
+      })
+      .withFailureHandler(function(err) { btn.disabled = false; btn.textContent = 'Kirim Project'; showMpToast(err.message || String(err), 'error'); })
+      .submitMiniProject(payload);
+  }
+
+  function showMpToast(msg, type) {
+    const t = document.getElementById('toast-mp');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    if (type !== 'error') setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+</script>

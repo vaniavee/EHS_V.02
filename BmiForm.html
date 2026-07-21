@@ -1,0 +1,112 @@
+<div id="bmi-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Measure Your Body</h2>
+  <p class="sub">Pengukuran dilakukan sekali per kuartal.</p>
+
+  <div class="card">
+    <label>Tinggi Badan (cm)</label>
+    <input id="bmi-tinggi" type="number" placeholder="Contoh: 165">
+
+    <label>Berat Badan (kg)</label>
+    <input id="bmi-berat" type="number" placeholder="Contoh: 60">
+
+    <label>Lingkar Pinggang (cm)</label>
+    <input id="bmi-pinggang" type="number" placeholder="Contoh: 80">
+
+    <button class="btn-primary" id="bmi-submit-btn" onclick="submitBmiForm()">Simpan Pengukuran</button>
+  </div>
+
+  <div class="card" id="bmi-result" style="display:none;"></div>
+
+  <p class="section-title">Riwayat Pengukuran</p>
+  <div id="bmi-history-list"><p class="sub">Memuat...</p></div>
+</div>
+
+<div id="toast-bmi" class="toast"></div>
+
+<script>
+  let bmiCurrentNik = null;
+
+  function initBmiForm(nik) {
+    bmiCurrentNik = nik;
+    document.getElementById('bmi-tinggi').value = '';
+    document.getElementById('bmi-berat').value = '';
+    document.getElementById('bmi-pinggang').value = '';
+    document.getElementById('bmi-result').style.display = 'none';
+    loadBmiHistory();
+  }
+
+  function submitBmiForm() {
+    const tinggi = document.getElementById('bmi-tinggi').value;
+    const berat = document.getElementById('bmi-berat').value;
+    const pinggang = document.getElementById('bmi-pinggang').value;
+
+    if (!tinggi || !berat || !pinggang) {
+      showBmiToast('Semua kolom wajib diisi.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('bmi-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false;
+        btn.textContent = 'Simpan Pengukuran';
+        showBmiToast(res.message, 'success');
+
+        const resultBox = document.getElementById('bmi-result');
+        resultBox.style.display = 'block';
+        resultBox.innerHTML =
+          '<p class="sub" style="margin:0 0 6px;">Hasil Pengukuran</p>' +
+          '<p style="font-size:22px;font-weight:800;margin:0;color:var(--green-900);">BMI ' + res.bmi + '</p>' +
+          '<p style="margin:4px 0 0;">Kategori: <b>' + res.kategori + '</b></p>' +
+          (res.kategoriSebelumnya ? '<p class="sub" style="margin:2px 0 0;">Sebelumnya: ' + res.kategoriSebelumnya + '</p>' : '') +
+          (res.points > 0 ? '<p style="margin:8px 0 0;color:var(--green-700);font-weight:700;">+' + res.points + ' poin</p>' : '');
+
+        loadBmiHistory();
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.textContent = 'Simpan Pengukuran';
+        showBmiToast(err.message || String(err), 'error');
+      })
+      .submitBmiRecord({
+        nik: bmiCurrentNik,
+        tinggiCm: Number(tinggi),
+        beratKg: Number(berat),
+        lingkarPinggangCm: Number(pinggang)
+      });
+  }
+
+  function loadBmiHistory() {
+    google.script.run
+      .withSuccessHandler(renderBmiHistory)
+      .withFailureHandler(showBmiError)
+      .getMyBmiRecords({ nik: bmiCurrentNik });
+  }
+
+  function renderBmiHistory(records) {
+    const el = document.getElementById('bmi-history-list');
+    if (!records.length) { el.innerHTML = '<p class="sub">Belum ada riwayat pengukuran.</p>'; return; }
+
+    el.innerHTML = records.map(function(r) {
+      return '<div class="card" style="padding:12px;">' +
+        '<b>BMI ' + r.BMI + '</b> · ' + r.Kategori_BMI +
+        '<div class="report-meta">' + r.Timestamp + ' · Periode ' + r.PeriodeKey + '</div>' +
+        (r.Points > 0 ? '<div style="color:var(--green-700);font-weight:700;margin-top:4px;">+' + r.Points + ' poin</div>' : '') +
+      '</div>';
+    }).join('');
+  }
+
+  function showBmiToast(msg, type) {
+    const t = document.getElementById('toast-bmi');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    if (type !== 'error') {
+      setTimeout(function() { t.className = 'toast'; }, 3500);
+    }
+  }
+  function showBmiError(err) { showBmiToast(err.message || String(err), 'error'); }
+</script>
