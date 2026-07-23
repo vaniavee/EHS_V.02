@@ -112,8 +112,19 @@ function submitHealthTaskDetailed(payload) {
     points = Number(task.Points) * Number(detail.jumlahPutaran);
   }
 
-  const isAuto = clean_(task.Validation).toLowerCase() === 'auto';
+  const isHealth = clean_(task.Pillar).toLowerCase() === 'health';
+  const hasPhoto = Boolean(payload.buktiBase64);
+  const photoTakenAt = payload.photoTakenAt ? new Date(payload.photoTakenAt) : null;
+  const enforcePhotoDate = Boolean(payload.verifyPhotoDate);
+  const photoDateValid = enforcePhotoDate
+    ? (photoTakenAt instanceof Date && !isNaN(photoTakenAt) && isSameDay_(photoTakenAt, new Date()))
+    : true;
+  const isAuto = isHealth && (clean_(task.Validation).toLowerCase() === 'auto' || !hasPhoto || photoDateValid);
   const status = isAuto ? 'Approved' : 'Pending';
+
+  if (payload.gpsLat) detail.gpsLat = payload.gpsLat;
+  if (payload.gpsLng) detail.gpsLng = payload.gpsLng;
+  if (payload.photoTakenAt) detail.photoTakenAt = payload.photoTakenAt;
 
   appendObjectRow_(EHS.sheets.taskClaims, {
     Timestamp: now_(),
@@ -144,8 +155,14 @@ function submitHealthTaskDetailed(payload) {
     points: points,
     message: isAuto
       ? 'Task berhasil diklaim (+' + points + ' poin).'
-      : 'Data terkirim, menunggu verifikasi Admin EHS. Poin (+' + points + ') masuk setelah disetujui.'
+      : 'Data terkirim, menunggu verifikasi Admin EHS. Poin (+' + points + ') masuk setelah disetujui. Pastikan tanggal foto diambil hari ini.'
   };
+}
+
+function isSameDay_(date1, date2) {
+  return date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate();
 }
 
 /**

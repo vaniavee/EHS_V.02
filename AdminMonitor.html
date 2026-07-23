@@ -320,12 +320,20 @@ function openMonitorReview(row) {
   if (row.Detail) {
     try {
       const parsed = JSON.parse(row.Detail);
-      detailHtml = '<div class="card" style="padding:12px;margin-top:10px;">' +
-        Object.keys(parsed).map(function(k) {
-          const val = parsed[k];
-          return '<div class="report-meta"><b>' + k + ':</b> ' + (Array.isArray(val) ? val.join(', ') : val) + '</div>';
-        }).join('') +
-      '</div>';
+      const specialFields = [];
+      if (parsed.photoTakenAt) {
+        specialFields.push('<div class="report-meta"><b>Tanggal foto:</b> ' + parsed.photoTakenAt + '</div>');
+      }
+      if (parsed.gpsLat && parsed.gpsLng) {
+        specialFields.push('<div class="report-meta"><b>Lokasi foto:</b> <a href="https://www.google.com/maps?q=' + parsed.gpsLat + ',' + parsed.gpsLng + '" target="_blank" rel="noopener">' + parsed.gpsLat + ', ' + parsed.gpsLng + '</a></div>');
+      }
+      const otherFields = Object.keys(parsed).filter(function(k) {
+        return !['photoTakenAt', 'gpsLat', 'gpsLng'].includes(k);
+      }).map(function(k) {
+        const val = parsed[k];
+        return '<div class="report-meta"><b>' + k + ':</b> ' + (Array.isArray(val) ? val.join(', ') : val) + '</div>';
+      });
+      detailHtml = '<div class="card" style="padding:12px;margin-top:10px;">' + specialFields.concat(otherFields).join('') + '</div>';
     } catch (e) {}
   }
 

@@ -23,6 +23,8 @@
   let healthCurrentNik = null;
   let healthCurrentTask = null;
   let healthModalFile = null;
+  let healthCurrentGps = null;
+  const VERIFY_HEALTH_PHOTO_DATE = true; // strict file date checking; screenshot lama akan ditolak
 
   const WALK_ROUTES = {
     'Farmasi': [
@@ -131,14 +133,16 @@
         checkboxRow_('tpp-yoga', 'Yoga') + checkboxRow_('tpp-gym', 'Gym') +
       '</div>' +
       '<label>Bukti Foto Aktivitas</label>' +
-      '<input id="health-bukti-file" type="file" accept="image/*" capture="environment">';
+      '<input id="health-bukti-file" type="file" accept="image/*" capture="environment">' +
+      '<p class="sub" style="margin:8px 0 0;">Gunakan kamera HP jika bisa. Jika di laptop, pilih foto yang diambil hari ini.</p>';
   }
 
   function buildExerciseMandiriForm_() {
     return '<label>Jenis Exercise</label>' +
       '<input id="em-jenis" type="text" placeholder="Contoh: Berenang, Bersepeda">' +
       '<label>Bukti Foto Aktivitas</label>' +
-      '<input id="health-bukti-file" type="file" accept="image/*" capture="environment">';
+      '<input id="health-bukti-file" type="file" accept="image/*" capture="environment">' +
+      '<p class="sub" style="margin:8px 0 0;">Gunakan kamera HP jika bisa. Jika di laptop, pilih foto yang diambil hari ini.</p>';
   }
 
   function buildWalkChallengeForm_() {
@@ -159,7 +163,8 @@
       '<label>Durasi Aktivitas (menit)</label><input id="wc-durasi" type="number" placeholder="Contoh: 15">' +
       '<label>Jumlah Langkah</label><input id="wc-langkah" type="number" placeholder="Contoh: 1500">' +
       '<label>Bukti Foto Aktivitas</label>' +
-      '<input id="health-bukti-file" type="file" accept="image/*" capture="environment">';
+      '<input id="health-bukti-file" type="file" accept="image/*" capture="environment">' +
+      '<p class="sub" style="margin:8px 0 0;">Gunakan kamera HP jika bisa. Jika di laptop, pilih foto yang diambil hari ini.</p>';
     return html;
   }
 
@@ -214,9 +219,26 @@
 
     if (buktiFileInput && buktiFileInput.files.length > 0) {
       const file = buktiFileInput.files[0];
+      if (VERIFY_HEALTH_PHOTO_DATE && !isPhotoDateToday(file)) {
+        showHealthToast('Tanggal foto tidak sesuai dengan hari ini.', 'error');
+        return;
+      }
+
       payload.buktiBase64 = await fileToBase64Health_(file);
       payload.buktiMime = file.type;
       payload.buktiFileName = file.name;
+      payload.verifyPhotoDate = VERIFY_HEALTH_PHOTO_DATE;
+      payload.photoTakenAt = new Date(file.lastModified).toISOString();
+
+      try {
+        healthCurrentGps = await getCurrentPositionHealth_();
+      } catch (e) {
+        healthCurrentGps = null;
+      }
+      if (healthCurrentGps) {
+        payload.gpsLat = healthCurrentGps.coords.latitude;
+        payload.gpsLng = healthCurrentGps.coords.longitude;
+      }
     } else if (taskId !== 'H01') {
       showHealthToast('Foto bukti wajib dilampirkan.', 'error'); return;
     }
@@ -236,6 +258,23 @@
         showHealthToast(err.message || String(err), 'error');
       })
       .submitHealthTaskDetailed(payload);
+  }
+
+  function getCurrentPositionHealth_() {
+    return new Promise(function(resolve, reject) {
+      if (!navigator.geolocation) {
+        return reject(new Error('Geolocation tidak tersedia.'));
+      }
+      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    });
+  }
+
+  function isPhotoDateToday(file) {
+    const taken = new Date(file.lastModified);
+    const today = new Date();
+    return taken.getFullYear() === today.getFullYear() &&
+      taken.getMonth() === today.getMonth() &&
+      taken.getDate() === today.getDate();
   }
 
   function fileToBase64Health_(file) {
