@@ -46,6 +46,15 @@ function normalizeSeasonId_(v) {
   return clean_(v || getActiveSeason_().SeasonId);
 }
 
+function getHeaderIndex_(headers, candidates) {
+  const names = Array.isArray(candidates) ? candidates : [candidates];
+  for (let i = 0; i < names.length; i++) {
+    const idx = headers.indexOf(names[i]);
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
 // Membaca worksheet menjadi array objek
 function readObjects_(sh) {
   if (!sh || sh.getLastRow() < 2) return [];

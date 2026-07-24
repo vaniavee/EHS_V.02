@@ -119,3 +119,13 @@ function TEST_add_column_obligation() {
   if (lastRow > 1) sh.getRange(2, insertBefore, lastRow - 1, 1).setValue('Recommended');
   Logger.log('Kolom ObligationLevel ditambahkan.');
 }
+
+function TEST_add_column_profileinterests() {
+  const sh = getSpreadsheet_().getSheetByName('02_Master_Users');
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  if (headers.indexOf('ProfileInterests') !== -1) { Logger.log('Sudah ada.'); return; }
+  const insertBefore = headers.indexOf('IsRegistered') + 1;
+  sh.insertColumnBefore(insertBefore);
+  sh.getRange(1, insertBefore).setValue('ProfileInterests');
+  Logger.log('Kolom ProfileInterests ditambahkan.');
+}

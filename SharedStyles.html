@@ -16,13 +16,25 @@
     --radius: 18px;
   }
   * { box-sizing: border-box; }
-  body {
-    margin: 0 auto;
-    max-width: 480px;
+  html, body {
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
     width: 100%;
+    overflow-x: hidden;
+  }
+  body {
     background: var(--bg);
     color: var(--ink);
     font-family: -apple-system, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  * { box-sizing: border-box; }
+  img, iframe, table { max-width: 100%; }
+  .container {
+    width: min(100%, 480px);
+    margin: 0 auto;
+    padding: 0 16px;
   }
   @media (min-width: 900px) {
     body { max-width: 1100px; padding: 24px 32px 90px; }
@@ -71,20 +83,44 @@
   .btn-primary {
     width: 100%;
     margin-top: 18px;
-    padding: 14px;
-    background: var(--green-900);
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #1d6b42 0%, #144f32 100%);
     color: #fff;
     border: none;
-    border-radius: 14px;
+    border-radius: 16px;
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
   }
-  .btn-primary:disabled { opacity: 0.5; }
-  .btn-ghost {
-    background: var(--surface-2);
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(28, 106, 65, 0.2);
+  }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-ghost,
+  .btn-secondary {
+    width: 100%;
+    margin-top: 14px;
+    padding: 14px 16px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 16px;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid rgba(20, 49, 36, 0.1);
+    background: rgba(255,255,255,0.94);
     color: var(--green-900);
-    border: 1px solid var(--line);
+    font-weight: 700;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  }
+  .btn-ghost:hover,
+  .btn-secondary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 22px rgba(23, 58, 44, 0.12);
+    background: #f7faf6;
   }
   .btn-danger { background: var(--danger); }
   .toast {

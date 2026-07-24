@@ -38,7 +38,7 @@ const EHS_SCHEMA = {
   '02_Master_Users': [
     'NIK', 'Nama', 'Divisi', 'No_WA',
     'IsAdmin', 'IsSupervisor', 'DivisiDiawasi', 'ProgramPreferences',
-    'IsRegistered','Active', 'TanggalDitambahkan', 'DitambahkanOleh'
+    'ProfileInterests','IsRegistered','Active', 'TanggalDitambahkan', 'DitambahkanOleh'
   ],
   '03_Master_Task': [
     'TaskId', 'Pillar', 'Category', 'Level', 'Title', 'Points',
@@ -114,11 +114,12 @@ function ensureSheet_(ss, name, headers) {
     sh.setFrozenRows(1);
   } else {
     const existingHeaders = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-    if (existingHeaders.length < headers.length) {
-      const missingHeaders = headers.slice(existingHeaders.length);
-      if (missingHeaders.length) {
-        sh.getRange(1, existingHeaders.length + 1, 1, missingHeaders.length).setValues([missingHeaders]);
-      }
+    const existingNormalized = existingHeaders.map(function(h) { return clean_(h); });
+    const missingHeaders = headers.filter(function(h) {
+      return existingNormalized.indexOf(clean_(h)) === -1;
+    });
+    if (missingHeaders.length) {
+      sh.getRange(1, existingHeaders.length + 1, 1, missingHeaders.length).setValues([missingHeaders]);
     }
   }
 

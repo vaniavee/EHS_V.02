@@ -6,7 +6,9 @@
 // Mengambil profil lengkap pengguna beserta capability yang dimiliki
 function getUserProfile_(nik) {
   const id = normalizeNik_(nik);
-  const users = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.users));
+  const ss = getSpreadsheet_();
+  ensureSheet_(ss, EHS.sheets.users, EHS_SCHEMA[EHS.sheets.users]);
+  const users = readObjects_(ss.getSheetByName(EHS.sheets.users));
   const row = users.find(function(u) { return normalizeNik_(u.NIK) === id; });
 
   if (!row) return { nik: id, active: false, found: false, isRegistered: false };
@@ -16,9 +18,14 @@ function getUserProfile_(nik) {
   const isRegistered = String(row.IsRegistered).toLowerCase() === 'yes';
   const divisiDiawasi = clean_(row.DivisiDiawasi)
     .split(',').map(function(d) { return d.trim(); }).filter(Boolean);
-
   const programPreferences = clean_(row.ProgramPreferences)
-    .split(',').map(function(p) { return clean_(p); }).filter(Boolean);
+    .split(',').map(function(p) { return p.trim(); }).filter(Boolean);
+
+  let profileInterests = { goals: [], activities: [], topics: [] };
+  const profileInterestsRaw = clean_(row.ProfileInterests || row.ProfileInterest);
+  if (profileInterestsRaw) {
+    try { profileInterests = JSON.parse(profileInterestsRaw); } catch (e) {}
+  }
 
   return {
     nik: id,
@@ -29,9 +36,10 @@ function getUserProfile_(nik) {
     isRegistered: isRegistered,
     isAdmin: isAdmin,
     isSupervisor: isSupervisor,
-    persona: isAdmin ? 'Admin': (isSupervisor ? 'Leader' : 'Non-leader/Volunter') ,
-    divisiDiawasi: divisiDiawasi,
+    persona: isAdmin ? 'Admin' : (isSupervisor ? 'Leader' : 'Non-leader / Volunteer'),
     programPreferences: programPreferences,
+    profileInterests: profileInterests,
+    divisiDiawasi: divisiDiawasi,
     canSubmitHealthTask: true,
     canSubmitEnergyTask: true,
     canSubmitSafetyReport: isSupervisor,
@@ -167,34 +175,30 @@ function registerUser(payload) {
   headers.forEach(function(h, i) { col[h] = i; });
 
   const rowIdx = data.findIndex(function(r, i) { return i > 0 && normalizeNikLenient_(r[col.NIK]) === nik; });
-  if (rowIdx === -1) {
-    throw new Error('NIK tidak ditemukan di database perusahaan. Hubungi Admin EHS untuk didaftarkan.');
-  }
+  if (rowIdx === -1) throw new Error('NIK tidak ditemukan di database perusahaan. Hubungi Admin EHS.');
 
   const row = data[rowIdx];
   const namaTerdaftar = clean_(row[col.Nama]).toLowerCase().replace(/\s+/g, ' ');
   const namaInput = clean_(payload.nama).toLowerCase().replace(/\s+/g, ' ');
-
   if (namaTerdaftar !== namaInput) {
     throw new Error('NIK dan Nama tidak cocok dengan data perusahaan. Periksa kembali ejaan nama Anda, atau hubungi Admin EHS.');
   }
-
   if (String(row[col.IsRegistered]).toLowerCase() === 'yes') {
     throw new Error('Akun ini sudah teregistrasi. Silakan langsung Login.');
   }
 
   sh.getRange(rowIdx + 1, col.IsRegistered + 1).setValue('Yes');
-  if (payload.noWa) {
-    sh.getRange(rowIdx + 1, col.No_WA + 1).setValue(payload.noWa);
-  }
-  if (payload.preferences && col.ProgramPreferences !== undefined && col.ProgramPreferences !== -1) {
-    const prefs = Array.isArray(payload.preferences)
-      ? payload.preferences.filter(Boolean).map(function(p) { return clean_(p); })
-      : [clean_(payload.preferences)];
-    sh.getRange(rowIdx + 1, col.ProgramPreferences + 1).setValue(prefs.join(', '));
-  }
+  if (payload.noWa) sh.getRange(rowIdx + 1, col.No_WA + 1).setValue(payload.noWa);
 
-  return { ok: true, message: 'Registrasi berhasil! Silakan login dengan NIK Anda.' };
+  const isPriority = isPriorityDivision_(clean_(row[col.Divisi]));
+  return {
+    ok: true,
+    needsPreference: !isPriority, // volunteer -> lanjut ke step pilih program
+    nik: nik,
+    message: isPriority
+      ? 'Registrasi berhasil! Divisi Anda memiliki program wajib otomatis.'
+      : 'Registrasi berhasil! Mari sesuaikan program yang ingin Anda ikuti.'
+  };
 }
 
 /**
@@ -207,4 +211,48 @@ function resolveBadgeTier_(totalPoints) {
   if (totalPoints >= 400) return { name: 'Penggerak', icon: '⚡', next: 800 };
   if (totalPoints >= 150) return { name: 'Konsisten', icon: '💧', next: 400 };
   return { name: 'Perintis', icon: '🌱', next: 150 };
+}
+
+function saveProgramPreference(payload) {
+  validateRequired_(payload, ['nik', 'preferences']);
+  const nik = normalizeNik_(payload.nik);
+  const ss = getSpreadsheet_();
+  ensureSheet_(ss, EHS.sheets.users, EHS_SCHEMA[EHS.sheets.users]);
+  const sh = ss.getSheetByName(EHS.sheets.users);
+  const data = sh.getDataRange().getValues();
+  const headers = data[0];
+  const programPrefCol = getHeaderIndex_(headers, ['ProgramPreferences', 'ProgramPreference']);
+  const nikCol = getHeaderIndex_(headers, ['NIK']);
+
+  const rowIdx = data.findIndex(function(r, i) { return i > 0 && normalizeNikLenient_(r[nikCol]) === nik; });
+  if (rowIdx === -1) throw new Error('User tidak ditemukan.');
+
+  const prefsStr = Array.isArray(payload.preferences) ? payload.preferences.join(',') : clean_(payload.preferences);
+  sh.getRange(rowIdx + 1, programPrefCol + 1).setValue(prefsStr);
+
+  return { ok: true, message: 'Preferensi program tersimpan.' };
+}
+
+function saveProfileInterests(payload) {
+  validateRequired_(payload, ['nik']);
+  const nik = normalizeNik_(payload.nik);
+  const ss = getSpreadsheet_();
+  ensureSheet_(ss, EHS.sheets.users, EHS_SCHEMA[EHS.sheets.users]);
+  const sh = ss.getSheetByName(EHS.sheets.users);
+  const data = sh.getDataRange().getValues();
+  const headers = data[0];
+  const nikCol = getHeaderIndex_(headers, ['NIK']);
+  const profileInterestsCol = getHeaderIndex_(headers, ['ProfileInterests', 'ProfileInterest']);
+
+  const rowIdx = data.findIndex(function(r, i) { return i > 0 && normalizeNikLenient_(r[nikCol]) === nik; });
+  if (rowIdx === -1) throw new Error('User tidak ditemukan.');
+
+  const interests = {
+    goals: payload.goals || [],
+    activities: payload.activities || [],
+    topics: payload.topics || []
+  };
+  sh.getRange(rowIdx + 1, profileInterestsCol + 1).setValue(JSON.stringify(interests));
+
+  return { ok: true, message: 'Preferensi tersimpan.' };
 }

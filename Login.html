@@ -5,19 +5,28 @@
     align-items: center;
     justify-content: center;
     background: linear-gradient(160deg, #10291f 0%, #173a2c 48%, #2c6a4a 100%);
-    padding: 24px 16px;
+    padding: 20px 12px;
   }
   .login-card {
     background: var(--surface);
-    border-radius: 24px;
-    padding: 32px 24px;
-    width: 100%;
-    max-width: 360px;
-    box-shadow: var(--shadow);
+    border-radius: 32px;
+    padding: 30px 24px;
+    width: min(100%, 460px);
+    max-width: 460px;
+    box-shadow: 0 24px 60px rgba(23, 58, 44, 0.18);
   }
-  .login-logo { font-size: 32px; text-align: center; margin-bottom: 4px; }
-  .login-title { text-align: center; font-size: 20px; font-weight: 800; color: var(--green-900); margin: 0; }
+  .login-logo { font-size: 42px; text-align: center; margin-bottom: 8px; }
+  .login-title { text-align: center; font-size: 22px; font-weight: 900; color: var(--green-900); margin: 0; }
   .login-sub { text-align: center; color: var(--muted); font-size: 13px; margin: 4px 0 24px; }
+  .login-card label { margin-top: 16px; }
+  .login-card input {
+    min-height: 54px;
+    border-radius: 16px;
+    border: 1px solid rgba(20, 49, 36, 0.12);
+    background: #f7f9f6;
+  }
+  .login-card input::placeholder { color: #8d9a8f; }
+  .login-buttons { display: grid; gap: 12px; margin-top: 16px; }
   .login-error {
     display: none;
     background: #fde2de; color: #b3261e;
@@ -34,7 +43,23 @@
     border-radius: 14px;
     text-decoration: none;
     cursor: pointer;
+    border: 1px solid rgba(23, 58, 44, 0.08);
+    background: rgba(255,255,255,0.92);
+    color: var(--green-900);
+    font-weight: 700;
+    transition: transform .18s ease, box-shadow .18s ease;
   }
+  .btn-help:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(23, 58, 44, 0.08); }
+  .btn-primary {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #1c6a41 0%, #145232 100%);
+    box-shadow: 0 18px 28px rgba(28, 106, 65, 0.24);
+    border-radius: 16px;
+    letter-spacing: 0.02em;
+    transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 20px 30px rgba(28, 106, 65, 0.28); }
+  .btn-primary:active { transform: translateY(0); }
 </style>
 
 <div class="login-wrap">
@@ -45,12 +70,11 @@
     <label>NIK / Employee ID</label>
     <input id="login-nik" type="text" placeholder="Contoh: 00180 atau MJ00313" autocomplete="off">
 
-    <button class="btn-primary" id="login-btn" onclick="doLogin()">Masuk</button>
-    <div class="login-error" id="login-error"></div>
-    <button class="btn-ghost" style="width:100%;margin-top:10px;" onclick="showView('register')">Belum punya akun? Daftar di sini</button>
-    <a href="https://wa.me/6281234567890" target="_blank" rel="noopener" class="btn-ghost btn-help">
-      💬 Chat Admin / Bantuan Login
-    </a>
+    <div class="login-buttons">
+      <button class="btn-primary" id="login-btn" onclick="doLogin()">Masuk Sekarang</button>
+      <button class="btn-secondary" onclick="showView('register')">Belum punya akun? Daftar di sini</button>
+      <a href="https://wa.me/6281234567890" target="_blank" rel="noopener" class="btn-help">💬 Chat Admin / Bantuan Login</a>
+    </div>
   </div>
 </div>
 

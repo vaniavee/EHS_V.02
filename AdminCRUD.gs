@@ -204,7 +204,10 @@ function saveUserRecord(payload) {
   const data = sh.getDataRange().getValues();
   const headers = data[0];
   const nikCol = headers.indexOf('NIK');
+  if (nikCol === -1) throw new Error('Kolom NIK tidak ditemukan di sheet ' + EHS.sheets.users + '.');
   const targetNik = normalizeNik_(payload.record.NIK);
+
+  sh.getRange(2, nikCol + 1, Math.max(sh.getLastRow() - 1, 1), 1).setNumberFormat('@');
 
   let rowIndex = -1;
   for (let i = 1; i < data.length; i++) {
