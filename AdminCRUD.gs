@@ -14,7 +14,7 @@ function getMasterDefinition_(masterType) {
       idField: 'TaskId',
       fields: ['TaskId', 'Pillar', 'Category', 'Level', 'Title', 'Points',
                'Description', 'FrequencyType', 'FrequencyLimit', 'Validation',
-               'Status', 'SeasonId', 'CampaignId']
+               'ObligationLevel', 'Status', 'SeasonId', 'CampaignId']
     },
     quiz: {
       sheet: '05_Master_QuizBank',
@@ -33,6 +33,11 @@ function getMasterDefinition_(masterType) {
       sheet: '08_Master_FAQ',
       idField: 'FaqId',
       fields: ['FaqId', 'Category', 'Question', 'Answer', 'Status']
+    },
+    department: {
+      sheet: '18_Master_Departments',
+      idField: 'DepartmentId',
+      fields: ['DepartmentId', 'Name', 'Note']
     }
   };
   const def = defs[masterType];
@@ -94,6 +99,43 @@ function deleteMasterRecord(payload) {
     }
   }
   throw new Error('Record tidak ditemukan: ' + idValue);
+}
+
+function bulkSaveMasterRecords(payload) {
+  assertCapability_(payload.nik, 'canManageMasterData');
+  const def = getMasterDefinition_(payload.masterType);
+  const sh = getSpreadsheet_().getSheetByName(def.sheet);
+  const data = sh.getDataRange().getValues();
+  const headers = data[0];
+  const idCol = headers.indexOf(def.idField);
+
+  let countCreated = 0;
+  let countUpdated = 0;
+
+  const existingIndex = {};
+  for (let i = 1; i < data.length; i++) {
+    const key = clean_(data[i][idCol]);
+    if (key) existingIndex[key] = i;
+  }
+
+  payload.records.forEach(function(record) {
+    const idValue = clean_(record[def.idField]);
+    if (!idValue) return;
+    const rowValues = def.fields.map(function(f) {
+      return record.hasOwnProperty(f) ? record[f] : '';
+    });
+
+    if (existingIndex[idValue] === undefined) {
+      sh.appendRow(rowValues);
+      countCreated++;
+    } else {
+      const rowIndex = existingIndex[idValue];
+      sh.getRange(rowIndex + 1, 1, 1, rowValues.length).setValues([rowValues]);
+      countUpdated++;
+    }
+  });
+
+  return { ok: true, countCreated: countCreated, countUpdated: countUpdated };
 }
 
 /**

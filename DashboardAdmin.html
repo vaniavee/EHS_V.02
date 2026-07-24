@@ -8,6 +8,7 @@
     <div class="pill" data-tab="akun" onclick="switchAdminTab('akun')">Akun</div>
     <div class="pill" data-tab="klaim" onclick="switchAdminTab('klaim')">Klaim</div>
     <div class="pill" data-tab="kabag" onclick="switchAdminTab('kabag')">Kabag/Supervisor</div>
+    <div class="pill" data-tab="department" onclick="switchAdminTab('department')">Department</div>
     <div class="pill" data-tab="quiz" onclick="switchAdminTab('quiz')">Quiz</div>
   </div>
 
@@ -41,6 +42,12 @@
       <select id="task-validation">
         <option value="auto">auto</option><option value="semiauto">semiauto</option>
         <option value="verifier">verifier</option><option value="panel">panel</option>
+      </select>
+      <label>Level Kewajiban</label>
+      <select id="task-obligation">
+        <option value="Required">Required (wajib)</option>
+        <option value="Recommended">Recommended (disarankan)</option>
+        <option value="Optional">Optional (opsional/lifestyle)</option>
       </select>
       <label>Status</label>
       <select id="task-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
@@ -95,7 +102,7 @@
       <label>Nama</label>
       <input id="akun-nama" placeholder="Contoh: Budi Santoso">
       <label>Divisi</label>
-      <input id="akun-divisi" placeholder="Contoh: Production">
+      <select id="akun-divisi"><option value="">Pilih divisi...</option></select>
       <label>No. WA (opsional)</label>
       <input id="akun-nowa" placeholder="Contoh: 081234567890">
       <label>Status Admin</label>
@@ -135,7 +142,7 @@
       <label>Nama</label>
       <input id="kabag-nama">
       <label>Divisi (tempat kerja)</label>
-      <input id="kabag-divisi">
+      <select id="kabag-divisi"><option value="">Pilih divisi...</option></select>
       <label>Divisi yang Diawasi (pisah koma kalau lebih dari satu)</label>
       <input id="kabag-diawasi" placeholder="Contoh: Production,Teknik Food">
       <button class="btn-primary" onclick="saveKabag()">Simpan sebagai Kabag</button>
@@ -143,6 +150,29 @@
 
     <p class="section-title">Daftar Kabag/Supervisor Saat Ini</p>
     <div id="kabag-list"></div>
+  </div>
+
+  <!-- ===================== TAB: DEPARTMENT ===================== -->
+  <div id="admin-tab-department" style="display:none;">
+    <div class="card">
+      <p class="section-title" style="margin-top:0;">Tambah / Edit Department</p>
+      <input id="dept-id" type="hidden">
+      <label>Nama Department</label>
+      <input id="dept-name" placeholder="Contoh: Analytical Development">
+      <label>Catatan / Deskripsi singkat</label>
+      <textarea id="dept-note"></textarea>
+      <button class="btn-primary" onclick="saveDepartment()">Simpan Department</button>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <p class="section-title" style="margin-top:0;">Import Department Massal</p>
+      <label>Tempel nama departemen, satu per baris</label>
+      <textarea id="dept-bulk-input" placeholder="Contoh: ANALYTICAL DEVELOPMENT/ NPD/ E-1" style="min-height:140px;"></textarea>
+      <button class="btn-primary" onclick="importDepartments()">Import Semua</button>
+    </div>
+
+    <p class="section-title">Daftar Department</p>
+    <div id="department-list"></div>
   </div>
 
   <!-- ===================== TAB: QUIZ ===================== -->
@@ -207,14 +237,16 @@
     document.getElementById('admin-tab-akun').style.display = tab === 'akun' ? '' : 'none';
     document.getElementById('admin-tab-klaim').style.display = tab === 'klaim' ? '' : 'none';
     document.getElementById('admin-tab-kabag').style.display = tab === 'kabag' ? '' : 'none';
+    document.getElementById('admin-tab-department').style.display = tab === 'department' ? '' : 'none';
     document.getElementById('admin-tab-quiz').style.display = tab === 'quiz' ? '' : 'none';
   
     if (tab === 'task') { loadTaskList(); loadCampaignOptions(); }
     else if (tab === 'campaign') loadCampaignList();
-    else if (tab === 'akun') loadAkunList();
+    else if (tab === 'akun') { loadAkunList(); loadDepartmentList(); }
     else if (tab === 'klaim') loadKlaimList();
+    else if (tab === 'department') loadDepartmentList();
     else if (tab === 'quiz') loadQuizList();
-    else loadKabagList();
+    else { loadKabagList(); loadDepartmentList(); }
   }
 
   // ---------- TASK ----------
@@ -248,6 +280,7 @@
     document.getElementById('task-validation').value = t.Validation;
     document.getElementById('task-status').value = t.Status;
     document.getElementById('task-campaignid').value = t.CampaignId || '';
+    document.getElementById('task-obligation').value = t.ObligationLevel || 'Recommended';
   }
 
   function saveTask() {
@@ -263,7 +296,8 @@
       Validation: document.getElementById('task-validation').value,
       Status: document.getElementById('task-status').value,
       SeasonId: 'S01',
-      CampaignId: document.getElementById('task-campaignid').value.trim()
+      CampaignId: document.getElementById('task-campaignid').value.trim(),
+      ObligationLevel: document.getElementById('task-obligation').value,
     };
     if (!record.TaskId || !record.Title) { showAdminToast('Task ID & Judul wajib diisi.', 'error'); return; }
 
@@ -344,6 +378,102 @@
       .withSuccessHandler(function() { showAdminToast('Campaign dihapus.', 'success'); loadCampaignList(); })
       .withFailureHandler(showAdminError)
       .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'campaign', id: campaignId });
+  }
+
+  // ---------- DEPARTMENT ----------
+  function loadDepartmentList() {
+    google.script.run
+      .withSuccessHandler(function(departments) {
+        renderDepartmentList(departments);
+        renderDepartmentDropdowns(departments);
+      })
+      .withFailureHandler(showAdminError)
+      .getAdminMasterData({ nik: adminCurrentNik, masterType: 'department' });
+  }
+
+  function renderDepartmentDropdowns(departments) {
+    const selectIds = ['akun-divisi', 'kabag-divisi'];
+    selectIds.forEach(function(selectId) {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      const currentValue = sel.value;
+      sel.innerHTML = '<option value="">Pilih divisi...</option>' + departments
+        .map(function(d) { return '<option value="' + escapeHtml(d.Name) + '">' + escapeHtml(d.Name) + '</option>'; })
+        .join('');
+      if (currentValue) sel.value = currentValue;
+    });
+  }
+
+  function escapeHtml(text) {
+    return String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderDepartmentList(departments) {
+    document.getElementById('department-list').innerHTML = departments.map(function(d) {
+      return '<div class="report-item">' +
+        '<b>' + d.Name + '</b>' +
+        '<div class="report-meta">' + (d.Note || '') + '</div>' +
+        '<div style="margin-top:8px;">' +
+          '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editDepartment(' + JSON.stringify(d) + ')\'>Edit</button>' +
+          '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteDepartment(\'' + d.DepartmentId + '\')">Hapus</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  function editDepartment(d) {
+    document.getElementById('dept-id').value = d.DepartmentId;
+    document.getElementById('dept-name').value = d.Name;
+    document.getElementById('dept-note').value = d.Note;
+  }
+
+  function saveDepartment() {
+    const name = document.getElementById('dept-name').value.trim();
+    if (!name) {
+      showAdminToast('Nama Department wajib diisi.', 'error'); return;
+    }
+
+    const record = {
+      DepartmentId: document.getElementById('dept-id').value.trim() || name.replace(/[^a-zA-Z0-9]+/g, '_').toUpperCase(),
+      Name: name,
+      Note: document.getElementById('dept-note').value.trim()
+    };
+
+    google.script.run
+      .withSuccessHandler(function(res) { showAdminToast('Department ' + res.action + '.', 'success'); loadDepartmentList(); })
+      .withFailureHandler(showAdminError)
+      .saveMasterRecord({ nik: adminCurrentNik, masterType: 'department', record: record });
+  }
+
+  function importDepartments() {
+    const raw = document.getElementById('dept-bulk-input').value.trim();
+    if (!raw) {
+      showAdminToast('Silakan tempel daftar department terlebih dahulu.', 'error'); return;
+    }
+    const lines = raw.split(/\r?\n/).map(function(line) { return line.trim(); }).filter(Boolean);
+    const records = lines.map(function(line) {
+      return {
+        DepartmentId: line.replace(/[^a-zA-Z0-9]+/g, '_').toUpperCase(),
+        Name: line,
+        Note: ''
+      };
+    });
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        showAdminToast('Import selesai: ' + res.countCreated + ' dibuat, ' + res.countUpdated + ' diperbarui.', 'success');
+        document.getElementById('dept-bulk-input').value = '';
+        loadDepartmentList();
+      })
+      .withFailureHandler(showAdminError)
+      .bulkSaveMasterRecords({ nik: adminCurrentNik, masterType: 'department', records: records });
+  }
+
+  function deleteDepartment(departmentId) {
+    if (!confirm('Hapus department ' + departmentId + '?')) return;
+    google.script.run
+      .withSuccessHandler(function() { showAdminToast('Department dihapus.', 'success'); loadDepartmentList(); })
+      .withFailureHandler(showAdminError)
+      .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'department', id: departmentId });
   }
 
   // ---------- AKUN ----------

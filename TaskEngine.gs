@@ -65,7 +65,8 @@ function getTasksForUser(payload) {
     const availability = getTaskAvailability_(t, nik, seasonId);
     return {
       taskId: t.TaskId,
-      campaignId: clean_(t.CampaignId), // <- ditambahkan
+      campaignId: clean_(t.CampaignId), 
+      obligationLevel: resolveTaskObligationLevelForUser_(user, t),
       title: t.Title,
       description: t.Description,
       points: Number(t.Points),
@@ -77,6 +78,42 @@ function getTasksForUser(payload) {
       reason: availability.reason
     };
   });
+}
+
+function resolveTaskObligationLevelForUser_(user, task) {
+  const baseLevel = clean_(task.ObligationLevel || 'Recommended');
+  const pillar = clean_(task.Pillar);
+  const normalizedPillar = normalizeText_(pillar);
+
+  if (isPriorityDivision_(user.divisi)) {
+    return 'Required';
+  }
+
+  if (user.isSupervisor && normalizedPillar === 'safety') {
+    return baseLevel === 'Optional' ? 'Recommended' : baseLevel;
+  }
+
+  const preferences = Array.isArray(user.programPreferences) ? user.programPreferences : [];
+  const normalizedPreferences = preferences.map(normalizeText_);
+  if (normalizedPreferences.indexOf(normalizedPillar) !== -1) {
+    return baseLevel === 'Optional' ? 'Recommended' : baseLevel;
+  }
+  if (baseLevel === 'Required') return 'Required';
+  return 'Optional';
+}
+
+function isPriorityDivision_(divisi) {
+  const norm = normalizeText_(divisi);
+  if (!norm) return false;
+  if (norm.indexOf('analytical development') !== -1) return true;
+  if (norm.indexOf('secretary of bod') !== -1) return true;
+  if (norm.indexOf('technical service') !== -1 && norm.indexOf('food') !== -1) return true;
+  if (norm.indexOf('production') !== -1 && norm.indexOf('food') !== -1) return true;
+  return false;
+}
+
+function normalizeText_(value) {
+  return String(value || '').trim().toLowerCase();
 }
 
 /**

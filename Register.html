@@ -20,6 +20,21 @@
     <input id="reg-nik" type="text" placeholder="Contoh: 00181">
     <label>Nama Lengkap (sesuai data perusahaan)</label>
     <input id="reg-nama" type="text" placeholder="Contoh: Budi Santoso">
+    <label>Pilihan Program Awal (opsional)</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <label style="border:1px solid #d9e5dc;border-radius:12px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" id="pref-health" value="Health"> Health
+      </label>
+      <label style="border:1px solid #d9e5dc;border-radius:12px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" id="pref-energy" value="Energy"> Energy
+      </label>
+      <label style="border:1px solid #d9e5dc;border-radius:12px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" id="pref-safety" value="Safety"> Safety
+      </label>
+      <label style="border:1px solid #d9e5dc;border-radius:12px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" id="pref-sustainability" value="Sustainability"> Sustainability
+      </label>
+    </div>
     <label>No. WhatsApp (opsional)</label>
     <input id="reg-nowa" type="text" placeholder="Contoh: 081234567890">
 
@@ -64,6 +79,6 @@
         el.textContent = err.message || String(err);
         el.style.display = 'block';
       })
-      .registerUser({ nik: nik, nama: nama, noWa: noWa });
+      .registerUser({ nik: nik, nama: nama, noWa: noWa, preferences: preferences });
   }
 </script>

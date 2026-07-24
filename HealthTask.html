@@ -69,8 +69,9 @@
       const buttonLabel = t.available ? 'Isi Data' : 'Kuota Habis';
       const reasonLine = !t.available && t.reason
         ? '<div class="report-meta" style="color:var(--danger);margin-top:4px;">' + t.reason + '</div>' : '';
+      const obligationBadge = obligationBadgeHtml_(t.obligationLevel);
 
-      return '<div class="card" style="padding:14px;margin-bottom:10px;">' +
+      return '<div class="card" style="padding:14px;margin-bottom:10px;">' + obligationBadge +
         '<b>' + t.title + '</b>' +
         '<div class="report-meta">' + t.description + '</div>' +
         '<div class="report-meta">Kuota: ' + quota + ' · ' + t.points + ' poin' + '</div>' +
@@ -78,6 +79,15 @@
         '<button class="btn-primary" style="margin-top:10px;" ' + disabled + ' onclick=\'openHealthModal(' + JSON.stringify(t) + ')\'>' + buttonLabel + '</button>' +
       '</div>';
     }).join('');
+  }
+  function obligationBadgeHtml_(level) {
+    const map = {
+      Required: { label: 'Wajib', cls: 'Revise' },
+      Recommended: { label: 'Disarankan', cls: 'Pending' },
+      Optional: { label: 'Opsional', cls: 'Approved' }
+    };
+    const m = map[level] || map.Recommended;
+    return '<span class="badge-status ' + m.cls + '" style="margin-bottom:6px;display:inline-block;">' + m.label + '</span><br>';
   }
 
   function openHealthModal(task) {

@@ -17,6 +17,9 @@ function getUserProfile_(nik) {
   const divisiDiawasi = clean_(row.DivisiDiawasi)
     .split(',').map(function(d) { return d.trim(); }).filter(Boolean);
 
+  const programPreferences = clean_(row.ProgramPreferences)
+    .split(',').map(function(p) { return clean_(p); }).filter(Boolean);
+
   return {
     nik: id,
     nama: clean_(row.Nama),
@@ -26,7 +29,9 @@ function getUserProfile_(nik) {
     isRegistered: isRegistered,
     isAdmin: isAdmin,
     isSupervisor: isSupervisor,
+    persona: isAdmin ? 'Admin': (isSupervisor ? 'Leader' : 'Non-leader/Volunter') ,
     divisiDiawasi: divisiDiawasi,
+    programPreferences: programPreferences,
     canSubmitHealthTask: true,
     canSubmitEnergyTask: true,
     canSubmitSafetyReport: isSupervisor,
@@ -181,6 +186,12 @@ function registerUser(payload) {
   sh.getRange(rowIdx + 1, col.IsRegistered + 1).setValue('Yes');
   if (payload.noWa) {
     sh.getRange(rowIdx + 1, col.No_WA + 1).setValue(payload.noWa);
+  }
+  if (payload.preferences && col.ProgramPreferences !== undefined && col.ProgramPreferences !== -1) {
+    const prefs = Array.isArray(payload.preferences)
+      ? payload.preferences.filter(Boolean).map(function(p) { return clean_(p); })
+      : [clean_(payload.preferences)];
+    sh.getRange(rowIdx + 1, col.ProgramPreferences + 1).setValue(prefs.join(', '));
   }
 
   return { ok: true, message: 'Registrasi berhasil! Silakan login dengan NIK Anda.' };

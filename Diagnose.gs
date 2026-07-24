@@ -106,3 +106,16 @@ function TEST_migrate_isregistered() {
   }
   Logger.log('Migrasi IsRegistered selesai.');
 }
+
+function TEST_add_column_obligation() {
+  const sh = getSpreadsheet_().getSheetByName('03_Master_Task');
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  if (headers.indexOf('ObligationLevel') !== -1) { Logger.log('Sudah ada.'); return; }
+  const insertBefore = headers.indexOf('Status') + 1;
+  sh.insertColumnBefore(insertBefore);
+  sh.getRange(1, insertBefore).setValue('ObligationLevel');
+  // Default semua task lama jadi "Recommended" supaya tidak ada yang kosong
+  const lastRow = sh.getLastRow();
+  if (lastRow > 1) sh.getRange(2, insertBefore, lastRow - 1, 1).setValue('Recommended');
+  Logger.log('Kolom ObligationLevel ditambahkan.');
+}

@@ -51,7 +51,7 @@
     document.getElementById('dash-greeting').textContent = 'Halo, ' + u.nama + '!';
     document.getElementById('dash-role').textContent =
       u.isAdmin ? 'Admin EHS · ' + u.divisi :
-      (u.isSupervisor ? 'Kabag/Supervisor · ' + u.divisi : u.divisi);
+      (u.isSupervisor ? 'Kepala Bagian/Supervisor (Leader)· ' + u.divisi : 'Karyawan (' + u.persona + ') . ' + u.divisi);
 
     document.getElementById('dash-badge').textContent = summary.badge.icon;
     document.getElementById('dash-points').textContent = summary.totalPoints + ' Poin';
