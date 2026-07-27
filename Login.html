@@ -69,6 +69,7 @@
     <p class="login-sub">Environment · Health · Safety</p>
     <label>NIK / Employee ID</label>
     <input id="login-nik" type="text" placeholder="Contoh: 00180 atau MJ00313" autocomplete="off">
+    <div id="login-error" class="login-error"></div>
 
     <div class="login-buttons">
       <button class="btn-primary" id="login-btn" onclick="doLogin()">Masuk Sekarang</button>
@@ -79,24 +80,46 @@
 </div>
 
 <script>
+  let loginRequestTimer = null;
+  const LOGIN_TIMEOUT_MS = 10000;
+
   function doLogin() {
-    const nik = document.getElementById('login-nik').value.trim();
+    const nikInput = document.getElementById('login-nik');
+    const btn = document.getElementById('login-btn');
+    const errorEl = document.getElementById('login-error');
+    if (!nikInput || !btn || !errorEl) return;
+
+    const nik = nikInput.value.trim();
     if (!nik) { loginShowError('NIK wajib diisi.'); return; }
 
-    const btn = document.getElementById('login-btn');
     btn.disabled = true;
     btn.textContent = 'Memeriksa...';
-    document.getElementById('login-error').style.display = 'none';
+    errorEl.style.display = 'none';
+
+    loginRequestTimer = setTimeout(function() {
+      loginRequestTimer = null;
+      btn.disabled = false;
+      btn.textContent = 'Masuk Sekarang';
+      loginShowError('Permintaan login terlalu lama. Periksa koneksi dan coba lagi.');
+    }, LOGIN_TIMEOUT_MS);
 
     verifyAndEnterDashboard(nik, false);
+  }
 
-    setTimeout(function() {
+  function resetLoginButton() {
+    const btn = document.getElementById('login-btn');
+    if (btn) {
       btn.disabled = false;
-      btn.textContent = 'Masuk';
-    }, 1500);
+      btn.textContent = 'Masuk Sekarang';
+    }
+    if (loginRequestTimer) {
+      clearTimeout(loginRequestTimer);
+      loginRequestTimer = null;
+    }
   }
 
   function loginShowError(msg) {
+    resetLoginButton();
     const el = document.getElementById('login-error');
     el.textContent = msg;
     el.style.display = 'block';

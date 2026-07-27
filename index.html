@@ -44,6 +44,7 @@
     function verifyAndEnterDashboard(nik, silent) {
       google.script.run
         .withSuccessHandler(function(user) {
+          if (typeof resetLoginButton === 'function') resetLoginButton();
           EHS_CURRENT_NIK = user.nik;
           EHS_CURRENT_IS_ADMIN = user.isAdmin;
           localStorage.setItem('ehs_nik', user.nik);
@@ -51,6 +52,7 @@
           loadDashboard(user.nik);
         })
         .withFailureHandler(function(err) {
+          if (typeof resetLoginButton === 'function') resetLoginButton();
           localStorage.removeItem('ehs_nik');
           showView('login');
           if (!silent) loginShowError(err.message || String(err));
