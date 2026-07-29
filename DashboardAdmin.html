@@ -10,6 +10,18 @@
     <div class="pill" data-tab="kabag" onclick="switchAdminTab('kabag')">Kabag/Supervisor</div>
     <div class="pill" data-tab="department" onclick="switchAdminTab('department')">Department</div>
     <div class="pill" data-tab="quiz" onclick="switchAdminTab('quiz')">Quiz</div>
+    <div class="pill" data-tab="survey" onclick="switchAdminTab('survey')">Survey Question</div>
+    <div class="pill" data-tab="obskelompok" onclick="switchAdminTab('obskelompok')">Obs Kelompok</div>
+    <div class="pill" data-tab="obsindividu" onclick="switchAdminTab('obsindividu')">Obs Individu</div>
+    <div class="pill" data-tab="season" onclick="switchAdminTab('season')">Seasons</div>
+    <div class="pill" data-tab="pointmapping" onclick="switchAdminTab('pointmapping')">Point Mapping</div>
+    <div class="pill" data-tab="journeyrule" onclick="switchAdminTab('journeyrule')">Journey Rules</div>
+    <div class="pill" data-tab="awareness" onclick="switchAdminTab('awareness')">Awareness Content</div>
+    <div class="pill" data-tab="rewardcatalog" onclick="switchAdminTab('rewardcatalog')">Reward Catalog</div>
+    <div class="pill" data-tab="club" onclick="switchAdminTab('club')">Clubs</div>
+    <div class="pill" data-tab="missiontemplate" onclick="switchAdminTab('missiontemplate')">Mission Templates</div>
+    <div class="pill" data-tab="challenge" onclick="switchAdminTab('challenge')">Challenges</div>
+ 
   </div>
 
   <!-- ===================== TAB: TASK ===================== -->
@@ -26,6 +38,10 @@
       <textarea id="task-desc"></textarea>
       <label>Poin</label>
       <input id="task-points" type="number">
+      <label>Domain XP (poin khusus pilar ini, opsional)</label>
+      <input id="task-domainxp" type="number" value="0">
+      <label>Coin Reward (opsional, untuk reward comingsoon)</label>
+      <input id="task-coinreward" type="number" value="0">
       <label>Frequency Type</label>
       <select id="task-freqtype">
         <option value="daily">daily</option><option value="weekly">weekly</option>
@@ -49,6 +65,13 @@
         <option value="Recommended">Recommended (disarankan)</option>
         <option value="Optional">Optional (opsional/lifestyle)</option>
       </select>
+      <label>Group Tag (untuk Mission Hub)</label>
+      <select id="task-grouptag">
+        <option value="">- Normal (masuk daftar biasa) -</option>
+        <option value="Recommended">Recommended</option>
+        <option value="Challenge">Challenge</option>
+        <option value="Awareness">Awareness</option>
+      </select>
       <label>Status</label>
       <select id="task-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
       <button class="btn-primary" onclick="saveTask()">Simpan Task</button>
@@ -62,10 +85,21 @@
   <div id="admin-tab-campaign" style="display:none;">
     <div class="card">
       <p class="section-title" style="margin-top:0;">Tambah / Edit Campaign</p>
+      <label>Season ID</label>
+      <input id="camp-seasonid" placeholder="Contoh: S01">
       <label>Campaign ID</label>
-      <input id="camp-id" placeholder="Contoh: E01 (samakan dengan TaskId kalau untuk 1 task)">
-      <label>Judul</label>
-      <input id="camp-title" placeholder="Contoh: Video Pembuka Kampanye Efisiensi Energi">
+      <input id="camp-id" placeholder="Contoh: E01">
+      <label>Period Type</label>
+      <select id="camp-periodtype">
+        <option value="campaign_once">campaign_once</option>
+        <option value="season_once">season_once</option>
+      </select>
+      <label>Start Date</label>
+      <input id="camp-startdate" type="date">
+      <label>End Date</label>
+      <input id="camp-enddate" type="date">
+      <label>Theme</label>
+      <input id="camp-theme" placeholder="Contoh: Efisiensi Energi">
       <label>Jenis Media</label>
       <select id="camp-mediatype">
         <option value="Video">Video</option>
@@ -74,18 +108,38 @@
         <option value="Banner">Banner</option>
         <option value="Microlearning">Microlearning</option>
       </select>
-      <label>Link Media (Google Drive/YouTube, harus "Anyone with link")</label>
-      <input id="camp-url" placeholder="https://drive.google.com/file/d/....">
+      <label>Judul</label>
+      <input id="camp-title" placeholder="Contoh: Video Pembuka Kampanye Efisiensi Energi">
       <label>Tagline</label>
       <input id="camp-tagline" placeholder="Contoh: Kerja Cerdas, Proses Optimal, Energi Terkendali">
       <label>Deskripsi</label>
       <textarea id="camp-desc"></textarea>
+      <label>Link Media (Google Drive/YouTube, harus "Anyone with link")</label>
+      <input id="camp-url" placeholder="https://drive.google.com/file/d/....">
+      <label>Minimal Durasi Exposure (detik)</label>
+      <input id="camp-minexposure" type="number" value="0">
+      <label>Expected Key Message (opsional)</label>
+      <textarea id="camp-expectedkeymessage"></textarea>
+      <label>Expected Action (opsional)</label>
+      <textarea id="camp-expectedaction"></textarea>
+      <label>Survey Point Mapping ID</label>
+      <input id="camp-surveypointmappingid" placeholder="Contoh: PM_SURVEY">
+      <label>Self Eval Point Mapping ID</label>
+      <input id="camp-selfevalpointmappingid" placeholder="Contoh: PM_SELF">
+      <label>Quiz Point Mapping ID</label>
+      <input id="camp-quizpointmappingid" placeholder="Contoh: PM_QUIZ_EASY">
       <label>Poin Survey</label>
       <input id="camp-surveypoints" type="number" value="5">
       <label>Poin Self Evaluation</label>
       <input id="camp-selfevalpoints" type="number" value="2">
+      <label>Sort Order</label>
+      <input id="camp-sortorder" type="number" value="1">
       <label>Status</label>
-      <select id="camp-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+      <select id="camp-status">
+        <option value="Draft">Draft</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
       <button class="btn-primary" onclick="saveCampaign()">Simpan Campaign</button>
     </div>
 
@@ -176,46 +230,485 @@
   </div>
 
   <!-- ===================== TAB: QUIZ ===================== -->
-  <div id="admin-tab-quiz" style="display:none;">
-    <div class="card">
-      <p class="section-title" style="margin-top:0;">Tambah / Edit Soal Quiz</p>
-      <label>Quiz ID</label>
-      <input id="quiz-id" placeholder="Contoh: QD01-1">
-      <label>Task ID (harus task bertipe Quiz, misal QD01)</label>
-      <input id="quiz-taskid" placeholder="Contoh: QD01">
-      <label>Pertanyaan</label>
-      <textarea id="quiz-question"></textarea>
-      <label>Pilihan A</label>
-      <input id="quiz-optiona">
-      <label>Pilihan B</label>
-      <input id="quiz-optionb">
-      <label>Pilihan C</label>
-      <input id="quiz-optionc">
-      <label>Pilihan D</label>
-      <input id="quiz-optiond">
-      <label>Jawaban Benar</label>
-      <select id="quiz-correct">
-        <option value="A">A</option><option value="B">B</option>
-        <option value="C">C</option><option value="D">D</option>
-      </select>
-      <label>Penjelasan (opsional)</label>
-      <textarea id="quiz-explanation"></textarea>
-      <label>Status</label>
-      <select id="quiz-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
-      <button class="btn-primary" onclick="saveQuiz()">Simpan Soal</button>
-    </div>
-
-    <div class="card" style="margin-top:0;">
-      <label>Filter Task ID (kosongkan untuk lihat semua)</label>
-      <div style="display:flex;gap:8px;">
-        <input id="quiz-filter-taskid" placeholder="Contoh: QD01" style="flex:1;">
-        <button class="btn-primary" style="width:auto;margin:0;padding:0 16px;" onclick="loadQuizList()">Cari</button>
-      </div>
-    </div>
-
-    <p class="section-title">Daftar Soal</p>
-    <div id="quiz-list"></div>
+<div id="admin-tab-quiz" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Soal Quiz</p>
+    <label>Season ID</label>
+    <input id="quiz-seasonid" placeholder="Contoh: S01">
+    <label>Quiz ID</label>
+    <input id="quiz-id" placeholder="Contoh: QZ01-1">
+    <label>Campaign ID (samakan dengan CampaignId Task yang menaunginya, atau "GENERAL")</label>
+    <input id="quiz-campaignid" placeholder="Contoh: E01 atau GENERAL">
+    <label>Quiz Scope</label>
+    <select id="quiz-scope"><option value="Campaign">Campaign</option><option value="General">General</option></select>
+    <label>Period Type</label>
+    <select id="quiz-periodtype">
+      <option value="daily">daily</option><option value="weekly">weekly</option>
+      <option value="campaign_once">campaign_once</option><option value="season_once">season_once</option>
+    </select>
+    <label>Difficulty</label>
+    <select id="quiz-difficulty"><option>Easy</option><option>Medium</option><option>Hard</option></select>
+    <label>Pertanyaan</label>
+    <textarea id="quiz-questiontext"></textarea>
+    <label>Pilihan A</label>
+    <input id="quiz-optiona">
+    <label>Pilihan B</label>
+    <input id="quiz-optionb">
+    <label>Pilihan C (opsional)</label>
+    <input id="quiz-optionc">
+    <label>Pilihan D (opsional)</label>
+    <input id="quiz-optiond">
+    <label>Jawaban Benar</label>
+    <select id="quiz-correct">
+      <option value="A">A</option><option value="B">B</option>
+      <option value="C">C</option><option value="D">D</option>
+    </select>
+    <label>Penjelasan (opsional)</label>
+    <textarea id="quiz-explanation"></textarea>
+    <label>Point Mapping ID (opsional, referensi ke tab Point Mapping)</label>
+    <input id="quiz-pointmappingid" placeholder="Contoh: PM_QUIZ_EASY">
+    <label>Points</label>
+    <input id="quiz-points" type="number" value="2">
+    <label>Sort Order</label>
+    <input id="quiz-sortorder" type="number" value="1">
+    <label>Acak Urutan Pilihan (Shuffle Options)</label>
+    <select id="quiz-shuffle"><option value="No">Tidak</option><option value="Yes">Ya</option></select>
+    <label>Status</label>
+    <select id="quiz-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <label>Source (opsional)</label>
+    <input id="quiz-source" placeholder="Contoh: Admin">
+    <button class="btn-primary" onclick="saveQuiz()">Simpan Soal</button>
   </div>
+
+  <div class="card" style="margin-top:0;">
+    <label>Filter Campaign ID (kosongkan untuk lihat semua)</label>
+    <div style="display:flex;gap:8px;">
+      <input id="quiz-filter-campaignid" placeholder="Contoh: E01" style="flex:1;">
+      <button class="btn-primary" style="width:auto;margin:0;padding:0 16px;" onclick="loadQuizList()">Cari</button>
+    </div>
+  </div>
+
+  <p class="section-title">Daftar Soal</p>
+  <div id="quiz-list"></div>
+</div>
+
+<!-- ===================== TAB: SURVEY QUESTION ===================== -->
+<div id="admin-tab-survey" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Survey Question</p>
+    <label>Question ID</label>
+    <input id="sv-id" placeholder="Contoh: S1">
+    <label>Dimension</label>
+    <input id="sv-dimension" placeholder="Contoh: Atensi">
+    <label>Question Text</label>
+    <textarea id="sv-questiontext" placeholder="Media awareness ini menarik perhatian saya."></textarea>
+    <label>Scale</label>
+    <input id="sv-scale" value="Likert 1-5">
+    <label>Evaluation Level</label>
+    <input id="sv-evallevel" placeholder="Contoh: Individu">
+    <label>Order</label>
+    <input id="sv-order" type="number" value="1">
+    <label>Status</label>
+    <select id="sv-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <button class="btn-primary" onclick="saveSurveyQuestion()">Simpan Pertanyaan</button>
+  </div>
+  <p class="section-title">Daftar Survey Question</p>
+  <div id="survey-question-list"></div>
+</div>
+
+<!-- ===================== TAB: OBS KELOMPOK ===================== -->
+<div id="admin-tab-obskelompok" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Pertanyaan Obs Kelompok</p>
+    <label>Question ID</label>
+    <input id="obk-id" placeholder="Contoh: G1">
+    <label>Dimension</label>
+    <input id="obk-dimension" placeholder="Contoh: Komunikasi">
+    <label>Question Text</label>
+    <textarea id="obk-questiontext" placeholder="Kondisi pembukaan, presentasi, atau penyampaian media cukup kondusif."></textarea>
+    <label>Scale</label>
+    <input id="obk-scale" value="Likert 1-5">
+    <label>Evaluation Level</label>
+    <input id="obk-evallevel" placeholder="Contoh: Kelompok">
+    <label>Order</label>
+    <input id="obk-order" type="number" value="1">
+    <label>Status</label>
+    <select id="obk-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <button class="btn-primary" onclick="saveObsKelompok()">Simpan Pertanyaan</button>
+  </div>
+  <p class="section-title">Daftar Pertanyaan Obs Kelompok</p>
+  <div id="obskelompok-list"></div>
+</div>
+
+<!-- ===================== TAB: OBS INDIVIDU ===================== -->
+<div id="admin-tab-obsindividu" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Pertanyaan Obs Individu</p>
+    <label>Question ID</label>
+    <input id="obi-id" placeholder="Contoh: O1">
+    <label>Dimension</label>
+    <input id="obi-dimension" placeholder="Contoh: Kepatuhan APD">
+    <label>Question Text</label>
+    <textarea id="obi-questiontext" placeholder="Karyawan menggunakan APD secara konsisten selama aktivitas."></textarea>
+    <label>Scale</label>
+    <input id="obi-scale" value="Likert 1-5">
+    <label>Evaluation Level</label>
+    <input id="obi-evallevel" placeholder="Contoh: Individu">
+    <label>Order</label>
+    <input id="obi-order" type="number" value="1">
+    <label>Status</label>
+    <select id="obi-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <button class="btn-primary" onclick="saveObsIndividu()">Simpan Pertanyaan</button>
+  </div>
+  <p class="section-title">Daftar Pertanyaan Obs Individu</p>
+  <div id="obsindividu-list"></div>
+</div>
+
+<!-- ===================== TAB: SEASON ===================== -->
+<div id="admin-tab-season" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Season</p>
+    <label>Season ID</label>
+    <input id="season-id" placeholder="Contoh: S02">
+    <label>Season Name</label>
+    <input id="season-name" placeholder="Contoh: Season 02">
+    <label>Start Date</label>
+    <input id="season-startdate" type="date">
+    <label>End Date</label>
+    <input id="season-enddate" type="date">
+    <label>Status</label>
+    <select id="season-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <label>Notes</label>
+    <textarea id="season-notes"></textarea>
+    <button class="btn-primary" onclick="saveSeason()">Simpan Season</button>
+  </div>
+  <p class="section-title">Daftar Season</p>
+  <div id="season-list"></div>
+</div>
+
+<!-- ===================== TAB: POINT MAPPING ===================== -->
+<div id="admin-tab-pointmapping" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Point Mapping</p>
+    <label>Season ID</label>
+    <input id="pm-seasonid" placeholder="Contoh: S01">
+    <label>Mapping ID</label>
+    <input id="pm-id" placeholder="Contoh: PM_SURVEY">
+    <label>Mapping Name</label>
+    <input id="pm-name" placeholder="Contoh: Survey media awareness">
+    <label>Activity Type</label>
+    <input id="pm-activitytype" placeholder="Contoh: Task">
+    <label>Difficulty</label>
+    <select id="pm-difficulty"><option>Easy</option><option>Medium</option><option>Hard</option></select>
+    <label>Period Type</label>
+    <select id="pm-periodtype">
+      <option value="daily">daily</option><option value="weekly">weekly</option>
+      <option value="monthly">monthly</option><option value="mixed">mixed</option>
+      <option value="campaign_once">campaign_once</option><option value="season_once">season_once</option>
+    </select>
+    <label>Base Points</label>
+    <input id="pm-basepoints" type="number" value="0">
+    <label>Completion Bonus</label>
+    <input id="pm-completionbonus" type="number" value="0">
+    <label>Max Per Period</label>
+    <input id="pm-maxperperiod" type="number" value="0">
+    <label>Status</label>
+    <select id="pm-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <label>Notes</label>
+    <textarea id="pm-notes"></textarea>
+    <button class="btn-primary" onclick="savePointMapping()">Simpan Point Mapping</button>
+  </div>
+  <p class="section-title">Daftar Point Mapping</p>
+  <div id="pointmapping-list"></div>
+</div>
+
+<!-- ===================== TAB: JOURNEY RULES ===================== -->
+<div id="admin-tab-journeyrule" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Journey Rule</p>
+    <label>Rule ID</label>
+    <input id="jr-id" placeholder="Contoh: JR01">
+    <label>Role Pattern</label>
+    <input id="jr-rolepattern" placeholder="Contoh: Supervisor">
+    <label>User Role Pattern</label>
+    <input id="jr-userrolepattern" placeholder="Contoh: *">
+    <label>Persona</label>
+    <input id="jr-persona" placeholder="Contoh: Leader">
+    <label>Force Journey Mode</label>
+    <input id="jr-forcejourneymode" placeholder="Contoh: SustainabilityJourney">
+    <label>Allowed Journey Modes</label>
+    <input id="jr-allowedjourneymodes" placeholder="Contoh: EnergyAwareness,SafetyParticipation">
+    <label>Required Domains</label>
+    <input id="jr-requireddomains" placeholder="Contoh: Safety">
+    <label>Recommended Domains</label>
+    <input id="jr-recommendeddomains" placeholder="Contoh: Energy,Health">
+    <label>Health Track</label>
+    <input id="jr-healthtrack" placeholder="Contoh: Yes">
+    <label>Required Mission Tags</label>
+    <input id="jr-requiredmissiontags" placeholder="Contoh: Required">
+    <label>Priority</label>
+    <input id="jr-priority" type="number" value="1">
+    <label>Status</label>
+    <select id="jr-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <button class="btn-primary" onclick="saveJourneyRule()">Simpan Journey Rule</button>
+  </div>
+  <p class="section-title">Daftar Journey Rules</p>
+  <div id="journeyrule-list"></div>
+</div>
+
+<!-- ===================== TAB: AWARENESS CONTENT ===================== -->
+<div id="admin-tab-awareness" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Awareness Content</p>
+    <label>Season ID</label>
+    <input id="aw-seasonid" placeholder="Contoh: S01">
+    <label>Content ID</label>
+    <input id="aw-id" placeholder="Contoh: CONTENT_EN_TIP_01">
+    <label>Legacy Campaign ID (opsional)</label>
+    <input id="aw-legacycampaignid" placeholder="Contoh: E01">
+    <label>Title</label>
+    <input id="aw-title" placeholder="Contoh: Energy Tip: Pemborosan yang Mudah Dicegah">
+    <label>Summary</label>
+    <textarea id="aw-summary"></textarea>
+    <label>Domain Tags</label>
+    <input id="aw-domaintags" placeholder="Contoh: Energy">
+    <label>Target Personas</label>
+    <input id="aw-targetpersonas" placeholder="Contoh: ALL">
+    <label>Journey Modes</label>
+    <input id="aw-journeymodes" placeholder="Contoh: EnergyAwareness,SustainabilityJourney">
+    <label>Audience Sites</label>
+    <input id="aw-audiencesites" placeholder="Contoh: ALL">
+    <label>Audience Departments</label>
+    <input id="aw-audiencedepartments" placeholder="Contoh: ALL">
+    <label>Requirement Label</label>
+    <input id="aw-requirementlabel" placeholder="Contoh: Recommended">
+    <label>Content Type</label>
+    <select id="aw-contenttype">
+      <option value="ImpactStory">Impact Story</option>
+      <option value="ShortVideo">Short Video</option>
+      <option value="InfoCard">Info Card</option>
+      <option value="Poster">Poster</option>
+      <option value="Sticker">Sticker</option>
+    </select>
+    <label>Publish Date</label>
+    <input id="aw-publishdate" type="date">
+    <label>Expiry Date</label>
+    <input id="aw-expirydate" type="date">
+    <label>Thumbnail URL</label>
+    <input id="aw-thumbnailurl" placeholder="https://...">
+    <label>Media URL</label>
+    <input id="aw-mediaurl" placeholder="https://drive.google.com/...">
+    <label>Estimated Minutes</label>
+    <input id="aw-estimatedminutes" type="number" value="3">
+    <label>Knowledge Tags</label>
+    <input id="aw-knowledgetags" placeholder="Contoh: efisiensi,idle">
+    <label>Related Mission IDs</label>
+    <input id="aw-relatedmissionids" placeholder="Contoh: E01,E02 (pisah koma)">
+    <label>Light XP</label>
+    <input id="aw-lightxp" type="number" value="0">
+    <label>CTA Type</label>
+    <input id="aw-ctatype" placeholder="Contoh: OpenMission">
+    <label>Privacy Class</label>
+    <input id="aw-privacyclass" placeholder="Contoh: Internal">
+    <label>Sort Order</label>
+    <input id="aw-sortorder" type="number" value="1">
+    <label>Status</label>
+    <select id="aw-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <button class="btn-primary" onclick="saveAwarenessContent()">Simpan Awareness Content</button>
+  </div>
+  <p class="section-title">Daftar Awareness Content</p>
+  <div id="awareness-list"></div>
+</div>
+
+<!-- ===================== TAB: REWARD CATALOG ===================== -->
+<div id="admin-tab-rewardcatalog" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Reward Catalog</p>
+    <label>Reward ID</label>
+    <input id="rc-id" placeholder="Contoh: RWD_TUMBLER">
+    <label>Title</label>
+    <input id="rc-title" placeholder="Contoh: Eco Tumbler">
+    <label>Description</label>
+    <textarea id="rc-description"></textarea>
+    <label>Category</label>
+    <input id="rc-category" placeholder="Contoh: Merchandise">
+    <label>Coin Cost</label>
+    <input id="rc-coincost" type="number" value="0">
+    <label>Stock</label>
+    <input id="rc-stock" type="number" value="0">
+    <label>Eligibility Rule (JSON, opsional)</label>
+    <input id="rc-eligibilityrulejson" placeholder='Contoh: {"minTier":"Konsisten"}'>
+    <label>Partner (opsional)</label>
+    <input id="rc-partner" placeholder="Contoh: Internal">
+    <label>Voucher Type (opsional)</label>
+    <input id="rc-vouchertype" placeholder="Contoh: Barang">
+    <label>Expiry Days (opsional)</label>
+    <input id="rc-expirydays" type="number" value="0">
+    <label>Status</label>
+    <select id="rc-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <button class="btn-primary" onclick="saveRewardCatalog()">Simpan Reward</button>
+  </div>
+  <p class="section-title">Daftar Reward Catalog</p>
+  <div id="rewardcatalog-list"></div>
+</div>
+
+<!-- ===================== TAB: CLUBS ===================== -->
+<div id="admin-tab-club" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Club</p>
+    <label>Club ID</label>
+    <input id="cl-id" placeholder="Contoh: CLUB_WALK">
+    <label>Title</label>
+    <input id="cl-title" placeholder="Contoh: Walking Community">
+    <label>Description</label>
+    <textarea id="cl-description"></textarea>
+    <label>Domain Tags</label>
+    <input id="cl-domaintags" placeholder="Contoh: Health">
+    <label>Department (opsional, kosongkan untuk semua)</label>
+    <input id="cl-department" placeholder="Contoh: Production">
+    <label>Site (opsional)</label>
+    <input id="cl-site" placeholder="Contoh: Plant Food">
+    <label>Owner Employee ID (opsional)</label>
+    <input id="cl-owneremployeeid" placeholder="Contoh: 00180">
+    <label>Member Limit (opsional, 0 = tanpa batas)</label>
+    <input id="cl-memberlimit" type="number" value="0">
+    <label>Visibility</label>
+    <select id="cl-visibility"><option value="Public">Public</option><option value="Private">Private</option></select>
+    <label>Status</label>
+    <select id="cl-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <button class="btn-primary" onclick="saveClub()">Simpan Club</button>
+  </div>
+  <p class="section-title">Daftar Clubs</p>
+  <div id="club-list"></div>
+</div>
+
+  <!-- ===================== TAB: MISSION TEMPLATES ===================== -->
+<div id="admin-tab-missiontemplate" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Mission Template</p>
+    <label>Season ID</label>
+    <input id="mt-seasonid" placeholder="Contoh: S01">
+    <label>Mission ID</label>
+    <input id="mt-id" placeholder="Contoh: MS_ACTIVE_WEEK">
+    <label>Title</label>
+    <input id="mt-title" placeholder="Contoh: Active Week">
+    <label>Description</label>
+    <textarea id="mt-description"></textarea>
+    <label>Domain Tags</label>
+    <input id="mt-domaintags" placeholder="Contoh: Energy,Safety,Health">
+    <label>Journey Modes</label>
+    <input id="mt-journeymodes" placeholder="Contoh: SustainabilityJourney">
+    <label>Target Personas</label>
+    <input id="mt-targetpersonas" placeholder="Contoh: ALL">
+    <label>Assignment Rule (JSON, opsional)</label>
+    <input id="mt-assignmentrulejson" placeholder='Contoh: {"divisi":["Production"]}'>
+    <label>Requirement Label</label>
+    <select id="mt-requirementlabel">
+      <option value="Required">Required</option>
+      <option value="Recommended">Recommended</option>
+      <option value="Optional">Optional</option>
+    </select>
+    <label>Frequency Type</label>
+    <select id="mt-frequencytype">
+      <option value="daily">daily</option><option value="weekly">weekly</option>
+      <option value="monthly">monthly</option><option value="quarterly">quarterly</option>
+      <option value="campaign_once">campaign_once</option><option value="season_once">season_once</option>
+    </select>
+    <label>Frequency Limit</label>
+    <input id="mt-frequencylimit" type="number" value="1">
+    <label>Start Date</label>
+    <input id="mt-startdate" type="date">
+    <label>End Date</label>
+    <input id="mt-enddate" type="date">
+    <label>Estimated Minutes</label>
+    <input id="mt-estimatedminutes" type="number" value="5">
+    <label>Location Requirement (opsional)</label>
+    <input id="mt-locationrequirement" placeholder="Contoh: No / GPS Area Kerja">
+    <label>Evidence Requirement (opsional)</label>
+    <input id="mt-evidencerequirement" placeholder="Contoh: Completion note / Photo">
+    <label>Validation Method</label>
+    <select id="mt-validationmethod">
+      <option value="Auto">Auto</option>
+      <option value="Verifier">Verifier</option>
+      <option value="Panel">Panel</option>
+    </select>
+    <label>Base XP</label>
+    <input id="mt-basexp" type="number" value="0">
+    <label>Domain XP</label>
+    <input id="mt-domainxp" type="number" value="0">
+    <label>Sustainability Contribution</label>
+    <input id="mt-sustainabilitycontribution" type="number" value="0">
+    <label>Integrated Score</label>
+    <input id="mt-integratedscore" type="number" value="0">
+    <label>Reward Coin</label>
+    <input id="mt-rewardcoin" type="number" value="0">
+    <label>Department Contribution</label>
+    <input id="mt-departmentcontribution" type="number" value="0">
+    <label>Daily Cap (opsional, 0 = tanpa batas)</label>
+    <input id="mt-dailycap" type="number" value="0">
+    <label>Seasonal Cap (opsional, 0 = tanpa batas)</label>
+    <input id="mt-seasonalcap" type="number" value="0">
+    <label>Prerequisite Mission IDs (opsional, pisah koma)</label>
+    <input id="mt-prerequisitemissionids" placeholder="Contoh: MS_INTRO">
+    <label>Related Content IDs (opsional, pisah koma)</label>
+    <input id="mt-relatedcontentids" placeholder="Contoh: CONTENT_EN_TIP_01">
+    <label>Related Challenge ID (opsional)</label>
+    <input id="mt-relatedchallengeid" placeholder="Contoh: CH_ACTIVE_WEEK">
+    <label>Safety Warning (opsional)</label>
+    <textarea id="mt-safetywarning" placeholder="Contoh: Ikuti SOP dan pertahankan kondisi kerja bebas risiko."></textarea>
+    <label>Privacy Class</label>
+    <input id="mt-privacyclass" placeholder="Contoh: Internal">
+    <label>Sort Order</label>
+    <input id="mt-sortorder" type="number" value="1">
+    <label>Status</label>
+    <select id="mt-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <button class="btn-primary" onclick="saveMissionTemplate()">Simpan Mission Template</button>
+  </div>
+  <p class="section-title">Daftar Mission Templates</p>
+  <div id="missiontemplate-list"></div>
+</div>
+
+
+  <!-- ===================== TAB: CHALLENGES ===================== -->
+<div id="admin-tab-challenge" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Challenge</p>
+    <label>Season ID</label>
+    <input id="ch-seasonid" placeholder="Contoh: S01">
+    <label>Challenge ID</label>
+    <input id="ch-id" placeholder="Contoh: CH_ACTIVE_WEEK">
+    <label>Title</label>
+    <input id="ch-title" placeholder="Contoh: Active Week">
+    <label>Description</label>
+    <textarea id="ch-description"></textarea>
+    <label>Domain Tags</label>
+    <input id="ch-domaintags" placeholder="Contoh: Health,Energy,Safety">
+    <label>Challenge Type</label>
+    <select id="ch-challengetype">
+      <option value="Individual">Individual</option>
+      <option value="Team">Team</option>
+      <option value="DepartmentRelay">Department Relay</option>
+    </select>
+    <label>Start Date</label>
+    <input id="ch-startdate" type="date">
+    <label>End Date</label>
+    <input id="ch-enddate" type="date">
+    <label>Mission IDs (pisah koma)</label>
+    <input id="ch-missionids" placeholder="Contoh: MS_ACTIVE_MINUTES,MS_STRETCH">
+    <label>Team Size (opsional, 0/kosong = individual)</label>
+    <input id="ch-teamsize" type="number" value="0">
+    <label>Reward Coin</label>
+    <input id="ch-rewardcoin" type="number" value="0">
+    <label>Bonus Integrated Score</label>
+    <input id="ch-bonusintegratedscore" type="number" value="0">
+    <label>Privacy Class</label>
+    <input id="ch-privacyclass" placeholder="Contoh: Internal">
+    <label>Status</label>
+    <select id="ch-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+    <button class="btn-primary" onclick="saveChallenge()">Simpan Challenge</button>
+  </div>
+  <p class="section-title">Daftar Challenges</p>
+  <div id="challenge-list"></div>
 </div>
 
 <div id="toast-admin" class="toast"></div>
@@ -239,13 +732,35 @@
     document.getElementById('admin-tab-kabag').style.display = tab === 'kabag' ? '' : 'none';
     document.getElementById('admin-tab-department').style.display = tab === 'department' ? '' : 'none';
     document.getElementById('admin-tab-quiz').style.display = tab === 'quiz' ? '' : 'none';
-  
+    document.getElementById('admin-tab-survey').style.display = tab === 'survey' ? '' : 'none';
+    document.getElementById('admin-tab-obskelompok').style.display = tab === 'obskelompok' ? '' : 'none';
+    document.getElementById('admin-tab-obsindividu').style.display = tab === 'obsindividu' ? '' : 'none';
+    document.getElementById('admin-tab-season').style.display = tab === 'season' ? '' : 'none';
+    document.getElementById('admin-tab-pointmapping').style.display = tab === 'pointmapping' ? '' : 'none';
+    document.getElementById('admin-tab-journeyrule').style.display = tab === 'journeyrule' ? '' : 'none';
+    document.getElementById('admin-tab-awareness').style.display = tab === 'awareness' ? '' : 'none';
+    document.getElementById('admin-tab-rewardcatalog').style.display = tab === 'rewardcatalog' ? '' : 'none';
+    document.getElementById('admin-tab-club').style.display = tab === 'club' ? '' : 'none';
+    document.getElementById('admin-tab-missiontemplate').style.display = tab === 'missiontemplate' ? '' : 'none';
+    document.getElementById('admin-tab-challenge').style.display = tab === 'challenge' ? '' : 'none';
+
     if (tab === 'task') { loadTaskList(); loadCampaignOptions(); }
     else if (tab === 'campaign') loadCampaignList();
     else if (tab === 'akun') { loadAkunList(); loadDepartmentList(); }
     else if (tab === 'klaim') loadKlaimList();
     else if (tab === 'department') loadDepartmentList();
     else if (tab === 'quiz') loadQuizList();
+    else if (tab === 'survey') loadSurveyQuestionList();
+    else if (tab === 'obskelompok') loadObsKelompokList();
+    else if (tab === 'obsindividu') loadObsIndividuList();
+    else if (tab === 'season') loadSeasonList();
+    else if (tab === 'pointmapping') loadPointMappingList();
+    else if (tab === 'journeyrule') loadJourneyRuleList();
+    else if (tab === 'awareness') loadAwarenessList();
+    else if (tab === 'rewardcatalog') loadRewardCatalogList();
+    else if (tab === 'club') loadClubList();
+    else if (tab === 'missiontemplate') loadMissionTemplateList();
+    else if (tab === 'challenge') loadChallengeList();
     else { loadKabagList(); loadDepartmentList(); }
   }
 
@@ -281,6 +796,7 @@
     document.getElementById('task-status').value = t.Status;
     document.getElementById('task-campaignid').value = t.CampaignId || '';
     document.getElementById('task-obligation').value = t.ObligationLevel || 'Recommended';
+    document.getElementById('task-grouptag').value = t.GroupTag || '';
   }
 
   function saveTask() {
@@ -298,6 +814,7 @@
       SeasonId: 'S01',
       CampaignId: document.getElementById('task-campaignid').value.trim(),
       ObligationLevel: document.getElementById('task-obligation').value,
+      GroupTag: document.getElementById('task-grouptag').value,
     };
     if (!record.TaskId || !record.Title) { showAdminToast('Task ID & Judul wajib diisi.', 'error'); return; }
 
@@ -661,11 +1178,11 @@
   }
   function showAdminError(err) { showAdminToast(err.message || String(err), 'error'); }
 
-  function loadQuizList() {
+function loadQuizList() {
   google.script.run
     .withSuccessHandler(function(quizzes) {
-      const filter = document.getElementById('quiz-filter-taskid').value.trim();
-      const filtered = filter ? quizzes.filter(function(q) { return q.TaskId === filter; }) : quizzes;
+      const filter = document.getElementById('quiz-filter-campaignid').value.trim();
+      const filtered = filter ? quizzes.filter(function(q) { return q.CampaignId === filter; }) : quizzes;
       renderQuizList(filtered);
     })
     .withFailureHandler(showAdminError)
@@ -675,9 +1192,9 @@
 function renderQuizList(quizzes) {
   document.getElementById('quiz-list').innerHTML = quizzes.map(function(q) {
     return '<div class="report-item">' +
-      '<b>' + q.QuizId + '</b> · Task: ' + q.TaskId + ' · ' + q.Status +
-      '<div class="report-meta">' + q.Question + '</div>' +
-      '<div class="report-meta">Jawaban benar: ' + q.CorrectOption + '</div>' +
+      '<b>' + q.QuizId + '</b> · Campaign: ' + q.CampaignId + ' · ' + q.Status +
+      '<div class="report-meta">' + q.QuestionText + '</div>' +
+      '<div class="report-meta">Jawaban benar: ' + q.CorrectOption + ' · ' + q.Points + ' poin</div>' +
       '<div style="margin-top:8px;">' +
         '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editQuiz(' + JSON.stringify(q) + ')\'>Edit</button>' +
         '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteQuiz(\'' + q.QuizId + '\')">Hapus</button>' +
@@ -686,51 +1203,69 @@ function renderQuizList(quizzes) {
 }
 
 function editQuiz(q) {
+  document.getElementById('quiz-seasonid').value = q.SeasonId;
   document.getElementById('quiz-id').value = q.QuizId;
-  document.getElementById('quiz-taskid').value = q.TaskId;
-  document.getElementById('quiz-question').value = q.Question;
+  document.getElementById('quiz-campaignid').value = q.CampaignId;
+  document.getElementById('quiz-scope').value = q.QuizScope || 'Campaign';
+  document.getElementById('quiz-periodtype').value = q.PeriodType || 'campaign_once';
+  document.getElementById('quiz-difficulty').value = q.Difficulty || 'Easy';
+  document.getElementById('quiz-questiontext').value = q.QuestionText;
   document.getElementById('quiz-optiona').value = q.OptionA;
   document.getElementById('quiz-optionb').value = q.OptionB;
   document.getElementById('quiz-optionc').value = q.OptionC;
   document.getElementById('quiz-optiond').value = q.OptionD;
   document.getElementById('quiz-correct').value = q.CorrectOption;
   document.getElementById('quiz-explanation').value = q.Explanation;
+  document.getElementById('quiz-pointmappingid').value = q.PointMappingId;
+  document.getElementById('quiz-points').value = q.Points;
+  document.getElementById('quiz-sortorder').value = q.SortOrder;
+  document.getElementById('quiz-shuffle').value = q.ShuffleOptions || 'No';
   document.getElementById('quiz-status').value = q.Status;
+  document.getElementById('quiz-source').value = q.Source;
 }
 
 function saveQuiz() {
   const record = {
+    SeasonId: document.getElementById('quiz-seasonid').value.trim(),
     QuizId: document.getElementById('quiz-id').value.trim(),
-    TaskId: document.getElementById('quiz-taskid').value.trim(),
-    Question: document.getElementById('quiz-question').value.trim(),
+    CampaignId: document.getElementById('quiz-campaignid').value.trim(),
+    QuizScope: document.getElementById('quiz-scope').value,
+    PeriodType: document.getElementById('quiz-periodtype').value,
+    Difficulty: document.getElementById('quiz-difficulty').value,
+    QuestionText: document.getElementById('quiz-questiontext').value.trim(),
     OptionA: document.getElementById('quiz-optiona').value.trim(),
     OptionB: document.getElementById('quiz-optionb').value.trim(),
     OptionC: document.getElementById('quiz-optionc').value.trim(),
     OptionD: document.getElementById('quiz-optiond').value.trim(),
     CorrectOption: document.getElementById('quiz-correct').value,
     Explanation: document.getElementById('quiz-explanation').value.trim(),
-    Status: document.getElementById('quiz-status').value
+    PointMappingId: document.getElementById('quiz-pointmappingid').value.trim(),
+    Points: Number(document.getElementById('quiz-points').value || 0),
+    SortOrder: Number(document.getElementById('quiz-sortorder').value || 1),
+    ShuffleOptions: document.getElementById('quiz-shuffle').value,
+    Status: document.getElementById('quiz-status').value,
+    Source: document.getElementById('quiz-source').value.trim()
   };
-  if (!record.QuizId || !record.TaskId || !record.Question) {
-    showAdminToast('Quiz ID, Task ID, dan Pertanyaan wajib diisi.', 'error'); return;
+  if (!record.QuizId || !record.CampaignId || !record.QuestionText) {
+    showAdminToast('Quiz ID, Campaign ID, dan Pertanyaan wajib diisi.', 'error'); return;
   }
 
-  const lastTaskId = record.TaskId; // simpan sebelum reset, supaya Task ID tetap terisi untuk soal berikutnya
+  const lastCampaignId = record.CampaignId;
 
   google.script.run
     .withSuccessHandler(function(res) {
-      showAdminToast('Soal ' + res.action + '. Silakan tambah soal berikutnya untuk Task yang sama.', 'success');
-      resetQuizForm(lastTaskId);
+      showAdminToast('Soal ' + res.action + '. Silakan tambah soal berikutnya untuk Campaign yang sama.', 'success');
+      resetQuizForm(lastCampaignId);
       loadQuizList();
     })
     .withFailureHandler(showAdminError)
     .saveMasterRecord({ nik: adminCurrentNik, masterType: 'quiz', record: record });
 }
 
-function resetQuizForm(keepTaskId) {
+function resetQuizForm(keepCampaignId) {
   document.getElementById('quiz-id').value = '';
-  document.getElementById('quiz-taskid').value = keepTaskId || '';
-  document.getElementById('quiz-question').value = '';
+  document.getElementById('quiz-campaignid').value = keepCampaignId || '';
+  document.getElementById('quiz-questiontext').value = '';
   document.getElementById('quiz-optiona').value = '';
   document.getElementById('quiz-optionb').value = '';
   document.getElementById('quiz-optionc').value = '';
@@ -759,5 +1294,758 @@ function loadCampaignOptions() {
     })
     .withFailureHandler(showAdminError)
     .getCampaignOptions({ nik: adminCurrentNik });
+}
+
+// ---------- SURVEY QUESTION ----------
+function loadSurveyQuestionList() {
+  google.script.run
+    .withSuccessHandler(renderSurveyQuestionList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'survey' });
+}
+
+function renderSurveyQuestionList(rows) {
+  document.getElementById('survey-question-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.QuestionId + '</b> · ' + (r.Dimension || '') +
+      '<div class="report-meta">' + r.QuestionText + '</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editSurveyQuestion(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteSurveyQuestion(\'' + r.QuestionId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editSurveyQuestion(r) {
+  document.getElementById('sv-id').value = r.QuestionId;
+  document.getElementById('sv-dimension').value = r.Dimension;
+  document.getElementById('sv-questiontext').value = r.QuestionText;
+  document.getElementById('sv-scale').value = r.Scale || 'Likert 1-5';
+  document.getElementById('sv-evallevel').value = r.EvaluationLevel;
+  document.getElementById('sv-order').value = r.Order || 1;
+  document.getElementById('sv-status').value = r.Status;
+}
+
+function saveSurveyQuestion() {
+  const record = {
+    QuestionId: document.getElementById('sv-id').value.trim(),
+    Dimension: document.getElementById('sv-dimension').value.trim(),
+    QuestionText: document.getElementById('sv-questiontext').value.trim(),
+    Scale: document.getElementById('sv-scale').value.trim(),
+    EvaluationLevel: document.getElementById('sv-evallevel').value.trim(),
+    Order: Number(document.getElementById('sv-order').value || 1),
+    Status: document.getElementById('sv-status').value
+  };
+  if (!record.QuestionId || !record.QuestionText) { showAdminToast('Question ID & Question Text wajib diisi.', 'error'); return; }
+
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Pertanyaan ' + res.action + '.', 'success'); loadSurveyQuestionList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'survey', record: record });
+}
+
+function deleteSurveyQuestion(id) {
+  if (!confirm('Hapus pertanyaan ' + id + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Pertanyaan dihapus.', 'success'); loadSurveyQuestionList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'survey', id: id });
+}
+
+// ---------- OBS KELOMPOK ----------
+function loadObsKelompokList() {
+  google.script.run
+    .withSuccessHandler(renderObsKelompokList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'obskelompok' });
+}
+
+function renderObsKelompokList(rows) {
+  document.getElementById('obskelompok-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.QuestionId + '</b> · ' + (r.Dimension || '') +
+      '<div class="report-meta">' + r.QuestionText + '</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editObsKelompok(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteObsKelompok(\'' + r.QuestionId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editObsKelompok(r) {
+  document.getElementById('obk-id').value = r.QuestionId;
+  document.getElementById('obk-dimension').value = r.Dimension;
+  document.getElementById('obk-questiontext').value = r.QuestionText;
+  document.getElementById('obk-scale').value = r.Scale || 'Likert 1-5';
+  document.getElementById('obk-evallevel').value = r.EvaluationLevel;
+  document.getElementById('obk-order').value = r.Order || 1;
+  document.getElementById('obk-status').value = r.Status;
+}
+
+function saveObsKelompok() {
+  const record = {
+    QuestionId: document.getElementById('obk-id').value.trim(),
+    Dimension: document.getElementById('obk-dimension').value.trim(),
+    QuestionText: document.getElementById('obk-questiontext').value.trim(),
+    Scale: document.getElementById('obk-scale').value.trim(),
+    EvaluationLevel: document.getElementById('obk-evallevel').value.trim(),
+    Order: Number(document.getElementById('obk-order').value || 1),
+    Status: document.getElementById('obk-status').value
+  };
+  if (!record.QuestionId || !record.QuestionText) { showAdminToast('Question ID & Question Text wajib diisi.', 'error'); return; }
+
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Pertanyaan ' + res.action + '.', 'success'); loadObsKelompokList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'obskelompok', record: record });
+}
+
+function deleteObsKelompok(id) {
+  if (!confirm('Hapus pertanyaan ' + id + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Pertanyaan dihapus.', 'success'); loadObsKelompokList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'obskelompok', id: id });
+}
+
+// ---------- OBS INDIVIDU ----------
+function loadObsIndividuList() {
+  google.script.run
+    .withSuccessHandler(renderObsIndividuList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'obsindividu' });
+}
+
+function renderObsIndividuList(rows) {
+  document.getElementById('obsindividu-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.QuestionId + '</b> · ' + (r.Dimension || '') +
+      '<div class="report-meta">' + r.QuestionText + '</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editObsIndividu(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteObsIndividu(\'' + r.QuestionId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editObsIndividu(r) {
+  document.getElementById('obi-id').value = r.QuestionId;
+  document.getElementById('obi-dimension').value = r.Dimension;
+  document.getElementById('obi-questiontext').value = r.QuestionText;
+  document.getElementById('obi-scale').value = r.Scale || 'Likert 1-5';
+  document.getElementById('obi-evallevel').value = r.EvaluationLevel;
+  document.getElementById('obi-order').value = r.Order || 1;
+  document.getElementById('obi-status').value = r.Status;
+}
+
+function saveObsIndividu() {
+  const record = {
+    QuestionId: document.getElementById('obi-id').value.trim(),
+    Dimension: document.getElementById('obi-dimension').value.trim(),
+    QuestionText: document.getElementById('obi-questiontext').value.trim(),
+    Scale: document.getElementById('obi-scale').value.trim(),
+    EvaluationLevel: document.getElementById('obi-evallevel').value.trim(),
+    Order: Number(document.getElementById('obi-order').value || 1),
+    Status: document.getElementById('obi-status').value
+  };
+  if (!record.QuestionId || !record.QuestionText) { showAdminToast('Question ID & Question Text wajib diisi.', 'error'); return; }
+
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Pertanyaan ' + res.action + '.', 'success'); loadObsIndividuList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'obsindividu', record: record });
+}
+
+function deleteObsIndividu(id) {
+  if (!confirm('Hapus pertanyaan ' + id + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Pertanyaan dihapus.', 'success'); loadObsIndividuList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'obsindividu', id: id });
+}
+
+// ---------- SEASON ----------
+function loadSeasonList() {
+  google.script.run
+    .withSuccessHandler(renderSeasonList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'season' });
+}
+
+function renderSeasonList(rows) {
+  document.getElementById('season-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.SeasonId + '</b> · ' + r.SeasonName +
+      '<div class="report-meta">' + r.StartDate + ' — ' + r.EndDate + '</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editSeason(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteSeason(\'' + r.SeasonId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editSeason(r) {
+  document.getElementById('season-id').value = r.SeasonId;
+  document.getElementById('season-name').value = r.SeasonName;
+  document.getElementById('season-startdate').value = r.StartDate;
+  document.getElementById('season-enddate').value = r.EndDate;
+  document.getElementById('season-status').value = r.Status;
+  document.getElementById('season-notes').value = r.Notes;
+}
+
+function saveSeason() {
+  const record = {
+    SeasonId: document.getElementById('season-id').value.trim(),
+    SeasonName: document.getElementById('season-name').value.trim(),
+    StartDate: document.getElementById('season-startdate').value,
+    EndDate: document.getElementById('season-enddate').value,
+    Status: document.getElementById('season-status').value,
+    Notes: document.getElementById('season-notes').value.trim()
+  };
+  if (!record.SeasonId || !record.SeasonName) { showAdminToast('Season ID & Season Name wajib diisi.', 'error'); return; }
+
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Season ' + res.action + '.', 'success'); loadSeasonList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'season', record: record });
+}
+
+function deleteSeason(id) {
+  if (!confirm('Hapus season ' + id + '? Pastikan tidak ada data aktif yang masih memakai season ini.')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Season dihapus.', 'success'); loadSeasonList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'season', id: id });
+}
+
+// ---------- POINT MAPPING ----------
+function loadPointMappingList() {
+  google.script.run
+    .withSuccessHandler(renderPointMappingList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'pointmapping' });
+}
+
+function renderPointMappingList(rows) {
+  document.getElementById('pointmapping-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.MappingId + '</b> · ' + r.MappingName +
+      '<div class="report-meta">' + r.ActivityType + ' · ' + r.Difficulty + ' · ' + r.BasePoints + ' poin</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editPointMapping(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deletePointMapping(\'' + r.MappingId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editPointMapping(r) {
+  document.getElementById('pm-seasonid').value = r.SeasonId;
+  document.getElementById('pm-id').value = r.MappingId;
+  document.getElementById('pm-name').value = r.MappingName;
+  document.getElementById('pm-activitytype').value = r.ActivityType;
+  document.getElementById('pm-difficulty').value = r.Difficulty;
+  document.getElementById('pm-periodtype').value = r.PeriodType;
+  document.getElementById('pm-basepoints').value = r.BasePoints;
+  document.getElementById('pm-completionbonus').value = r.CompletionBonus;
+  document.getElementById('pm-maxperperiod').value = r.MaxPerPeriod;
+  document.getElementById('pm-status').value = r.Status;
+  document.getElementById('pm-notes').value = r.Notes;
+}
+
+function savePointMapping() {
+  const record = {
+    SeasonId: document.getElementById('pm-seasonid').value.trim(),
+    MappingId: document.getElementById('pm-id').value.trim(),
+    MappingName: document.getElementById('pm-name').value.trim(),
+    ActivityType: document.getElementById('pm-activitytype').value.trim(),
+    Difficulty: document.getElementById('pm-difficulty').value,
+    PeriodType: document.getElementById('pm-periodtype').value,
+    BasePoints: Number(document.getElementById('pm-basepoints').value || 0),
+    CompletionBonus: Number(document.getElementById('pm-completionbonus').value || 0),
+    MaxPerPeriod: Number(document.getElementById('pm-maxperperiod').value || 0),
+    Status: document.getElementById('pm-status').value,
+    Notes: document.getElementById('pm-notes').value.trim()
+  };
+  if (!record.MappingId || !record.MappingName) { showAdminToast('Mapping ID & Mapping Name wajib diisi.', 'error'); return; }
+
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Point Mapping ' + res.action + '.', 'success'); loadPointMappingList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'pointmapping', record: record });
+}
+
+function deletePointMapping(id) {
+  if (!confirm('Hapus mapping ' + id + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Point Mapping dihapus.', 'success'); loadPointMappingList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'pointmapping', id: id });
+}
+
+// ---------- JOURNEY RULES ----------
+function loadJourneyRuleList() {
+  google.script.run
+    .withSuccessHandler(renderJourneyRuleList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'journeyrule' });
+}
+
+function renderJourneyRuleList(rows) {
+  document.getElementById('journeyrule-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.RuleId + '</b> · ' + (r.Persona || '') +
+      '<div class="report-meta">Role: ' + (r.RolePattern || '-') + ' · Priority: ' + r.Priority + '</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editJourneyRule(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteJourneyRule(\'' + r.RuleId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editJourneyRule(r) {
+  document.getElementById('jr-id').value = r.RuleId;
+  document.getElementById('jr-rolepattern').value = r.RolePattern;
+  document.getElementById('jr-userrolepattern').value = r.UserRolePattern;
+  document.getElementById('jr-persona').value = r.Persona;
+  document.getElementById('jr-forcejourneymode').value = r.ForceJourneyMode;
+  document.getElementById('jr-allowedjourneymodes').value = r.AllowedJourneyModes;
+  document.getElementById('jr-requireddomains').value = r.RequiredDomains;
+  document.getElementById('jr-recommendeddomains').value = r.RecommendedDomains;
+  document.getElementById('jr-healthtrack').value = r.HealthTrack;
+  document.getElementById('jr-requiredmissiontags').value = r.RequiredMissionTags;
+  document.getElementById('jr-priority').value = r.Priority;
+  document.getElementById('jr-status').value = r.Status;
+}
+
+function saveJourneyRule() {
+  const record = {
+    RuleId: document.getElementById('jr-id').value.trim(),
+    RolePattern: document.getElementById('jr-rolepattern').value.trim(),
+    UserRolePattern: document.getElementById('jr-userrolepattern').value.trim(),
+    Persona: document.getElementById('jr-persona').value.trim(),
+    ForceJourneyMode: document.getElementById('jr-forcejourneymode').value.trim(),
+    AllowedJourneyModes: document.getElementById('jr-allowedjourneymodes').value.trim(),
+    RequiredDomains: document.getElementById('jr-requireddomains').value.trim(),
+    RecommendedDomains: document.getElementById('jr-recommendeddomains').value.trim(),
+    HealthTrack: document.getElementById('jr-healthtrack').value.trim(),
+    RequiredMissionTags: document.getElementById('jr-requiredmissiontags').value.trim(),
+    Priority: Number(document.getElementById('jr-priority').value || 1),
+    Status: document.getElementById('jr-status').value
+  };
+  if (!record.RuleId || !record.Persona) { showAdminToast('Rule ID & Persona wajib diisi.', 'error'); return; }
+
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Journey Rule ' + res.action + '.', 'success'); loadJourneyRuleList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'journeyrule', record: record });
+}
+
+function deleteJourneyRule(id) {
+  if (!confirm('Hapus rule ' + id + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Journey Rule dihapus.', 'success'); loadJourneyRuleList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'journeyrule', id: id });
+}
+// ---------- AWARENESS ----------
+function loadAwarenessList() {
+  google.script.run
+    .withSuccessHandler(renderAwarenessList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'awareness' });
+}
+
+function renderAwarenessList(rows) {
+  document.getElementById('awareness-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.ContentId + '</b> · ' + r.Title +
+      '<div class="report-meta">' + r.ContentType + ' · ' + (r.DomainTags || '') + ' · ' + (r.EstimatedMinutes || 0) + ' menit</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editAwarenessContent(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteAwarenessContent(\'' + r.ContentId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editAwarenessContent(r) {
+  document.getElementById('aw-seasonid').value = r.SeasonId;
+  document.getElementById('aw-id').value = r.ContentId;
+  document.getElementById('aw-legacycampaignid').value = r.LegacyCampaignId;
+  document.getElementById('aw-title').value = r.Title;
+  document.getElementById('aw-summary').value = r.Summary;
+  document.getElementById('aw-domaintags').value = r.DomainTags;
+  document.getElementById('aw-targetpersonas').value = r.TargetPersonas;
+  document.getElementById('aw-journeymodes').value = r.JourneyModes;
+  document.getElementById('aw-audiencesites').value = r.AudienceSites;
+  document.getElementById('aw-audiencedepartments').value = r.AudienceDepartments;
+  document.getElementById('aw-requirementlabel').value = r.RequirementLabel;
+  document.getElementById('aw-contenttype').value = r.ContentType;
+  document.getElementById('aw-publishdate').value = r.PublishDate;
+  document.getElementById('aw-expirydate').value = r.ExpiryDate;
+  document.getElementById('aw-thumbnailurl').value = r.ThumbnailUrl;
+  document.getElementById('aw-mediaurl').value = r.MediaUrl;
+  document.getElementById('aw-estimatedminutes').value = r.EstimatedMinutes;
+  document.getElementById('aw-knowledgetags').value = r.KnowledgeTags;
+  document.getElementById('aw-relatedmissionids').value = r.RelatedMissionIds;
+  document.getElementById('aw-lightxp').value = r.LightXP;
+  document.getElementById('aw-ctatype').value = r.CTAType;
+  document.getElementById('aw-privacyclass').value = r.PrivacyClass;
+  document.getElementById('aw-sortorder').value = r.SortOrder;
+  document.getElementById('aw-status').value = r.Status;
+}
+
+function saveAwarenessContent() {
+  const record = {
+    SeasonId: document.getElementById('aw-seasonid').value.trim(),
+    ContentId: document.getElementById('aw-id').value.trim(),
+    LegacyCampaignId: document.getElementById('aw-legacycampaignid').value.trim(),
+    Title: document.getElementById('aw-title').value.trim(),
+    Summary: document.getElementById('aw-summary').value.trim(),
+    DomainTags: document.getElementById('aw-domaintags').value.trim(),
+    TargetPersonas: document.getElementById('aw-targetpersonas').value.trim(),
+    JourneyModes: document.getElementById('aw-journeymodes').value.trim(),
+    AudienceSites: document.getElementById('aw-audiencesites').value.trim(),
+    AudienceDepartments: document.getElementById('aw-audiencedepartments').value.trim(),
+    RequirementLabel: document.getElementById('aw-requirementlabel').value.trim(),
+    ContentType: document.getElementById('aw-contenttype').value,
+    PublishDate: document.getElementById('aw-publishdate').value,
+    ExpiryDate: document.getElementById('aw-expirydate').value,
+    ThumbnailUrl: document.getElementById('aw-thumbnailurl').value.trim(),
+    MediaUrl: document.getElementById('aw-mediaurl').value.trim(),
+    EstimatedMinutes: Number(document.getElementById('aw-estimatedminutes').value || 0),
+    KnowledgeTags: document.getElementById('aw-knowledgetags').value.trim(),
+    RelatedMissionIds: document.getElementById('aw-relatedmissionids').value.trim(),
+    LightXP: Number(document.getElementById('aw-lightxp').value || 0),
+    CTAType: document.getElementById('aw-ctatype').value.trim(),
+    PrivacyClass: document.getElementById('aw-privacyclass').value.trim(),
+    SortOrder: Number(document.getElementById('aw-sortorder').value || 1),
+    Status: document.getElementById('aw-status').value
+  };
+  if (!record.ContentId || !record.Title) { showAdminToast('Content ID & Title wajib diisi.', 'error'); return; }
+
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Awareness Content ' + res.action + '.', 'success'); loadAwarenessList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'awareness', record: record });
+}
+
+function deleteAwarenessContent(id) {
+  if (!confirm('Hapus content ' + id + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Awareness Content dihapus.', 'success'); loadAwarenessList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'awareness', id: id });
+}
+
+// ---------- REWARD CATALOG ----------
+function loadRewardCatalogList() {
+  google.script.run
+    .withSuccessHandler(renderRewardCatalogList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'rewardcatalog' });
+}
+
+function renderRewardCatalogList(rows) {
+  document.getElementById('rewardcatalog-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.RewardId + '</b> · ' + r.Title +
+      '<div class="report-meta">' + (r.Category || '') + ' · ' + r.CoinCost + ' coin · Stok: ' + r.Stock + '</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editRewardCatalog(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteRewardCatalog(\'' + r.RewardId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editRewardCatalog(r) {
+  document.getElementById('rc-id').value = r.RewardId;
+  document.getElementById('rc-title').value = r.Title;
+  document.getElementById('rc-description').value = r.Description;
+  document.getElementById('rc-category').value = r.Category;
+  document.getElementById('rc-coincost').value = r.CoinCost;
+  document.getElementById('rc-stock').value = r.Stock;
+  document.getElementById('rc-eligibilityrulejson').value = r.EligibilityRuleJson;
+  document.getElementById('rc-partner').value = r.Partner;
+  document.getElementById('rc-vouchertype').value = r.VoucherType;
+  document.getElementById('rc-expirydays').value = r.ExpiryDays;
+  document.getElementById('rc-status').value = r.Status;
+}
+
+function saveRewardCatalog() {
+  const record = {
+    RewardId: document.getElementById('rc-id').value.trim(),
+    Title: document.getElementById('rc-title').value.trim(),
+    Description: document.getElementById('rc-description').value.trim(),
+    Category: document.getElementById('rc-category').value.trim(),
+    CoinCost: Number(document.getElementById('rc-coincost').value || 0),
+    Stock: Number(document.getElementById('rc-stock').value || 0),
+    EligibilityRuleJson: document.getElementById('rc-eligibilityrulejson').value.trim(),
+    Partner: document.getElementById('rc-partner').value.trim(),
+    VoucherType: document.getElementById('rc-vouchertype').value.trim(),
+    ExpiryDays: Number(document.getElementById('rc-expirydays').value || 0),
+    Status: document.getElementById('rc-status').value
+  };
+  if (!record.RewardId || !record.Title) { showAdminToast('Reward ID & Title wajib diisi.', 'error'); return; }
+
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Reward ' + res.action + '.', 'success'); loadRewardCatalogList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'rewardcatalog', record: record });
+}
+
+function deleteRewardCatalog(id) {
+  if (!confirm('Hapus reward ' + id + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Reward dihapus.', 'success'); loadRewardCatalogList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'rewardcatalog', id: id });
+}
+// ---------- CLUBS ----------
+function loadClubList() {
+  google.script.run
+    .withSuccessHandler(renderClubList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'club' });
+}
+
+function renderClubList(rows) {
+  document.getElementById('club-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.ClubId + '</b> · ' + r.Title +
+      '<div class="report-meta">' + (r.DomainTags || '') + ' · ' + (r.Visibility || '') + '</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editClub(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteClub(\'' + r.ClubId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editClub(r) {
+  document.getElementById('cl-id').value = r.ClubId;
+  document.getElementById('cl-title').value = r.Title;
+  document.getElementById('cl-description').value = r.Description;
+  document.getElementById('cl-domaintags').value = r.DomainTags;
+  document.getElementById('cl-department').value = r.Department;
+  document.getElementById('cl-site').value = r.Site;
+  document.getElementById('cl-owneremployeeid').value = r.OwnerEmployeeId;
+  document.getElementById('cl-memberlimit').value = r.MemberLimit;
+  document.getElementById('cl-visibility').value = r.Visibility || 'Public';
+  document.getElementById('cl-status').value = r.Status;
+}
+
+function saveClub() {
+  const record = {
+    ClubId: document.getElementById('cl-id').value.trim(),
+    Title: document.getElementById('cl-title').value.trim(),
+    Description: document.getElementById('cl-description').value.trim(),
+    DomainTags: document.getElementById('cl-domaintags').value.trim(),
+    Department: document.getElementById('cl-department').value.trim(),
+    Site: document.getElementById('cl-site').value.trim(),
+    OwnerEmployeeId: document.getElementById('cl-owneremployeeid').value.trim(),
+    MemberLimit: Number(document.getElementById('cl-memberlimit').value || 0),
+    Visibility: document.getElementById('cl-visibility').value,
+    Status: document.getElementById('cl-status').value
+  };
+  if (!record.ClubId || !record.Title) { showAdminToast('Club ID & Title wajib diisi.', 'error'); return; }
+
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Club ' + res.action + '.', 'success'); loadClubList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'club', record: record });
+}
+
+function deleteClub(id) {
+  if (!confirm('Hapus club ' + id + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Club dihapus.', 'success'); loadClubList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'club', id: id });
+}
+
+// ---------- MISSION TEMPLATES ----------
+function loadMissionTemplateList() {
+  google.script.run
+    .withSuccessHandler(renderMissionTemplateList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'missiontemplate' });
+}
+
+function renderMissionTemplateList(rows) {
+  document.getElementById('missiontemplate-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.MissionId + '</b> · ' + r.Title +
+      '<div class="report-meta">' + (r.DomainTags || '') + ' · ' + r.RequirementLabel + ' · ' + r.BaseXP + ' XP</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editMissionTemplate(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteMissionTemplate(\'' + r.MissionId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editMissionTemplate(r) {
+  document.getElementById('mt-seasonid').value = r.SeasonId;
+  document.getElementById('mt-id').value = r.MissionId;
+  document.getElementById('mt-title').value = r.Title;
+  document.getElementById('mt-description').value = r.Description;
+  document.getElementById('mt-domaintags').value = r.DomainTags;
+  document.getElementById('mt-journeymodes').value = r.JourneyModes;
+  document.getElementById('mt-targetpersonas').value = r.TargetPersonas;
+  document.getElementById('mt-assignmentrulejson').value = r.AssignmentRuleJson;
+  document.getElementById('mt-requirementlabel').value = r.RequirementLabel || 'Recommended';
+  document.getElementById('mt-frequencytype').value = r.FrequencyType;
+  document.getElementById('mt-frequencylimit').value = r.FrequencyLimit;
+  document.getElementById('mt-startdate').value = r.StartDate;
+  document.getElementById('mt-enddate').value = r.EndDate;
+  document.getElementById('mt-estimatedminutes').value = r.EstimatedMinutes;
+  document.getElementById('mt-locationrequirement').value = r.LocationRequirement;
+  document.getElementById('mt-evidencerequirement').value = r.EvidenceRequirement;
+  document.getElementById('mt-validationmethod').value = r.ValidationMethod || 'Auto';
+  document.getElementById('mt-basexp').value = r.BaseXP;
+  document.getElementById('mt-domainxp').value = r.DomainXP;
+  document.getElementById('mt-sustainabilitycontribution').value = r.SustainabilityContribution;
+  document.getElementById('mt-integratedscore').value = r.IntegratedScore;
+  document.getElementById('mt-rewardcoin').value = r.RewardCoin;
+  document.getElementById('mt-departmentcontribution').value = r.DepartmentContribution;
+  document.getElementById('mt-dailycap').value = r.DailyCap;
+  document.getElementById('mt-seasonalcap').value = r.SeasonalCap;
+  document.getElementById('mt-prerequisitemissionids').value = r.PrerequisiteMissionIds;
+  document.getElementById('mt-relatedcontentids').value = r.RelatedContentIds;
+  document.getElementById('mt-relatedchallengeid').value = r.RelatedChallengeId;
+  document.getElementById('mt-safetywarning').value = r.SafetyWarning;
+  document.getElementById('mt-privacyclass').value = r.PrivacyClass;
+  document.getElementById('mt-sortorder').value = r.SortOrder;
+  document.getElementById('mt-status').value = r.Status;
+}
+
+function saveMissionTemplate() {
+  const record = {
+    SeasonId: document.getElementById('mt-seasonid').value.trim(),
+    MissionId: document.getElementById('mt-id').value.trim(),
+    Title: document.getElementById('mt-title').value.trim(),
+    Description: document.getElementById('mt-description').value.trim(),
+    DomainTags: document.getElementById('mt-domaintags').value.trim(),
+    JourneyModes: document.getElementById('mt-journeymodes').value.trim(),
+    TargetPersonas: document.getElementById('mt-targetpersonas').value.trim(),
+    AssignmentRuleJson: document.getElementById('mt-assignmentrulejson').value.trim(),
+    RequirementLabel: document.getElementById('mt-requirementlabel').value,
+    FrequencyType: document.getElementById('mt-frequencytype').value,
+    FrequencyLimit: Number(document.getElementById('mt-frequencylimit').value || 1),
+    StartDate: document.getElementById('mt-startdate').value,
+    EndDate: document.getElementById('mt-enddate').value,
+    EstimatedMinutes: Number(document.getElementById('mt-estimatedminutes').value || 0),
+    LocationRequirement: document.getElementById('mt-locationrequirement').value.trim(),
+    EvidenceRequirement: document.getElementById('mt-evidencerequirement').value.trim(),
+    ValidationMethod: document.getElementById('mt-validationmethod').value,
+    BaseXP: Number(document.getElementById('mt-basexp').value || 0),
+    DomainXP: Number(document.getElementById('mt-domainxp').value || 0),
+    SustainabilityContribution: Number(document.getElementById('mt-sustainabilitycontribution').value || 0),
+    IntegratedScore: Number(document.getElementById('mt-integratedscore').value || 0),
+    RewardCoin: Number(document.getElementById('mt-rewardcoin').value || 0),
+    DepartmentContribution: Number(document.getElementById('mt-departmentcontribution').value || 0),
+    DailyCap: Number(document.getElementById('mt-dailycap').value || 0),
+    SeasonalCap: Number(document.getElementById('mt-seasonalcap').value || 0),
+    PrerequisiteMissionIds: document.getElementById('mt-prerequisitemissionids').value.trim(),
+    RelatedContentIds: document.getElementById('mt-relatedcontentids').value.trim(),
+    RelatedChallengeId: document.getElementById('mt-relatedchallengeid').value.trim(),
+    SafetyWarning: document.getElementById('mt-safetywarning').value.trim(),
+    PrivacyClass: document.getElementById('mt-privacyclass').value.trim(),
+    SortOrder: Number(document.getElementById('mt-sortorder').value || 1),
+    Status: document.getElementById('mt-status').value
+  };
+  if (!record.MissionId || !record.Title) { showAdminToast('Mission ID & Title wajib diisi.', 'error'); return; }
+
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Mission Template ' + res.action + '.', 'success'); loadMissionTemplateList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'missiontemplate', record: record });
+}
+
+function deleteMissionTemplate(id) {
+  if (!confirm('Hapus mission template ' + id + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Mission Template dihapus.', 'success'); loadMissionTemplateList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'missiontemplate', id: id });
+}
+
+// ---------- CHALLENGE ----------
+function loadChallengeList() {
+  google.script.run
+    .withSuccessHandler(renderChallengeList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'challenge' });
+}
+
+function renderChallengeList(rows) {
+  document.getElementById('challenge-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.ChallengeId + '</b> · ' + r.Title +
+      '<div class="report-meta">' + (r.DomainTags || '') + ' · ' + r.ChallengeType + ' · Misi: ' + (r.MissionIds || '-') + '</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editChallenge(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteChallenge(\'' + r.ChallengeId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editChallenge(r) {
+  document.getElementById('ch-seasonid').value = r.SeasonId;
+  document.getElementById('ch-id').value = r.ChallengeId;
+  document.getElementById('ch-title').value = r.Title;
+  document.getElementById('ch-description').value = r.Description;
+  document.getElementById('ch-domaintags').value = r.DomainTags;
+  document.getElementById('ch-challengetype').value = r.ChallengeType || 'Individual';
+  document.getElementById('ch-startdate').value = r.StartDate;
+  document.getElementById('ch-enddate').value = r.EndDate;
+  document.getElementById('ch-missionids').value = r.MissionIds;
+  document.getElementById('ch-teamsize').value = r.TeamSize;
+  document.getElementById('ch-rewardcoin').value = r.RewardCoin;
+  document.getElementById('ch-bonusintegratedscore').value = r.BonusIntegratedScore;
+  document.getElementById('ch-privacyclass').value = r.PrivacyClass;
+  document.getElementById('ch-status').value = r.Status;
+}
+
+function saveChallenge() {
+  const record = {
+    SeasonId: document.getElementById('ch-seasonid').value.trim(),
+    ChallengeId: document.getElementById('ch-id').value.trim(),
+    Title: document.getElementById('ch-title').value.trim(),
+    Description: document.getElementById('ch-description').value.trim(),
+    DomainTags: document.getElementById('ch-domaintags').value.trim(),
+    ChallengeType: document.getElementById('ch-challengetype').value,
+    StartDate: document.getElementById('ch-startdate').value,
+    EndDate: document.getElementById('ch-enddate').value,
+    MissionIds: document.getElementById('ch-missionids').value.trim(),
+    TeamSize: Number(document.getElementById('ch-teamsize').value || 0),
+    RewardCoin: Number(document.getElementById('ch-rewardcoin').value || 0),
+    BonusIntegratedScore: Number(document.getElementById('ch-bonusintegratedscore').value || 0),
+    PrivacyClass: document.getElementById('ch-privacyclass').value.trim(),
+    Status: document.getElementById('ch-status').value
+  };
+  if (!record.ChallengeId || !record.Title) { showAdminToast('Challenge ID & Title wajib diisi.', 'error'); return; }
+
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Challenge ' + res.action + '.', 'success'); loadChallengeList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'challenge', record: record });
+}
+
+function deleteChallenge(id) {
+  if (!confirm('Hapus challenge ' + id + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Challenge dihapus.', 'success'); loadChallengeList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'challenge', id: id });
 }
 </script>

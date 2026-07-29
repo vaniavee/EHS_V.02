@@ -5,7 +5,8 @@ function getLeaderboard_(seasonId, pillar, limit) {
   const rows = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.pointsLedger))
     .filter(function(r) {
       if (clean_(r.SeasonId) !== sid) return false;
-      if (pillar && clean_(r.Pillar) !== pillar) return false; // pillar=null -> gabungan 3 pilar
+      if (clean_(r.TaskId) === 'BMI') return false; // privasi: poin BMI tidak tampil di leaderboard publik
+      if (pillar && clean_(r.Pillar) !== pillar) return false;
       return true;
     });
 
@@ -102,13 +103,14 @@ function getDistinctDivisions() {
  */
 function getLeaderboardFiltered(payload) {
   const seasonId = normalizeSeasonId_(payload.seasonId);
-  const pillar = clean_(payload.pillar); // '' berarti gabungan
+  const pillar = clean_(payload.pillar);
   const divisi = clean_(payload.divisi);
   const limit = Number(payload.limit || 50);
 
   const rows = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.pointsLedger))
     .filter(function(r) {
       if (clean_(r.SeasonId) !== seasonId) return false;
+      if (clean_(r.TaskId) === 'BMI') return false; // privasi: poin BMI tidak tampil di leaderboard publik
       if (pillar && clean_(r.Pillar) !== pillar) return false;
       if (divisi && clean_(r.Divisi) !== divisi) return false;
       return true;
@@ -138,4 +140,74 @@ function getDistinctDivisions() {
   const set = {};
   users.forEach(function(u) { if (clean_(u.Divisi)) set[clean_(u.Divisi)] = true; });
   return Object.keys(set).sort();
+}
+
+function getTotalDomainXpForUser_(nik, seasonId, pillar) {
+  const rows = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.pointsLedger))
+    .filter(function(r) {
+      return normalizeNikLenient_(r.NIK) === nik && clean_(r.SeasonId) === seasonId &&
+             (!pillar || clean_(r.Pillar) === pillar);
+    });
+  return rows.reduce(function(sum, r) { return sum + Number(r.DomainXP || 0); }, 0);
+}
+
+function getTotalCoinsForUser_(nik, seasonId) {
+  const rows = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.pointsLedger))
+    .filter(function(r) { return normalizeNikLenient_(r.NIK) === nik && clean_(r.SeasonId) === seasonId; });
+  return rows.reduce(function(sum, r) { return sum + Number(r.Coin || 0); }, 0);
+}
+
+const EHS_DOMAIN_META = {
+  Energy: { icon: '⚡', title: 'Energy', tagline: 'Learn efficiently, improve responsibly.', cssClass: 'domain-energy' },
+  Safety: { icon: '🛡️', title: 'Safety', tagline: 'Observe clearly. Act positively.', cssClass: 'domain-safety' },
+  Health: { icon: '❤️', title: 'Healthy Lifestyle', tagline: 'Move consistently. Recover wisely.', cssClass: 'domain-health' }
+};
+
+function getDomainOverview(payload) {
+  validateRequired_(payload, ['nik']);
+  const nik = normalizeNik_(payload.nik);
+  const user = getUserProfile_(nik);
+  const seasonId = normalizeSeasonId_(payload.seasonId);
+
+  const energyStats = getDomainStats_(nik, seasonId, 'Energy');
+  const healthStats = getDomainStats_(nik, seasonId, 'Health');
+  const safetyStats = getSafetyDomainStats_(user, seasonId);
+
+  const domains = [
+    Object.assign({ pillar: 'Energy' }, EHS_DOMAIN_META.Energy, energyStats),
+    Object.assign({ pillar: 'Safety' }, EHS_DOMAIN_META.Safety, safetyStats),
+    Object.assign({ pillar: 'Health' }, EHS_DOMAIN_META.Health, healthStats)
+  ];
+
+  const totalMissions = domains.reduce(function(s, d) { return s + d.totalMissions; }, 0);
+  const totalCompleted = domains.reduce(function(s, d) { return s + d.completedMissions; }, 0);
+  const totalOpen = domains.reduce(function(s, d) { return s + d.openMissions; }, 0);
+  const sustainabilityPct = totalMissions ? Math.round((totalCompleted / totalMissions) * 100) : 0;
+
+  domains.push({
+    pillar: 'Sustainability', icon: '🌱', title: 'Sustainability',
+    tagline: 'Safe. Healthy. Efficient.', cssClass: 'domain-sustainability',
+    openMissions: totalOpen, totalMissions: totalMissions, progressPct: sustainabilityPct,
+    clickable: false, comingSoon: true
+  });
+
+  return domains;
+}
+
+function getDomainStats_(nik, seasonId, pillar) {
+  const tasks = getTasksForUser({ nik: nik, pillar: pillar, seasonId: seasonId });
+  const total = tasks.length;
+  const openMissions = tasks.filter(function(t) { return t.available; }).length;
+  const completedMissions = tasks.filter(function(t) { return t.used >= t.limit && t.limit > 0; }).length;
+  const pct = total ? Math.round((completedMissions / total) * 100) : 0;
+  return { totalMissions: total, openMissions: openMissions, completedMissions: completedMissions, progressPct: pct, clickable: true };
+}
+
+function getSafetyDomainStats_(user, seasonId) {
+  const missions = getSafetyMissionsForUser({ nik: user.nik, seasonId: seasonId });
+  const total = missions.length;
+  const completedMissions = missions.filter(function(m) { return m.used >= m.limit && m.limit > 0; }).length;
+  const openMissions = missions.filter(function(m) { return m.available; }).length;
+  const pct = total ? Math.round((completedMissions / total) * 100) : 0;
+  return { totalMissions: total, openMissions: openMissions, completedMissions: completedMissions, progressPct: pct, clickable: true };
 }

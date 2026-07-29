@@ -7,9 +7,9 @@
 // Pengelolaan task, validasi penyelesaian task, pemberian poin, serta pencatatan transaksi poin ke dalam Points Ledger.
 
 // Fungsi untuk menambahkan poin pengguna ke tabel PointsLedger
-function awardPoints_(user, pillar, taskId, referenceId, points, note, campaignId, seasonId) {
+function awardPoints_(user, pillar, taskId, referenceId, points, note, campaignId, seasonId, domainXp, coin) {
   const lock = LockService.getScriptLock();
-  const gotLock = lock.tryLock(10000); // tunggu maks 10 detik
+  const gotLock = lock.tryLock(10000);
   if (!gotLock) {
     throw new Error('Sistem sedang sibuk, coba submit ulang beberapa detik lagi.');
   }
@@ -20,7 +20,6 @@ function awardPoints_(user, pillar, taskId, referenceId, points, note, campaignI
     const exists = rows.some(function(r) { return clean_(r.ReferenceId) === clean_(referenceId); });
     if (exists) return 0;
 
-    // Menambahkan satu baris baru ke Spreadsheet
     appendObjectRow_(EHS.sheets.pointsLedger, {
       Timestamp: now_(),
       SeasonId: sid,
@@ -32,9 +31,11 @@ function awardPoints_(user, pillar, taskId, referenceId, points, note, campaignI
       Divisi: user.divisi,
       ReferenceId: referenceId,
       Points: Number(points || 0),
+      DomainXP: Number(domainXp || 0),
+      Coin: Number(coin || 0),
       Note: note || ''
     });
-    return Number(points || 0);
+    return Number(points || 0); // tetap Number, supaya semua caller lama tidak perlu diubah
   } finally {
     lock.releaseLock();
   }
@@ -269,4 +270,52 @@ function getMyTaskClaims(payload) {
     .filter(function(r) { return normalizeNikLenient_(r.NIK) === nik && clean_(r.Pillar) === payload.pillar; });
   rows.sort(function(a, b) { return new Date(b.Timestamp) - new Date(a.Timestamp); });
   return rows.slice(0, 20);
+}
+
+function getMissionHubData(payload) {
+  validateRequired_(payload, ['nik', 'pillar']);
+  const nik = normalizeNik_(payload.nik);
+  const user = getUserProfile_(nik);
+  if (!user.active) throw new Error('NIK tidak terdaftar atau tidak aktif.');
+  const seasonId = normalizeSeasonId_(payload.seasonId);
+  const pillar = clean_(payload.pillar);
+
+  let tasks;
+  if (pillar === 'Safety') {
+    tasks = getSafetyMissionsForUser({ nik: nik, seasonId: seasonId }).map(function(m) {
+      return Object.assign({}, m, { groupTag: '', campaignId: '' });
+    });
+  } else {
+    tasks = getTasksForUser({ nik: nik, pillar: pillar, seasonId: seasonId }).map(function(t) {
+      const rawTask = getTaskById_(t.taskId, seasonId) || {};
+      return Object.assign({}, t, { groupTag: clean_(rawTask.GroupTag) });
+    });
+  }
+
+  return {
+    pillar: pillar,
+    recommended: pickRecommendedTask_(tasks),
+    challenge: tasks.filter(function(t) { return t.groupTag === 'Challenge'; }),
+    awareness: tasks.filter(function(t) { return t.groupTag === 'Awareness'; }),
+    continueLearning: getContinueLearningCampaign_(tasks)
+  };
+}
+
+function pickRecommendedTask_(tasks) {
+  const priority = { Required: 0, Recommended: 1, Optional: 2 };
+  const candidates = tasks.filter(function(t) { return t.available; });
+  candidates.sort(function(a, b) {
+    return (priority[a.obligationLevel] !== undefined ? priority[a.obligationLevel] : 3) -
+           (priority[b.obligationLevel] !== undefined ? priority[b.obligationLevel] : 3);
+  });
+  return candidates[0] || null;
+}
+
+function getContinueLearningCampaign_(tasks) {
+  const nextTask = tasks.find(function(t) { return t.campaignId && t.available; });
+  if (!nextTask) return null;
+  const campaign = readObjects_(getSpreadsheet_().getSheetByName('06_Master_Campaigns'))
+    .find(function(c) { return clean_(c.CampaignId) === clean_(nextTask.campaignId); });
+  if (!campaign) return null;
+  return { campaignId: campaign.CampaignId, title: campaign.Title, mediaType: campaign.MediaType, taskId: nextTask.taskId };
 }

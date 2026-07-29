@@ -42,7 +42,8 @@ function getUserProfile_(nik) {
     divisiDiawasi: divisiDiawasi,
     canSubmitHealthTask: true,
     canSubmitEnergyTask: true,
-    canSubmitSafetyReport: isSupervisor,
+    //canSubmitSafetyReport: isSupervisor,
+    canSubmitSafetyReport: true,
     canApproveOwnDivisionReports: isSupervisor,
     canManageMasterData: isAdmin,
     canApproveAllReports: isAdmin,
@@ -90,8 +91,10 @@ function assertSupervisesDivision_(nik, targetDivisi) {
 function getDivisiDiawasiForUser(nik) {
   const user = getUserProfile_(nik);
   if (user.isAdmin) return ['Production', 'Engineering', 'Warehouse', 'Quality Control', 'Quality Assurance', 'HSE', 'Demand Planning', 'Office/Admin', 'Other'];
-  if (!user.isSupervisor) throw new Error('Hanya Kabag/Admin yang bisa mengakses form ini.');
-  return user.divisiDiawasi;
+  //if (!user.isSupervisor) throw new Error('Hanya Kabag/Admin yang bisa mengakses form ini.');
+  if (user.isSupervisor) return user.divisiDiawasi;
+  return user.divisi ? [user.divisi] : [];
+  //return user.divisiDiawasi;
 }
 
 /**
@@ -149,13 +152,19 @@ function getDashboardSummary(payload) {
   const leaderboard = getLeaderboard_(seasonId, null, 9999);
   const myRank = leaderboard.find(function(r) { return r.nik === nik; });
 
-  return {
+  const result = {
     user: user,
     seasonId: seasonId,
     totalPoints: totalPoints,
     rank: myRank ? myRank.rank : '-',
     badge: resolveBadgeTier_(totalPoints)
   };
+
+  if (!user.isAdmin) {
+    result.domains = getDomainOverview({ nik: nik, seasonId: seasonId });
+  }
+
+  return result;
 }
 
 /**

@@ -189,4 +189,44 @@
     font-weight: 700; font-size: 12px;
   }
   .quiz-option-row.active .quiz-option-letter { background: rgba(255,255,255,0.25); }
+  #domain-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0 4px;
+  }
+  @media (min-width: 900px) {
+    #domain-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  .domain-card {
+    border-radius: 20px;
+    padding: 18px;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .domain-card:hover { transform: translateY(-2px); }
+  .domain-card.domain-disabled { cursor: not-allowed; opacity: 0.75; }
+  .domain-energy { background: linear-gradient(135deg, #c9772f 0%, #8a4a1a 100%); }
+  .domain-safety { background: linear-gradient(135deg, #2f5ea8 0%, #1c3a6b 100%); }
+  .domain-health { background: linear-gradient(135deg, #1c6a41 0%, #0f3d26 100%); }
+  .domain-sustainability { background: linear-gradient(135deg, #0f2e26 0%, #051813 100%); }
+  .domain-icon { font-size: 22px; margin-bottom: 8px; }
+  .domain-title { font-size: 16px; font-weight: 800; margin: 0 0 4px; }
+  .domain-tagline { font-size: 12px; opacity: 0.85; margin: 0 0 14px; min-height: 32px; }
+  .domain-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; font-weight: 700; margin-bottom: 8px;
+  }
+  .domain-progress-track {
+    width: 100%; height: 6px; border-radius: 999px;
+    background: rgba(255,255,255,0.25); overflow: hidden;
+  }
+  .domain-progress-fill {
+    height: 100%; background: #fff; border-radius: 999px;
+    transition: width 0.3s ease;
+  }
 </style>

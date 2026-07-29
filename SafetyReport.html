@@ -1,7 +1,7 @@
 <div id="safety-form-page">
   <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
   <h2>Lapor Safety</h2>
-  <p class="sub">Isi laporan Safety Talk, Safety Walk, atau kondisi bahaya untuk divisi yang Anda awasi.</p>
+  <p class="sub">Isi laporan Safety Talk, Safety Walk, atau kondisi bahaya untuk divisi Anda.</p>
 
   <div class="card">
     <label>Jenis Laporan</label>
@@ -61,7 +61,7 @@
       .withSuccessHandler(function(divisiList) {
         if (!divisiList || !divisiList.length) {
           sel.innerHTML = '<option value="">Tidak ada divisi terdaftar</option>';
-          showSafetyReportToast('Anda belum punya divisi yang diawasi. Hubungi Admin EHS.', 'error');
+          showSafetyReportToast('Anda belum punya divisi terdaftar. Hubungi Admin EHS.', 'error');
           return;
         }
         sel.innerHTML = divisiList.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
@@ -72,7 +72,29 @@
       })
       .getDivisiDiawasiForUser(nik);
 
+    google.script.run
+      .withSuccessHandler(annotateJenisPills_)
+      .withFailureHandler(function() {})
+      .getSafetyMissionsForUser({ nik: nik });
+
     loadMySafetyReports();
+  }
+
+  function annotateJenisPills_(missions) {
+    const map = {};
+    missions.forEach(function(m) { map[m.taskId.replace('SAFETY_', '')] = m; });
+    document.querySelectorAll('#jenis-pills .pill').forEach(function(p) {
+      const m = map[p.dataset.value];
+      if (!m) return;
+      let badge = p.querySelector('.pill-obligation');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'pill-obligation';
+        badge.style.cssText = 'font-size:10px;opacity:0.8;margin-top:2px;';
+        p.appendChild(badge);
+      }
+      badge.textContent = m.obligationLevel === 'Required' ? 'Wajib' : 'Opsional';
+    });
   }
 
   document.querySelectorAll('#jenis-pills .pill').forEach(function(el) {

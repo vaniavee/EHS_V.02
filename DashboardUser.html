@@ -15,6 +15,7 @@
     </div>
   </div>
 
+  <div id="domain-grid" style="display:none;"></div>
   <p class="section-title">Menu Utama</p>
   <div class="menu-grid" id="menu-grid"></div>
 </div>
@@ -47,41 +48,72 @@
   }
 
   function renderDashboard(summary) {
-    const u = summary.user;
-    document.getElementById('dash-greeting').textContent = 'Halo, ' + u.nama + '!';
-    document.getElementById('dash-role').textContent =
-      u.isAdmin ? 'Admin EHS · ' + u.divisi :
-      (u.isSupervisor ? 'Kepala Bagian/Supervisor (Leader)· ' + u.divisi : 'Karyawan (' + u.persona + ') . ' + u.divisi);
+  const u = summary.user;
+  document.getElementById('dash-greeting').textContent = 'Halo, ' + u.nama + '!';
+  document.getElementById('dash-role').textContent =
+    u.isAdmin ? 'Admin EHS · ' + u.divisi :
+    (u.isSupervisor ? 'Kepala Bagian/Supervisor (Leader)· ' + u.divisi : 'Karyawan (' + u.persona + ') . ' + u.divisi);
 
-    document.getElementById('dash-badge').textContent = summary.badge.icon;
-    document.getElementById('dash-points').textContent = summary.totalPoints + ' Poin';
-    document.getElementById('dash-tier').textContent =
-      summary.badge.name + ' · Rank #' + summary.rank +
-      (summary.badge.next ? ' · ' + (summary.badge.next - summary.totalPoints) + ' poin lagi naik tier' : '');
+  document.getElementById('dash-badge').textContent = summary.badge.icon;
+  document.getElementById('dash-points').textContent = summary.totalPoints + ' Poin';
+  document.getElementById('dash-tier').textContent =
+    summary.badge.name + ' · Rank #' + summary.rank +
+    (summary.badge.next ? ' · ' + (summary.badge.next - summary.totalPoints) + ' poin lagi naik tier' : '');
 
-    renderMenu(u);
+  if (summary.domains) {
+    document.getElementById('domain-grid').style.display = '';
+    renderDomainCards(summary.domains);
+  }
+
+  renderMenu(u);
+}
+
+  function renderDomainCards(domains) {
+    const el = document.getElementById('domain-grid');
+    el.innerHTML = domains.map(function(d) {
+      const clickable = d.clickable !== false;
+      const onclick = clickable ? 'onclick="handleDomainClick(\'' + d.pillar + '\')"' : '';
+      const statusLine = d.restricted
+        ? 'Khusus Kabag/Supervisor'
+        : (d.comingSoon ? 'Coming Soon' : d.openMissions + ' open missions');
+
+      return '<div class="domain-card ' + d.cssClass + (clickable ? '' : ' domain-disabled') + '" ' + onclick + '>' +
+        '<div class="domain-icon">' + d.icon + '</div>' +
+        '<div class="domain-title">' + d.title + '</div>' +
+        '<div class="domain-tagline">' + d.tagline + '</div>' +
+        '<div class="domain-footer">' +
+          '<span>' + statusLine + '</span>' +
+          '<span>' + d.progressPct + '%</span>' +
+        '</div>' +
+        '<div class="domain-progress-track"><div class="domain-progress-fill" style="width:' + d.progressPct + '%"></div></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function handleDomainClick(pillar) {
+    if (pillar === 'Sustainability') { alert('Fitur Sustainability Journey (Integrated Challenges) akan segera hadir.'); return; }
+    showView('missionhub');
+    initMissionHub(EHS_CURRENT_NIK, pillar);
   }
 
   function renderMenu(user) {
     let items;
 
-  if (user.isAdmin) {
-    items = [
-      { icon: '🚶', label: 'Pantau Health Task', page: 'health-monitor' },
-      { icon: '⚡', label: 'Pantau Energy Task', page: 'energy-monitor' },
-      { icon: '⚖️', label: 'Data BMI Karyawan', page: 'bmi-monitor' },
-      { icon: '📋', label: 'Review Safety', page: 'safety-review' },
-      { icon: '❓', label: 'Kelola Pertanyaan', page: 'admin-help' },
-      { icon: '⚙️', label: 'Kelola Master Data', page: 'admin' },
-      { icon: '🏆', label: 'Leaderboard', page: 'leaderboard' },
-      { icon: '💬', label: 'Bantuan', page: 'help' },
-    ];
-    } else {
+    if (user.isAdmin) {
       items = [
-        { icon: '🚶', label: 'Health Task', page: 'health' },
-        { icon: '⚡', label: 'Energy Task', page: 'energy' },
+        { icon: '🚶', label: 'Pantau Health Task', page: 'health-monitor' },
+        { icon: '⚡', label: 'Pantau Energy Task', page: 'energy-monitor' },
+        { icon: '⚖️', label: 'Data BMI Karyawan', page: 'bmi-monitor' },
+        { icon: '📋', label: 'Review Safety', page: 'safety-review' },
+        { icon: '❓', label: 'Kelola Pertanyaan', page: 'admin-help' },
+        { icon: '⚙️', label: 'Kelola Master Data', page: 'admin' },
+        { icon: '🏆', label: 'Leaderboard', page: 'leaderboard' },
+        { icon: '💬', label: 'Bantuan', page: 'help' },
+      ];
+    } else {
+      // Health Task & Energy Task dipindah ke domain card di atas, tidak diulang di sini
+      items = [
         { icon: '⚖️', label: 'Measure Your Body', page: 'bmi' },
-        { icon: '🦺', label: 'Lapor Safety', page: 'safety-report', show: user.canSubmitSafetyReport },
         { icon: '🏆', label: 'Leaderboard', page: 'leaderboard' },
         { icon: '💬', label: 'Bantuan', page: 'help' }
       ];

@@ -163,7 +163,8 @@ function claimTask(payload) {
 
   const points = awardPoints_(
     user, task.Pillar, task.TaskId, referenceId,
-    Number(task.Points || 0), 'Klaim ' + task.Title, task.CampaignId, seasonId
+    Number(task.Points || 0), 'Klaim ' + task.Title, task.CampaignId, seasonId,
+    Number(task.DomainXP || 0), Number(task.CoinReward || 0)
   );
 
   appendObjectRow_(EHS.sheets.taskClaims, {
@@ -186,7 +187,7 @@ function claimTask(payload) {
   return {
     ok: true,
     message: points > 0 ? 'Task berhasil diklaim (+' + points + ' poin).' : 'Task sudah diklaim periode ini.',
-    points: points
+    points: points, domainXp: Number(task.DomainXP || 0), coin: Number(task.CoinReward || 0)
   };
 }
 

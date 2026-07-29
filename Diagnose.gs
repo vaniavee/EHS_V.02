@@ -129,3 +129,60 @@ function TEST_add_column_profileinterests() {
   sh.getRange(1, insertBefore).setValue('ProfileInterests');
   Logger.log('Kolom ProfileInterests ditambahkan.');
 }
+
+function TEST_migrate_task_reward_columns() {
+  const ss = getSpreadsheet_();
+  ensureSheet_(ss, '03_Master_Task', EHS_SCHEMA['03_Master_Task']);
+  ensureSheet_(ss, '10_DB_PointsLedger', EHS_SCHEMA['10_DB_PointsLedger']);
+
+  // Default kolom baru jadi 0 untuk baris yang sudah ada, biar tidak kosong/NaN
+  ['03_Master_Task'].forEach(function(name) {
+    const sh = ss.getSheetByName(name);
+    const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+    ['DomainXP', 'CoinReward'].forEach(function(col) {
+      const idx = headers.indexOf(col) + 1;
+      const lastRow = sh.getLastRow();
+      if (idx > 0 && lastRow > 1) {
+        const range = sh.getRange(2, idx, lastRow - 1, 1);
+        const values = range.getValues();
+        const filled = values.map(function(r) { return [r[0] === '' ? 0 : r[0]]; });
+        range.setValues(filled);
+      }
+    });
+  });
+
+  const ledgerSh = ss.getSheetByName('10_DB_PointsLedger');
+  const ledgerHeaders = ledgerSh.getRange(1, 1, 1, ledgerSh.getLastColumn()).getValues()[0];
+  ['DomainXP', 'Coin'].forEach(function(col) {
+    const idx = ledgerHeaders.indexOf(col) + 1;
+    const lastRow = ledgerSh.getLastRow();
+    if (idx > 0 && lastRow > 1) {
+      const range = ledgerSh.getRange(2, idx, lastRow - 1, 1);
+      const values = range.getValues();
+      range.setValues(values.map(function(r) { return [r[0] === '' ? 0 : r[0]]; }));
+    }
+  });
+
+  Logger.log('Migrasi kolom reward selesai.');
+}
+
+function TEST_migrate_question_sheets() {
+  const ss = getSpreadsheet_();
+  ['07_Master_SurveyQuestions', '09_Master_ObsKelompok', '19_Master_ObsIndividu'].forEach(function(name) {
+    ensureSheet_(ss, name, EHS_SCHEMA[name]);
+  });
+  Logger.log('Sheet pertanyaan (Survey/ObsKelompok/ObsIndividu) siap.');
+}
+
+function TEST_migrate_master_data_batch2() {
+  const ss = getSpreadsheet_();
+  ['20_Master_AwarenessContent', '21_Master_MissionTemplates', '22_Master_PointMapping',
+   '23_Master_RewardCatalog', '24_Master_Clubs', '25_Master_Challenges',
+   '26_Master_JourneyRules'].forEach(function(name) {
+    ensureSheet_(ss, name, EHS_SCHEMA[name]);
+  });
+  ensureSheet_(ss, '01_Master_Seasons', EHS_SCHEMA['01_Master_Seasons']);
+  ensureSheet_(ss, '06_Master_Campaigns', EHS_SCHEMA['06_Master_Campaigns']);
+  ensureSheet_(ss, '05_Master_QuizBank', EHS_SCHEMA['05_Master_QuizBank']);
+  Logger.log('Migrasi batch 2 (versi field lengkap) selesai.');
+}

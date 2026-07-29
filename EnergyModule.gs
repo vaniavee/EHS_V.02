@@ -5,16 +5,37 @@
 // --- QUIZ ---
 function getQuizForTask(payload) {
   validateRequired_(payload, ['taskId']);
+  const seasonId = normalizeSeasonId_(payload.seasonId);
+  const task = getTaskById_(payload.taskId, seasonId);
+  if (!task) throw new Error('Task tidak ditemukan: ' + payload.taskId);
+
+  const campaignId = clean_(task.CampaignId);
+  if (!campaignId) throw new Error('Task ini belum ditautkan ke Campaign manapun. Set CampaignId di Task terlebih dahulu.');
+
   const questions = readObjects_(getSpreadsheet_().getSheetByName('05_Master_QuizBank'))
-    .filter(function(q) { return clean_(q.TaskId) === clean_(payload.taskId) && clean_(q.Status) === 'Active'; });
-  // Jangan kirim CorrectOption ke client — dicocokkan di server saat submit.
+    .filter(function(q) {
+      return clean_(q.CampaignId) === campaignId && clean_(q.Status) === 'Active';
+    })
+    .sort(function(a, b) { return Number(a.SortOrder || 0) - Number(b.SortOrder || 0); });
+
   return questions.map(function(q) {
-    return { quizId: q.QuizId, question: q.Question, options: { A: q.OptionA, B: q.OptionB, C: q.OptionC, D: q.OptionD } };
+    let keys = ['A', 'B', 'C', 'D'];
+    if (clean_(q.ShuffleOptions).toLowerCase() === 'yes') {
+      keys = keys.map(function(k) { return { k: k, sort: Math.random() }; })
+        .sort(function(a, b) { return a.sort - b.sort; }).map(function(x) { return x.k; });
+    }
+    const optionsMap = { A: q.OptionA, B: q.OptionB, C: q.OptionC, D: q.OptionD };
+    const options = {};
+    keys.forEach(function(originalKey, idx) {
+      const displayKey = ['A', 'B', 'C', 'D'][idx];
+      if (optionsMap[originalKey]) options[displayKey] = optionsMap[originalKey];
+    });
+    return { quizId: q.QuizId, question: q.QuestionText, options: options, keyMap: keys };
   });
 }
 
 function submitQuizAnswers(payload) {
-  validateRequired_(payload, ['nik', 'taskId', 'answers']); // answers: { quizId: 'A' }
+  validateRequired_(payload, ['nik', 'taskId', 'answers']); // answers: { quizId: displayKey misal 'A' }
   const nik = normalizeNik_(payload.nik);
   const user = getUserProfile_(nik);
   const seasonId = normalizeSeasonId_(payload.seasonId);
@@ -24,15 +45,25 @@ function submitQuizAnswers(payload) {
   const availability = getTaskAvailability_(task, nik, seasonId);
   if (!availability.available) throw new Error(availability.reason);
 
+  const campaignId = clean_(task.CampaignId);
   const questions = readObjects_(getSpreadsheet_().getSheetByName('05_Master_QuizBank'))
-    .filter(function(q) { return clean_(q.TaskId) === clean_(payload.taskId); });
+    .filter(function(q) { return clean_(q.CampaignId) === campaignId; });
+
+  // keyMap dikirim balik oleh frontend (karena shuffle dilakukan per-sesi di getQuizForTask),
+  // supaya displayKey yang dipilih user bisa dipetakan balik ke originalKey yang benar.
+  const keyMaps = payload.keyMaps || {}; // { quizId: ['A','C','B','D'] } — urutan originalKey sesuai displayKey A,B,C,D
 
   let correctCount = 0;
   questions.forEach(function(q) {
-    if (clean_(payload.answers[q.QuizId]) === clean_(q.CorrectOption)) correctCount++;
+    const displayAnswer = clean_(payload.answers[q.QuizId]);
+    if (!displayAnswer) return;
+    const keyMap = keyMaps[q.QuizId];
+    const originalAnswer = keyMap ? keyMap[['A', 'B', 'C', 'D'].indexOf(displayAnswer)] : displayAnswer;
+    if (originalAnswer === clean_(q.CorrectOption)) correctCount++;
   });
+
   const scorePct = questions.length ? correctCount / questions.length : 0;
-  const points = Math.round(Number(task.Points) * scorePct); // proporsional, auto-graded
+  const points = Math.round(Number(task.Points || 0) * scorePct);
 
   const claimNumber = availability.used + 1;
   const referenceId = [seasonId, task.TaskId, nik, availability.periodKey, claimNumber].join(':');

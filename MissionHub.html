@@ -1,0 +1,86 @@
+<div id="missionhub-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <div id="mh-header"></div>
+  <div id="mh-cards" class="mh-grid"></div>
+</div>
+
+<style>
+  .mh-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+  @media (min-width:900px){ .mh-grid{grid-template-columns:repeat(4,1fr);} }
+  .mh-card { background:var(--surface); border-radius:18px; padding:16px; box-shadow:var(--shadow); display:flex; flex-direction:column; }
+  .mh-card-label{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-bottom:6px; }
+  .mh-card-title{ font-size:15px; font-weight:800; margin:0 0 6px; }
+  .mh-card-desc{ font-size:12px; color:var(--muted); flex:1; margin-bottom:10px; }
+  .mh-card-empty{ font-size:12px; color:var(--muted); font-style:italic; }
+</style>
+
+<script>
+  let mhCurrentNik = null;
+  let mhCurrentPillar = null;
+
+  function initMissionHub(nik, pillar) {
+    mhCurrentNik = nik;
+    mhCurrentPillar = pillar;
+    document.getElementById('mh-header').innerHTML = '<p class="sub">Memuat...</p>';
+    document.getElementById('mh-cards').innerHTML = '';
+
+    google.script.run
+      .withSuccessHandler(renderMissionHub)
+      .withFailureHandler(function(err) { alert(err.message || String(err)); })
+      .getMissionHubData({ nik: nik, pillar: pillar });
+  }
+
+  function renderMissionHub(data) {
+    const meta = {
+      Energy: { icon: '⚡', title: 'Energy' },
+      Safety: { icon: '🛡️', title: 'Safety' },
+      Health: { icon: '❤️', title: 'Healthy Lifestyle' }
+    }[data.pillar] || { icon: '🌱', title: data.pillar };
+
+    document.getElementById('mh-header').innerHTML =
+      '<h2 style="margin-bottom:2px;">' + meta.icon + ' ' + meta.title + '</h2>' +
+      '<p class="sub">Continue where it matters — learning, mission, challenge, dan awareness.</p>';
+
+    const cards = [];
+
+    cards.push('<div class="mh-card"><div class="mh-card-label">Continue Learning</div>' +
+      (data.continueLearning
+        ? '<div class="mh-card-title">' + data.continueLearning.title + '</div>' +
+          '<div class="mh-card-desc">' + data.continueLearning.mediaType + '</div>' +
+          '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList()">Continue Learning</button>'
+        : '<div class="mh-card-desc mh-card-empty">Belum ada media baru untuk dilanjutkan.</div>') +
+    '</div>');
+
+    cards.push('<div class="mh-card"><div class="mh-card-label">Recommended</div>' +
+      (data.recommended
+        ? '<div class="mh-card-title">' + data.recommended.title + '</div>' +
+          '<div class="mh-card-desc">' + (data.recommended.description || '') + ' · +' + data.recommended.points + ' XP</div>' +
+          '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList()">Open Mission</button>'
+        : '<div class="mh-card-desc mh-card-empty">Tidak ada mission direkomendasikan saat ini.</div>') +
+    '</div>');
+
+    cards.push('<div class="mh-card"><div class="mh-card-label">Challenge</div>' +
+      (data.challenge.length
+        ? data.challenge.map(function(c) {
+            return '<div class="mh-card-title">' + c.title + '</div>' +
+              '<div class="mh-card-desc">' + (c.description || '') + ' · +' + c.points + ' XP</div>';
+          }).join('') + '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList()">Open Challenge</button>'
+        : '<div class="mh-card-desc mh-card-empty">Belum ada challenge aktif untuk pilar ini.</div>') +
+    '</div>');
+
+    cards.push('<div class="mh-card"><div class="mh-card-label">Awareness → Impact</div>' +
+      (data.awareness.length
+        ? '<div class="mh-card-desc">' + data.awareness.length + ' media awareness tersedia.</div>' +
+          '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList()">Explore Learning</button>'
+        : '<div class="mh-card-desc mh-card-empty">Belum ada media awareness untuk pilar ini.</div>') +
+    '</div>');
+
+    document.getElementById('mh-cards').innerHTML = cards.join('');
+  }
+
+  function mhOpenPillarList() {
+    if (mhCurrentPillar === 'Energy') { showView('energy'); initEnergyTask(mhCurrentNik); return; }
+    if (mhCurrentPillar === 'Health') { showView('health'); initHealthTask(mhCurrentNik); return; }
+    if (mhCurrentPillar === 'Safety') { navigateTo('safety-report'); return; }
+  }
+</script>

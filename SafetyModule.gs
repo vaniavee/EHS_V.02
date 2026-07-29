@@ -29,22 +29,21 @@ function submitSafetyReport(payload) {
     throw new Error('JenisLaporan harus salah satu: ST, SW, Hazard.');
   }
 
-  const user = assertSupervisesDivision_(payload.nik, payload.divisiDilaporkan);
+  const user = assertCanReportDivision_(payload.nik, payload.divisiDilaporkan);
+  const nik = user.nik;
   const seasonId = normalizeSeasonId_(payload.seasonId);
   const periodKey = getCurrentPeriodKey_('daily');
   const divisi = clean_(payload.divisiDilaporkan);
 
-  // Cek batas harian PER DIVISI PER JENIS — bukan per supervisor,
-  // supaya 1 divisi tidak dilaporkan dobel walau oleh supervisor berbeda.
-  const usedToday = countSafetyReportsInPeriod_(divisi, jenis, seasonId, periodKey);
+  const usedToday = countSafetyReportsInPeriod_(nik, jenis, seasonId, periodKey);
   const limit = SAFETY_DAILY_LIMIT[jenis];
   if (usedToday >= limit) {
     throw new Error(
-      'Laporan ' + jenis + ' untuk divisi ' + divisi + ' sudah mencapai batas hari ini (' + limit + 'x).'
+      'Laporan ' + jenis + ' Anda sudah mencapai batas hari ini (' + limit + 'x).'
     );
   }
 
-  const referenceId = [seasonId, 'SAFETY', jenis, divisi, periodKey, usedToday + 1].join(':');
+  const referenceId = [seasonId, 'SAFETY', jenis, nik, periodKey, usedToday + 1].join(':');
 
   // --- Tentukan status & poin awal berdasarkan jenis laporan ---
   let status, points, severity;
@@ -105,14 +104,14 @@ function submitSafetyReport(payload) {
 }
 
 // Menghitung jumlah laporan pada divisi dan periode tertentu
-function countSafetyReportsInPeriod_(divisi, jenis, seasonId, periodKey) {
+function countSafetyReportsInPeriod_(nik, jenis, seasonId, periodKey) {
   const rows = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.safetyReports));
   return rows.filter(function(r) {
-    return clean_(r.DivisiDilaporkan) === divisi &&
+    return normalizeNikLenient_(r.SupervisorNik) === nik &&
            clean_(r.JenisLaporan) === jenis &&
            clean_(r.SeasonId) === seasonId &&
            clean_(r.PeriodKey) === periodKey &&
-           clean_(r.Status) !== 'Revise'; // laporan yang direvisi tidak menghabiskan kuota
+           clean_(r.Status) !== 'Revise';
   }).length;
 }
 
@@ -286,4 +285,68 @@ function listAllSafetyReports(payload) {
   if (payload.jenis) rows = rows.filter(function(r) { return clean_(r.JenisLaporan) === payload.jenis; });
   rows.sort(function(a, b) { return new Date(b.Timestamp) - new Date(a.Timestamp); });
   return rows;
+}
+
+function assertCanReportDivision_(nik, targetDivisi) {
+  const user = getUserProfile_(nik);
+  if (!user.active) throw new Error('User tidak aktif atau tidak ditemukan.');
+  if (user.isAdmin) return user;
+  if (user.isSupervisor) {
+    if (user.divisiDiawasi.indexOf(clean_(targetDivisi)) === -1) {
+      throw new Error('Anda tidak berwenang melaporkan untuk divisi: ' + targetDivisi);
+    }
+    return user;
+  }
+  if (clean_(user.divisi) !== clean_(targetDivisi)) {
+    throw new Error('Anda hanya bisa melaporkan untuk divisi Anda sendiri: ' + user.divisi);
+  }
+  return user;
+}
+
+function resolveSafetyObligationLevel_(user, jenis) {
+  // Leader/Admin: ST & SW tetap wajib, tidak terpengaruh preferensi.
+  if (user.isAdmin || user.isSupervisor) {
+    return (jenis === 'ST' || jenis === 'SW') ? 'Required' : 'Optional';
+  }
+
+  // Hazard selalu opsional untuk semua non-leader.
+  if (jenis !== 'ST' && jenis !== 'SW') return 'Optional';
+
+  // Divisi prioritas: ST/SW tetap wajib apapun preferensinya.
+  if (isPriorityDivision_(user.divisi)) return 'Required';
+
+  // Karyawan biasa yang pilih minat Safety Participation saat register -> naik jadi Recommended.
+  const preferences = Array.isArray(user.programPreferences) ? user.programPreferences : [];
+  const normalizedPreferences = preferences.map(normalizeText_);
+  if (normalizedPreferences.indexOf('safetyparticipation') !== -1) return 'Recommended';
+
+  return 'Optional';
+}
+
+function getSafetyMissionsForUser(payload) {
+  validateRequired_(payload, ['nik']);
+  const nik = normalizeNik_(payload.nik);
+  const user = getUserProfile_(nik);
+  if (!user.active) throw new Error('NIK tidak terdaftar atau tidak aktif.');
+
+  const seasonId = normalizeSeasonId_(payload.seasonId);
+  const periodKey = getCurrentPeriodKey_('daily');
+
+  const jenisList = ['ST', 'SW', 'Hazard'];
+  return jenisList.map(function(jenis) {
+    const used = countSafetyReportsInPeriod_(nik, jenis, seasonId, periodKey);
+    const limit = SAFETY_DAILY_LIMIT[jenis];
+    const available = used < limit;
+    return {
+      taskId: 'SAFETY_' + jenis,
+      title: jenis === 'ST' ? 'Safety Talk' : (jenis === 'SW' ? 'Safety Walk' : 'Lapor Bahaya'),
+      description: jenis === 'Hazard'
+        ? 'Laporkan kondisi/tindakan tidak aman yang Anda temukan.'
+        : 'Lakukan dan laporkan ' + (jenis === 'ST' ? 'Safety Talk' : 'Safety Walk') + ' harian.',
+      points: jenis === 'Hazard' ? SAFETY_POINTS.HAZARD_BASE.Low : SAFETY_POINTS[jenis],
+      obligationLevel: resolveSafetyObligationLevel_(user, jenis),
+      used: used, limit: limit, available: available,
+      reason: available ? '' : 'Kuota harian Anda untuk ' + jenis + ' sudah tercapai.'
+    };
+  });
 }

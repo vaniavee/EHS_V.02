@@ -34,33 +34,37 @@ const EHS = {
 //  Mendefinisikan skema susunan kolom (headers) untuk setiap sheet database agar terstruktur dengan konsisten.
 const EHS_SCHEMA = {
   '00_Config': ['Key', 'Value', 'Note'],
-  '01_Master_Seasons': ['SeasonId', 'SeasonName', 'StartDate', 'EndDate', 'Status'],
+  '01_Master_Seasons': ['SeasonId', 'SeasonName', 'StartDate', 'EndDate', 'Status', 'Notes'],
   '02_Master_Users': [
     'NIK', 'Nama', 'Divisi', 'No_WA',
     'IsAdmin', 'IsSupervisor', 'DivisiDiawasi', 'ProgramPreferences',
     'ProfileInterests','IsRegistered','Active', 'TanggalDitambahkan', 'DitambahkanOleh'
   ],
   '03_Master_Task': [
-    'TaskId', 'Pillar', 'Category', 'Level', 'Title', 'Points',
+    'TaskId', 'Pillar', 'Category', 'Level', 'Title', 'Points','DomainXP', 'CoinReward',
     'Description', 'FrequencyType', 'FrequencyLimit', 'Validation',
     'ObligationLevel', 'Status', 'SeasonId', 'CampaignId'
   ],
-  '04_Master_BMI_ScoringRule': ['KategoriLama', 'KategoriBaru', 'KriteriaPoin', 'Poin'],
+  '04_Master_BMI_ScoringRule': ['KategoriLama', 'KategoriBaru', 'KriteriaPoin', 'Poin'
+  ],
   '10_DB_PointsLedger': [
     'Timestamp', 'SeasonId', 'Pillar', 'TaskId', 'CampaignId',
-    'NIK', 'Nama', 'Divisi', 'ReferenceId', 'Points', 'Note'
+    'NIK', 'Nama', 'Divisi', 'ReferenceId', 'Points', 'DomainXP', 'Coin', 'Note'
   ],
   '05_Master_QuizBank': [
   'QuizId', 'TaskId', 'Question', 'OptionA', 'OptionB', 'OptionC', 'OptionD',
-  'CorrectOption', 'Explanation', 'Status'
+  'CorrectOption', 'Explanation', 'Status', 'SeasonId', 'CampaignId', 'QuizScope', 'PeriodType',
+  'Difficulty', 'SortOrder', 'ShuffleOptions', 'Source'
   ],
-  '18_Master_Departments': ['DepartmentId', 'Name', 'Note'],
+  '18_Master_Departments': ['DepartmentId', 'Name', 'Note'
+  ],
   '06_Master_Campaigns': [
     'CampaignId', 'Title', 'MediaType', 'MediaUrl', 'Tagline', 'Description',
     'SubmissionMode', 'MinExposureSeconds', 'SurveyPoints', 'SelfEvalPoints',
-    'Status', 'SeasonId'
+    'Status', 'SeasonId','CampaignId', 'PeriodType','ExpectedAction', 'SurveyPointMappingId',
+    'QuizPointMappingId','SortOrder','UpdatedAt'
   ],
-  '07_Master_SurveyQuestions': ['QuestionId', 'QuestionText', 'Dimension', 'Order', 'Status'
+  '07_Master_SurveyQuestions': ['QuestionId', 'Dimension', 'QuestionText', 'Scale', 'EvaluationLevel', 'Order', 'Status'
   ],
   '08_Master_FAQ': ['FaqId', 'Category', 'Question', 'Answer', 'Status'
   ],
@@ -93,7 +97,53 @@ const EHS_SCHEMA = {
   '17_DB_GroupSurveySubmissions': [
     'Timestamp', 'ReferenceId', 'SeasonId', 'CampaignId', 'NIK_Pelapor',
     'Nama_Pelapor', 'AnggotaKelompok', 'Divisi', 'Jawaban', 'Points', 'Status'
-  ]
+  ],
+  '09_Master_ObsKelompok':    ['QuestionId', 'Dimension', 'QuestionText', 'Scale', 'EvaluationLevel', 'Order', 'Status'
+  ],
+  '19_Master_ObsIndividu':    ['QuestionId', 'Dimension', 'QuestionText', 'Scale', 'EvaluationLevel', 'Order', 'Status'
+  ],
+  '20_Master_AwarenessContent': [
+    'SeasonId', 'ContentId', 'LegacyCampaignId', 'Title', 'Summary', 'DomainTags', 'TargetPersonas',
+    'JourneyModes', 'AudienceSites', 'AudienceDepartments', 'RequirementLabel', 'ContentType',
+    'PublishDate', 'ExpiryDate', 'ThumbnailUrl', 'MediaUrl', 'EstimatedMinutes', 'KnowledgeTags',
+    'RelatedMissionIds', 'LightXP', 'CTAType', 'PrivacyClass', 'SortOrder', 'Status', 'UpdatedAt'
+  ],
+
+  '21_Master_MissionTemplates': [
+    'SeasonId', 'MissionId', 'Title', 'Description', 'DomainTags', 'JourneyModes', 'TargetPersonas',
+    'AssignmentRuleJson', 'RequirementLabel', 'FrequencyType', 'FrequencyLimit', 'StartDate', 'EndDate',
+    'EstimatedMinutes', 'LocationRequirement', 'EvidenceRequirement', 'ValidationMethod', 'BaseXP',
+    'DomainXP', 'SustainabilityContribution', 'IntegratedScore', 'RewardCoin', 'DepartmentContribution',
+    'DailyCap', 'SeasonalCap', 'PrerequisiteMissionIds', 'RelatedContentIds', 'RelatedChallengeId',
+    'SafetyWarning', 'PrivacyClass', 'SortOrder', 'Status', 'UpdatedAt'
+  ],
+
+  '22_Master_PointMapping': [
+    'SeasonId', 'MappingId', 'MappingName', 'ActivityType', 'Difficulty', 'PeriodType',
+    'BasePoints', 'CompletionBonus', 'MaxPerPeriod', 'Status', 'Notes'
+  ],
+
+  '23_Master_RewardCatalog': [
+    'RewardId', 'Title', 'Description', 'Category', 'CoinCost', 'Stock', 'EligibilityRuleJson',
+    'Partner', 'VoucherType', 'ExpiryDays', 'Status', 'UpdatedAt'
+  ],
+
+  '24_Master_Clubs': [
+    'ClubId', 'Title', 'Description', 'DomainTags', 'Department', 'Site', 'OwnerEmployeeId',
+    'MemberLimit', 'Visibility', 'Status', 'UpdatedAt'
+  ],
+
+  '25_Master_Challenges': [
+    'SeasonId', 'ChallengeId', 'Title', 'Description', 'DomainTags', 'ChallengeType', 'StartDate',
+    'EndDate', 'MissionIds', 'TeamSize', 'RewardCoin', 'BonusIntegratedScore', 'PrivacyClass',
+    'Status', 'UpdatedAt'
+  ],
+
+  '26_Master_JourneyRules': [
+    'RuleId', 'RolePattern', 'UserRolePattern', 'Persona', 'ForceJourneyMode', 'AllowedJourneyModes',
+    'RequiredDomains', 'RecommendedDomains', 'HealthTrack', 'RequiredMissionTags', 'Priority',
+    'Status', 'UpdatedAt'
+  ],
 };
 
 // Fungsi utama untuk menginisialisasiseluruh sistem ketika aplikasi pertama kali dipasang

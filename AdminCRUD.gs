@@ -12,22 +12,19 @@ function getMasterDefinition_(masterType) {
     task: {
       sheet: EHS.sheets.tasks,
       idField: 'TaskId',
-      fields: ['TaskId', 'Pillar', 'Category', 'Level', 'Title', 'Points',
+      fields: ['TaskId', 'Pillar', 'Category', 'Level', 'Title', 'Points', 'DomainXP', 'CoinReward',
                'Description', 'FrequencyType', 'FrequencyLimit', 'Validation',
-               'ObligationLevel', 'Status', 'SeasonId', 'CampaignId']
+               'ObligationLevel', 'Status', 'SeasonId', 'CampaignId', 'GroupTag']
     },
     quiz: {
       sheet: '05_Master_QuizBank',
       idField: 'QuizId',
-      fields: ['QuizId', 'TaskId', 'Question', 'OptionA', 'OptionB', 'OptionC', 'OptionD',
-               'CorrectOption', 'Explanation', 'Status']
+      fields: EHS_SCHEMA['05_Master_QuizBank']
     },
     campaign: {
       sheet: '06_Master_Campaigns',
       idField: 'CampaignId',
-      fields: ['CampaignId', 'Title', 'MediaType', 'MediaUrl', 'Tagline',
-               'Description', 'SubmissionMode', 'MinExposureSeconds',
-               'SurveyPoints', 'SelfEvalPoints', 'Status', 'SeasonId']
+      fields: EHS_SCHEMA['06_Master_Campaigns']
     },
     faq: {
       sheet: '08_Master_FAQ',
@@ -38,6 +35,61 @@ function getMasterDefinition_(masterType) {
       sheet: '18_Master_Departments',
       idField: 'DepartmentId',
       fields: ['DepartmentId', 'Name', 'Note']
+    },
+    survey: {
+      sheet: '07_Master_SurveyQuestions',
+      idField: 'QuestionId',
+      fields: ['QuestionId', 'Dimension', 'QuestionText', 'Scale', 'EvaluationLevel', 'Order', 'Status']
+    },
+    obskelompok: {
+      sheet: '09_Master_ObsKelompok',
+      idField: 'QuestionId',
+      fields: ['QuestionId', 'Dimension', 'QuestionText', 'Scale', 'EvaluationLevel', 'Order', 'Status']
+    },
+    obsindividu: {
+      sheet: '19_Master_ObsIndividu',
+      idField: 'QuestionId',
+      fields: ['QuestionId', 'Dimension', 'QuestionText', 'Scale', 'EvaluationLevel', 'Order', 'Status']
+    },
+    awareness: { 
+      sheet: '20_Master_AwarenessContent', 
+      idField: 'ContentId', 
+      fields: EHS_SCHEMA['20_Master_AwarenessContent'] 
+    },
+    missiontemplate: { 
+      sheet: '21_Master_MissionTemplates', 
+      idField: 'MissionId', 
+      fields: EHS_SCHEMA['21_Master_MissionTemplates'] 
+    },
+    pointmapping: {
+      sheet: '22_Master_PointMapping', 
+      idField: 'MappingId', 
+      fields: EHS_SCHEMA['22_Master_PointMapping'] 
+    },
+    rewardcatalog: { 
+      sheet: '23_Master_RewardCatalog', 
+      idField: 'RewardId', 
+      fields: EHS_SCHEMA['23_Master_RewardCatalog'] 
+      },
+    club: { 
+      sheet: '24_Master_Clubs', 
+      idField: 'ClubId', 
+      fields: EHS_SCHEMA['24_Master_Clubs'] 
+    },
+    challenge: { 
+      sheet: '25_Master_Challenges', 
+      idField: 'ChallengeId', 
+      fields: EHS_SCHEMA['25_Master_Challenges'] 
+    },
+    journeyrule: { 
+      sheet: '26_Master_JourneyRules', 
+      idField: 'RuleId', 
+      fields: EHS_SCHEMA['26_Master_JourneyRules'] 
+    },
+    season: { 
+      sheet: '01_Master_Seasons', 
+      idField: 'SeasonId', 
+      fields: EHS_SCHEMA['01_Master_Seasons'] 
     }
   };
   const def = defs[masterType];
@@ -67,6 +119,11 @@ function saveMasterRecord(payload) {
   let rowIndex = -1;
   for (let i = 1; i < data.length; i++) {
     if (clean_(data[i][idCol]) === idValue) { rowIndex = i; break; }
+  }
+
+  // Auto-timestamp UpdatedAt kalau field ini ada di definisi — abaikan apapun yang dikirim frontend.
+  if (def.fields.indexOf('UpdatedAt') !== -1) {
+    payload.record.UpdatedAt = now_();
   }
 
   const rowValues = def.fields.map(function(f) {
