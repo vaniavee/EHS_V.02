@@ -137,30 +137,29 @@
     document.getElementById('energy-modal-body').innerHTML = '<p class="sub">Memuat survey...</p>';
     document.getElementById('energy-modal-overlay').classList.add('show');
 
-  if (!task.campaignId) {
-    // Task tanpa CampaignId sama sekali -> langsung tampilkan form tanpa kartu media
-    google.script.run
-      .withSuccessHandler(function(questions) { renderSurveyForm_(null, questions); })
-      .withFailureHandler(function(err) { showEnergyToast(err.message || String(err), 'error'); })
-      .getSurveyQuestions();
-    return;
-  }
-
-  google.script.run
-    .withSuccessHandler(function(campaign) {
-      google.script.run
-        .withSuccessHandler(function(questions) { renderSurveyForm_(campaign, questions); })
-        .withFailureHandler(function(err) { showEnergyToast(err.message || String(err), 'error'); })
-        .getSurveyQuestions();
-    })
-    .withFailureHandler(function() {
+    if (!task.campaignId) {
       google.script.run
         .withSuccessHandler(function(questions) { renderSurveyForm_(null, questions); })
         .withFailureHandler(function(err) { showEnergyToast(err.message || String(err), 'error'); })
         .getSurveyQuestions();
-    })
-    .getCampaignById({ campaignId: task.campaignId });
-}
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(campaign) {
+        google.script.run
+          .withSuccessHandler(function(questions) { renderSurveyForm_(campaign, questions); })
+          .withFailureHandler(function(err) { showEnergyToast(err.message || String(err), 'error'); })
+          .getSurveyQuestions();
+      })
+      .withFailureHandler(function() {
+        google.script.run
+          .withSuccessHandler(function(questions) { renderSurveyForm_(null, questions); })
+          .withFailureHandler(function(err) { showEnergyToast(err.message || String(err), 'error'); })
+          .getSurveyQuestions();
+      })
+      .getCampaignById({ campaignId: task.campaignId });
+  }
 
   function renderSurveyForm_(campaign, questions) {
     let html = '';
@@ -200,6 +199,7 @@
     }
 
     document.getElementById('energy-modal-body').innerHTML = html;
+    document.getElementById('energy-modal-submit-btn').disabled = false;
   }
 
   function selectSurveyMode_(el) {
@@ -207,6 +207,7 @@
     el.classList.add('active');
     document.getElementById('survey-kelompok-wrap').style.display = el.dataset.value === 'Kelompok' ? 'block' : 'none';
   }
+
   function selectLikert_(el) {
     const group = el.parentElement;
     group.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
@@ -271,9 +272,11 @@
       .withFailureHandler(function(err) { btn.disabled = false; btn.textContent = 'Kirim'; showEnergyToast(err.message || String(err), 'error'); })
       .submitAwarenessSurvey({
         nik: energyCurrentNik,
-        taskId: energyCurrentTask.taskId,        // <- untuk logika poin/kuota
-        campaignId: energyCurrentTask.campaignId, // <- cuma untuk referensi media
-        mode: mode, anggotaKelompok: anggota, jawaban: jawaban
+        taskId: energyCurrentTask.taskId,
+        campaignId: energyCurrentTask.campaignId,
+        mode: mode, 
+        anggotaKelompok: anggota, 
+        jawaban: jawaban
       });
   }
 

@@ -2,6 +2,15 @@
 <html>
 <head>
   <base target="_top">
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      const banner = document.createElement('div');
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;padding:14px;background:#fde2de;color:#b3261e;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:40vh;overflow:auto;';
+      banner.textContent = 'JS ERROR:\n' + message + '\nFile: ' + source + '\nBaris: ' + lineno + ':' + colno;
+      document.body.prepend(banner);
+      return false;
+    };
+  </script>
   <?!= include('SharedStyles'); ?>
 </head>
 <body>
@@ -28,9 +37,26 @@
     let EHS_CURRENT_IS_ADMIN = false;
 
     function showView(name) {
-      EHS_VIEWS.forEach(function(v) {
-        document.getElementById('view-' + v).style.display = (v === name) ? '' : 'none';
+      const viewId = 'view-' + name;
+      const target = document.getElementById(viewId);
+      if (!target) {
+        console.warn('View tidak ditemukan:', name);
+        if (name !== 'login') showView('login');
+        return;
+      }
+
+      const allViews = Array.from(document.querySelectorAll('body > div[id^="view-"]'));
+      allViews.forEach(function(viewEl) {
+        viewEl.style.display = (viewEl.id === viewId) ? '' : 'none';
+        viewEl.hidden = viewEl.id !== viewId;
       });
+
+      target.hidden = false;
+      target.style.display = '';
+
+      if (!EHS_VIEWS.includes(name)) {
+        EHS_VIEWS.push(name);
+      }
     }
 
     function boot() {
@@ -73,20 +99,26 @@
      * di file HTML masing-masing) yang menerima NIK user yang sedang login.
      */
     function navigateTo(page) {
-      if (page === 'bmi') { showView('bmi'); initBmiForm(EHS_CURRENT_NIK); return; }
-      if (page === 'health') { showView('health'); initHealthTask(EHS_CURRENT_NIK); return; }
-      if (page === 'energy') { showView('energy'); initEnergyTask(EHS_CURRENT_NIK); return; }
-      if (page === 'safety-report') { showView('safety-report'); initSafetyReportForm(EHS_CURRENT_NIK); return; }
-      if (page === 'safety-review') { showView('safety-review'); initSafetyReviewQueue(EHS_CURRENT_NIK); return; }
-      if (page === 'admin') { showView('admin'); initAdminDashboard(EHS_CURRENT_NIK); return; }
-      if (page === 'health-monitor') { showView('monitor'); initAdminMonitor(EHS_CURRENT_NIK, 'health'); return; }
-      if (page === 'energy-monitor') { showView('monitor'); initAdminMonitor(EHS_CURRENT_NIK, 'energy'); return; }
-      if (page === 'bmi-monitor') { showView('monitor'); initAdminMonitor(EHS_CURRENT_NIK, 'bmi'); return; }
-      if (page === 'leaderboard') { showView('leaderboard'); initLeaderboardPage(EHS_CURRENT_NIK); return; }
-      if (page === 'help') { showView('help'); initHelpPage(EHS_CURRENT_NIK); return; }
-      if (page === 'admin-help') { showView('admin-help'); initAdminHelpQueue(EHS_CURRENT_NIK); return; }
-      if (page === 'help') { showView('help'); initHelpPage(EHS_CURRENT_NIK, EHS_CURRENT_IS_ADMIN); return; }
-      //if (page === 'task-review') { showView('task-review'); initTaskReviewQueue(EHS_CURRENT_NIK); return; }
+      const route = {
+        bmi: function() { showView('bmi'); initBmiForm(EHS_CURRENT_NIK); },
+        health: function() { showView('health'); initHealthTask(EHS_CURRENT_NIK); },
+        energy: function() { showView('energy'); initEnergyTask(EHS_CURRENT_NIK); },
+        'safety-report': function() { showView('safety-report'); initSafetyReportForm(EHS_CURRENT_NIK); },
+        'safety-review': function() { showView('safety-review'); initSafetyReviewQueue(EHS_CURRENT_NIK); },
+        admin: function() { showView('admin'); initAdminDashboard(EHS_CURRENT_NIK); },
+        'health-monitor': function() { showView('monitor'); initAdminMonitor(EHS_CURRENT_NIK, 'health'); },
+        'energy-monitor': function() { showView('monitor'); initAdminMonitor(EHS_CURRENT_NIK, 'energy'); },
+        'bmi-monitor': function() { showView('monitor'); initAdminMonitor(EHS_CURRENT_NIK, 'bmi'); },
+        leaderboard: function() { showView('leaderboard'); initLeaderboardPage(EHS_CURRENT_NIK); },
+        help: function() { showView('help'); initHelpPage(EHS_CURRENT_NIK, EHS_CURRENT_IS_ADMIN); },
+        'admin-help': function() { showView('admin-help'); initAdminHelpQueue(EHS_CURRENT_NIK); },
+      };
+
+      if (typeof route[page] === 'function') {
+        route[page]();
+        return;
+      }
+
       alert('Halaman "' + page + '" akan dibuat di tahap berikutnya.');
     }
 

@@ -144,6 +144,10 @@ const EHS_SCHEMA = {
     'RequiredDomains', 'RecommendedDomains', 'HealthTrack', 'RequiredMissionTags', 'Priority',
     'Status', 'UpdatedAt'
   ],
+  '27_DB_RewardRedemptions': [
+  'Timestamp', 'ReferenceId', 'SeasonId', 'NIK', 'Nama', 'Divisi',
+  'RewardId', 'RewardTitle', 'CoinCost', 'Status', 'Notes', 'FulfilledBy', 'FulfilledAt'
+  ],
 };
 
 // Fungsi utama untuk menginisialisasiseluruh sistem ketika aplikasi pertama kali dipasang

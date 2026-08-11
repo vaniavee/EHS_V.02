@@ -141,31 +141,31 @@ function logLoginEvent_(user) {
  * dibuka, menggabungkan profile + poin + rank supaya cuma 1 round-trip.
  */
 // Menghasilkan ringkasan data dashboard pengguna
-function getDashboardSummary(payload) {
-  validateRequired_(payload, ['nik']);
-  const nik = normalizeNik_(payload.nik);
-  const user = getUserProfile_(nik);
-  if (!user.found) throw new Error('User tidak ditemukan.');
+// function getDashboardSummary(payload) {
+//   validateRequired_(payload, ['nik']);
+//   const nik = normalizeNik_(payload.nik);
+//   const user = getUserProfile_(nik);
+//   if (!user.found) throw new Error('User tidak ditemukan.');
 
-  const seasonId = normalizeSeasonId_(payload.seasonId);
-  const totalPoints = getTotalPointsForUser_(nik, seasonId);
-  const leaderboard = getLeaderboard_(seasonId, null, 9999);
-  const myRank = leaderboard.find(function(r) { return r.nik === nik; });
+//   const seasonId = normalizeSeasonId_(payload.seasonId);
+//   const totalPoints = getTotalPointsForUser_(nik, seasonId);
+//   const leaderboard = getLeaderboard_(seasonId, null, 9999);
+//   const myRank = leaderboard.find(function(r) { return r.nik === nik; });
 
-  const result = {
-    user: user,
-    seasonId: seasonId,
-    totalPoints: totalPoints,
-    rank: myRank ? myRank.rank : '-',
-    badge: resolveBadgeTier_(totalPoints)
-  };
+//   const result = {
+//     user: user,
+//     seasonId: seasonId,
+//     totalPoints: totalPoints,
+//     rank: myRank ? myRank.rank : '-',
+//     badge: resolveBadgeTier_(totalPoints)
+//   };
 
-  if (!user.isAdmin) {
-    result.domains = getDomainOverview({ nik: nik, seasonId: seasonId });
-  }
+//   if (!user.isAdmin) {
+//     result.domains = getDomainOverview({ nik: nik, seasonId: seasonId });
+//   }
 
-  return result;
-}
+//   return result;
+// }
 
 /**
  * Registrasi mandiri: user mencocokkan NIK + Nama dengan data yang
@@ -264,4 +264,26 @@ function saveProfileInterests(payload) {
   sh.getRange(rowIdx + 1, profileInterestsCol + 1).setValue(JSON.stringify(interests));
 
   return { ok: true, message: 'Preferensi tersimpan.' };
+}
+function getDashboardSummary(payload) {
+  validateRequired_(payload, ['nik']);
+  const nik = normalizeNik_(payload.nik);
+  const user = getUserProfile_(nik);
+  if (!user.found) throw new Error('User tidak ditemukan.');
+
+  const seasonId = normalizeSeasonId_(payload.seasonId);
+  const totalPoints = getTotalPointsForUser_(nik, seasonId);
+  const leaderboard = getLeaderboard_(seasonId, null, 9999);
+  const myRank = leaderboard.find(function(r) { return r.nik === nik; });
+
+  const result = {
+    user: user, seasonId: seasonId, totalPoints: totalPoints,
+    rank: myRank ? myRank.rank : '-', badge: resolveBadgeTier_(totalPoints)
+  };
+
+  if (!user.isAdmin) {
+    result.domains = getDomainOverview({ nik: nik, seasonId: seasonId });
+  }
+
+  return result;
 }

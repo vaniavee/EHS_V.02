@@ -1,0 +1,94 @@
+<div id="reward-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Tukar Coin</h2>
+  <div class="card" style="background:var(--green-900);color:#fff;display:flex;align-items:center;gap:12px;">
+    <div style="font-size:28px;">🪙</div>
+    <div>
+      <p style="font-size:20px;font-weight:800;margin:0;" id="reward-my-coins">0 Coin</p>
+      <p style="font-size:12px;opacity:0.85;margin:2px 0 0;">Saldo Coin Anda saat ini</p>
+    </div>
+  </div>
+
+  <p class="section-title">Katalog Reward</p>
+  <div id="reward-catalog-list"><p class="sub">Memuat...</p></div>
+
+  <p class="section-title">Riwayat Redeem Saya</p>
+  <div id="reward-my-redemptions"><p class="sub">Memuat...</p></div>
+</div>
+
+<div id="toast-reward" class="toast"></div>
+
+<script>
+  let rewardCurrentNik = null;
+
+  function initRewardCatalogPage(nik) {
+    rewardCurrentNik = nik;
+    loadRewardCatalog();
+    loadMyRedemptions();
+  }
+
+  function loadRewardCatalog() {
+    google.script.run
+      .withSuccessHandler(renderRewardCatalog)
+      .withFailureHandler(function(err) { showRewardToast(err.message || String(err), 'error'); })
+      .getRewardCatalogForUser({ nik: rewardCurrentNik });
+  }
+
+  function renderRewardCatalog(data) {
+    document.getElementById('reward-my-coins').textContent = data.myCoins + ' Coin';
+    const el = document.getElementById('reward-catalog-list');
+    if (!data.rewards.length) { el.innerHTML = '<p class="sub">Belum ada reward tersedia.</p>'; return; }
+
+    el.innerHTML = data.rewards.map(function(r) {
+      const disabled = r.eligible ? '' : 'disabled';
+      const buttonLabel = r.eligible ? 'Redeem' : (r.reason || 'Tidak tersedia');
+      return '<div class="card" style="padding:14px;margin-bottom:10px;">' +
+        '<b>' + r.title + '</b>' +
+        '<div class="report-meta">' + (r.description || '') + '</div>' +
+        '<div class="report-meta">' + r.coinCost + ' coin · Stok: ' + r.stock + (r.partner ? ' · ' + r.partner : '') + '</div>' +
+        (!r.eligible && r.reason ? '<div class="report-meta" style="color:var(--danger);">' + r.reason + '</div>' : '') +
+        '<button class="btn-primary" style="margin-top:10px;" ' + disabled + ' onclick="confirmRedeem(\'' + r.rewardId + '\', \'' + r.title.replace(/'/g, "\\'") + '\', ' + r.coinCost + ')">' + buttonLabel + '</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function confirmRedeem(rewardId, title, coinCost) {
+    if (!confirm('Redeem "' + title + '" seharga ' + coinCost + ' coin?')) return;
+    google.script.run
+      .withSuccessHandler(function(res) {
+        showRewardToast(res.message, 'success');
+        loadRewardCatalog();
+        loadMyRedemptions();
+      })
+      .withFailureHandler(function(err) { showRewardToast(err.message || String(err), 'error'); })
+      .redeemReward({ nik: rewardCurrentNik, rewardId: rewardId });
+  }
+
+  function loadMyRedemptions() {
+    google.script.run
+      .withSuccessHandler(renderMyRedemptions)
+      .withFailureHandler(function(err) { showRewardToast(err.message || String(err), 'error'); })
+      .getMyRewardRedemptions({ nik: rewardCurrentNik });
+  }
+
+  function renderMyRedemptions(rows) {
+    const el = document.getElementById('reward-my-redemptions');
+    if (!rows.length) { el.innerHTML = '<p class="sub">Belum pernah redeem reward.</p>'; return; }
+
+    el.innerHTML = rows.map(function(r) {
+      const statusClass = r.Status === 'Fulfilled' ? 'Approved' : (r.Status === 'Cancelled' ? 'Revise' : 'Pending');
+      return '<div class="card" style="padding:12px;">' +
+        '<span class="badge-status ' + statusClass + '">' + r.Status + '</span> ' +
+        '<b>' + r.RewardTitle + '</b>' +
+        '<div class="report-meta">' + r.Timestamp + ' · -' + r.CoinCost + ' coin</div>' +
+        (r.Notes ? '<div class="report-meta">Catatan: ' + r.Notes + '</div>' : '') +
+      '</div>';
+    }).join('');
+  }
+
+  function showRewardToast(msg, type) {
+    const t = document.getElementById('toast-reward');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    if (type !== 'error') setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+</script>

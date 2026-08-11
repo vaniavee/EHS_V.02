@@ -17,11 +17,9 @@
     <div class="pill" data-tab="pointmapping" onclick="switchAdminTab('pointmapping')">Point Mapping</div>
     <div class="pill" data-tab="journeyrule" onclick="switchAdminTab('journeyrule')">Journey Rules</div>
     <div class="pill" data-tab="awareness" onclick="switchAdminTab('awareness')">Awareness Content</div>
-    <div class="pill" data-tab="rewardcatalog" onclick="switchAdminTab('rewardcatalog')">Reward Catalog</div>
     <div class="pill" data-tab="club" onclick="switchAdminTab('club')">Clubs</div>
     <div class="pill" data-tab="missiontemplate" onclick="switchAdminTab('missiontemplate')">Mission Templates</div>
     <div class="pill" data-tab="challenge" onclick="switchAdminTab('challenge')">Challenges</div>
- 
   </div>
 
   <!-- ===================== TAB: TASK ===================== -->
@@ -82,70 +80,70 @@
   </div>
 
   <!-- ===================== TAB: CAMPAIGN ===================== -->
-  <div id="admin-tab-campaign" style="display:none;">
-    <div class="card">
-      <p class="section-title" style="margin-top:0;">Tambah / Edit Campaign</p>
-      <label>Season ID</label>
-      <input id="camp-seasonid" placeholder="Contoh: S01">
-      <label>Campaign ID</label>
-      <input id="camp-id" placeholder="Contoh: E01">
-      <label>Period Type</label>
-      <select id="camp-periodtype">
-        <option value="campaign_once">campaign_once</option>
-        <option value="season_once">season_once</option>
-      </select>
-      <label>Start Date</label>
-      <input id="camp-startdate" type="date">
-      <label>End Date</label>
-      <input id="camp-enddate" type="date">
-      <label>Theme</label>
-      <input id="camp-theme" placeholder="Contoh: Efisiensi Energi">
-      <label>Jenis Media</label>
-      <select id="camp-mediatype">
-        <option value="Video">Video</option>
-        <option value="Poster">Poster</option>
-        <option value="Sticker">Sticker</option>
-        <option value="Banner">Banner</option>
-        <option value="Microlearning">Microlearning</option>
-      </select>
-      <label>Judul</label>
-      <input id="camp-title" placeholder="Contoh: Video Pembuka Kampanye Efisiensi Energi">
-      <label>Tagline</label>
-      <input id="camp-tagline" placeholder="Contoh: Kerja Cerdas, Proses Optimal, Energi Terkendali">
-      <label>Deskripsi</label>
-      <textarea id="camp-desc"></textarea>
-      <label>Link Media (Google Drive/YouTube, harus "Anyone with link")</label>
-      <input id="camp-url" placeholder="https://drive.google.com/file/d/....">
-      <label>Minimal Durasi Exposure (detik)</label>
-      <input id="camp-minexposure" type="number" value="0">
-      <label>Expected Key Message (opsional)</label>
-      <textarea id="camp-expectedkeymessage"></textarea>
-      <label>Expected Action (opsional)</label>
-      <textarea id="camp-expectedaction"></textarea>
-      <label>Survey Point Mapping ID</label>
-      <input id="camp-surveypointmappingid" placeholder="Contoh: PM_SURVEY">
-      <label>Self Eval Point Mapping ID</label>
-      <input id="camp-selfevalpointmappingid" placeholder="Contoh: PM_SELF">
-      <label>Quiz Point Mapping ID</label>
-      <input id="camp-quizpointmappingid" placeholder="Contoh: PM_QUIZ_EASY">
-      <label>Poin Survey</label>
-      <input id="camp-surveypoints" type="number" value="5">
-      <label>Poin Self Evaluation</label>
-      <input id="camp-selfevalpoints" type="number" value="2">
-      <label>Sort Order</label>
-      <input id="camp-sortorder" type="number" value="1">
-      <label>Status</label>
-      <select id="camp-status">
-        <option value="Draft">Draft</option>
-        <option value="Active">Active</option>
-        <option value="Inactive">Inactive</option>
-      </select>
-      <button class="btn-primary" onclick="saveCampaign()">Simpan Campaign</button>
-    </div>
-
-    <p class="section-title">Daftar Campaign</p>
-    <div id="campaign-list"></div>
+<div id="admin-tab-campaign" style="display:none;">
+  <div class="card">
+    <p class="section-title" style="margin-top:0;">Tambah / Edit Campaign</p>
+    <label>Season ID</label>
+    <input id="camp-seasonid" placeholder="Contoh: S01">
+    <label>Campaign ID</label>
+    <input id="camp-id" placeholder="Contoh: E01">
+    <label>Period Type</label>
+    <select id="camp-periodtype">
+      <option value="campaign_once">campaign_once</option>
+      <option value="season_once">season_once</option>
+    </select>
+    <label>Start Date</label>
+    <input id="camp-startdate" type="date">
+    <label>End Date</label>
+    <input id="camp-enddate" type="date">
+    <label>Theme</label>
+    <input id="camp-theme" placeholder="Contoh: Efisiensi Energi">
+    <label>Jenis Media</label>
+    <select id="camp-mediatype">
+      <option value="Video">Video</option>
+      <option value="Poster">Poster</option>
+      <option value="Sticker">Sticker</option>
+      <option value="Banner">Banner</option>
+      <option value="Microlearning">Microlearning</option>
+    </select>
+    <label>Judul</label>
+    <input id="camp-title" placeholder="Contoh: Video Pembuka Kampanye Efisiensi Energi">
+    <label>Tagline</label>
+    <input id="camp-tagline" placeholder="Contoh: Kerja Cerdas, Proses Optimal, Energi Terkendali">
+    <label>Deskripsi</label>
+    <textarea id="camp-desc"></textarea>
+    <label>Link Media (Google Drive/YouTube, harus "Anyone with link")</label>
+    <input id="camp-url" placeholder="https://drive.google.com/file/d/....">
+    <label>Minimal Durasi Exposure (detik)</label>
+    <input id="camp-minexposure" type="number" value="0">
+    <label>Expected Key Message (opsional)</label>
+    <textarea id="camp-expectedkeymessage"></textarea>
+    <label>Expected Action (opsional)</label>
+    <textarea id="camp-expectedaction"></textarea>
+    <label>Survey Point Mapping ID</label>
+    <input id="camp-surveypointmappingid" placeholder="Contoh: PM_SURVEY">
+    <label>Self Eval Point Mapping ID</label>
+    <input id="camp-selfevalpointmappingid" placeholder="Contoh: PM_SELF">
+    <label>Quiz Point Mapping ID</label>
+    <input id="camp-quizpointmappingid" placeholder="Contoh: PM_QUIZ_EASY">
+    <label>Poin Survey</label>
+    <input id="camp-surveypoints" type="number" value="5">
+    <label>Poin Self Evaluation</label>
+    <input id="camp-selfevalpoints" type="number" value="2">
+    <label>Sort Order</label>
+    <input id="camp-sortorder" type="number" value="1">
+    <label>Status</label>
+    <select id="camp-status">
+      <option value="Draft">Draft</option>
+      <option value="Active">Active</option>
+      <option value="Inactive">Inactive</option>
+    </select>
+    <button class="btn-primary" onclick="saveCampaign()">Simpan Campaign</button>
   </div>
+
+  <p class="section-title">Daftar Campaign</p>
+  <div id="campaign-list"></div>
+</div>
 
   <!-- ===================== TAB: AKUN ===================== -->
   <div id="admin-tab-akun" style="display:none;">
@@ -232,6 +230,15 @@
   <!-- ===================== TAB: QUIZ ===================== -->
 <div id="admin-tab-quiz" style="display:none;">
   <div class="card">
+    <p class="section-title" style="margin-top:0;">Import Bank Quiz (Excel / CSV / TXT / JSON)</p>
+    <p class="sub" style="margin-top:-8px;">
+      Header wajib: SeasonId, QuizId, CampaignId, QuizScope, PeriodType, Difficulty, QuestionText,
+      OptionA, OptionB, OptionC, OptionD, CorrectOption, Explanation, PointMappingId, Points, SortOrder, ShuffleOptions, Status, Source
+    </p>
+    <input id="quiz-import-file" type="file" accept=".xlsx,.csv,.txt,.json">
+    <button class="btn-primary" onclick="importQuizFile()">Upload & Simpan</button>
+  </div>
+  <div class="card">
     <p class="section-title" style="margin-top:0;">Tambah / Edit Soal Quiz</p>
     <label>Season ID</label>
     <input id="quiz-seasonid" placeholder="Contoh: S01">
@@ -290,6 +297,7 @@
 
   <p class="section-title">Daftar Soal</p>
   <div id="quiz-list"></div>
+</div>
 </div>
 
 <!-- ===================== TAB: SURVEY QUESTION ===================== -->
@@ -711,6 +719,21 @@
   <div id="challenge-list"></div>
 </div>
 
+<!-- ===================== TAB: REDEMPTION QUEUE ===================== -->
+<div id="admin-tab-rewardqueue" style="display:none;">
+  <div class="card">
+    <label>Filter Status</label>
+    <select id="rq-filter-status" onchange="loadRewardQueueList()">
+      <option value="">Semua</option>
+      <option value="Pending">Pending</option>
+      <option value="Fulfilled">Fulfilled</option>
+      <option value="Cancelled">Cancelled</option>
+    </select>
+  </div>
+  <p class="section-title">Antrian Redemption</p>
+  <div id="rewardqueue-list"></div>
+</div>
+
 <div id="toast-admin" class="toast"></div>
 
 <script>
@@ -739,7 +762,6 @@
     document.getElementById('admin-tab-pointmapping').style.display = tab === 'pointmapping' ? '' : 'none';
     document.getElementById('admin-tab-journeyrule').style.display = tab === 'journeyrule' ? '' : 'none';
     document.getElementById('admin-tab-awareness').style.display = tab === 'awareness' ? '' : 'none';
-    document.getElementById('admin-tab-rewardcatalog').style.display = tab === 'rewardcatalog' ? '' : 'none';
     document.getElementById('admin-tab-club').style.display = tab === 'club' ? '' : 'none';
     document.getElementById('admin-tab-missiontemplate').style.display = tab === 'missiontemplate' ? '' : 'none';
     document.getElementById('admin-tab-challenge').style.display = tab === 'challenge' ? '' : 'none';
@@ -761,6 +783,7 @@
     else if (tab === 'club') loadClubList();
     else if (tab === 'missiontemplate') loadMissionTemplateList();
     else if (tab === 'challenge') loadChallengeList();
+    else if (tab === 'rewardqueue') loadRewardQueueList();
     else { loadKabagList(); loadDepartmentList(); }
   }
 
@@ -853,31 +876,52 @@
   }
 
   function editCampaign(c) {
+    document.getElementById('camp-seasonid').value = c.SeasonId;
     document.getElementById('camp-id').value = c.CampaignId;
-    document.getElementById('camp-title').value = c.Title;
+    document.getElementById('camp-periodtype').value = c.PeriodType || 'campaign_once';
+    document.getElementById('camp-startdate').value = c.StartDate;
+    document.getElementById('camp-enddate').value = c.EndDate;
+    document.getElementById('camp-theme').value = c.Theme;
     document.getElementById('camp-mediatype').value = c.MediaType;
-    document.getElementById('camp-url').value = c.MediaUrl;
+    document.getElementById('camp-title').value = c.Title;
     document.getElementById('camp-tagline').value = c.Tagline;
     document.getElementById('camp-desc').value = c.Description;
+    document.getElementById('camp-url').value = c.MediaUrl;
+    document.getElementById('camp-minexposure').value = c.MinExposureSeconds;
+    document.getElementById('camp-expectedkeymessage').value = c.ExpectedKeyMessage;
+    document.getElementById('camp-expectedaction').value = c.ExpectedAction;
+    document.getElementById('camp-surveypointmappingid').value = c.SurveyPointMappingId;
+    document.getElementById('camp-selfevalpointmappingid').value = c.SelfEvalPointMappingId;
+    document.getElementById('camp-quizpointmappingid').value = c.QuizPointMappingId;
     document.getElementById('camp-surveypoints').value = c.SurveyPoints;
     document.getElementById('camp-selfevalpoints').value = c.SelfEvalPoints;
+    document.getElementById('camp-sortorder').value = c.SortOrder;
     document.getElementById('camp-status').value = c.Status;
   }
 
   function saveCampaign() {
     const record = {
+      SeasonId: document.getElementById('camp-seasonid').value.trim(),
       CampaignId: document.getElementById('camp-id').value.trim(),
-      Title: document.getElementById('camp-title').value.trim(),
+      PeriodType: document.getElementById('camp-periodtype').value,
+      StartDate: document.getElementById('camp-startdate').value,
+      EndDate: document.getElementById('camp-enddate').value,
+      Theme: document.getElementById('camp-theme').value.trim(),
       MediaType: document.getElementById('camp-mediatype').value,
-      MediaUrl: document.getElementById('camp-url').value.trim(),
+      Title: document.getElementById('camp-title').value.trim(),
       Tagline: document.getElementById('camp-tagline').value.trim(),
       Description: document.getElementById('camp-desc').value.trim(),
-      SubmissionMode: 'Keduanya',
-      MinExposureSeconds: 0,
+      MediaUrl: document.getElementById('camp-url').value.trim(),
+      MinExposureSeconds: Number(document.getElementById('camp-minexposure').value || 0),
+      ExpectedKeyMessage: document.getElementById('camp-expectedkeymessage').value.trim(),
+      ExpectedAction: document.getElementById('camp-expectedaction').value.trim(),
+      SurveyPointMappingId: document.getElementById('camp-surveypointmappingid').value.trim(),
+      SelfEvalPointMappingId: document.getElementById('camp-selfevalpointmappingid').value.trim(),
+      QuizPointMappingId: document.getElementById('camp-quizpointmappingid').value.trim(),
       SurveyPoints: Number(document.getElementById('camp-surveypoints').value || 5),
       SelfEvalPoints: Number(document.getElementById('camp-selfevalpoints').value || 2),
-      Status: document.getElementById('camp-status').value,
-      SeasonId: 'S01'
+      SortOrder: Number(document.getElementById('camp-sortorder').value || 1),
+      Status: document.getElementById('camp-status').value
     };
     if (!record.CampaignId || !record.Title || !record.MediaUrl) {
       showAdminToast('Campaign ID, Judul, dan Link Media wajib diisi.', 'error'); return;
@@ -1745,69 +1789,69 @@ function deleteAwarenessContent(id) {
 }
 
 // ---------- REWARD CATALOG ----------
-function loadRewardCatalogList() {
-  google.script.run
-    .withSuccessHandler(renderRewardCatalogList)
-    .withFailureHandler(showAdminError)
-    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'rewardcatalog' });
-}
+// function loadRewardCatalogList() {
+//   google.script.run
+//     .withSuccessHandler(renderRewardCatalogList)
+//     .withFailureHandler(showAdminError)
+//     .getAdminMasterData({ nik: adminCurrentNik, masterType: 'rewardcatalog' });
+// }
 
-function renderRewardCatalogList(rows) {
-  document.getElementById('rewardcatalog-list').innerHTML = rows.map(function(r) {
-    return '<div class="report-item">' +
-      '<b>' + r.RewardId + '</b> · ' + r.Title +
-      '<div class="report-meta">' + (r.Category || '') + ' · ' + r.CoinCost + ' coin · Stok: ' + r.Stock + '</div>' +
-      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
-      '<div style="margin-top:8px;">' +
-        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editRewardCatalog(' + JSON.stringify(r) + ')\'>Edit</button>' +
-        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteRewardCatalog(\'' + r.RewardId + '\')">Hapus</button>' +
-      '</div></div>';
-  }).join('');
-}
+// function renderRewardCatalogList(rows) {
+//   document.getElementById('rewardcatalog-list').innerHTML = rows.map(function(r) {
+//     return '<div class="report-item">' +
+//       '<b>' + r.RewardId + '</b> · ' + r.Title +
+//       '<div class="report-meta">' + (r.Category || '') + ' · ' + r.CoinCost + ' coin · Stok: ' + r.Stock + '</div>' +
+//       '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+//       '<div style="margin-top:8px;">' +
+//         '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editRewardCatalog(' + JSON.stringify(r) + ')\'>Edit</button>' +
+//         '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteRewardCatalog(\'' + r.RewardId + '\')">Hapus</button>' +
+//       '</div></div>';
+//   }).join('');
+// }
 
-function editRewardCatalog(r) {
-  document.getElementById('rc-id').value = r.RewardId;
-  document.getElementById('rc-title').value = r.Title;
-  document.getElementById('rc-description').value = r.Description;
-  document.getElementById('rc-category').value = r.Category;
-  document.getElementById('rc-coincost').value = r.CoinCost;
-  document.getElementById('rc-stock').value = r.Stock;
-  document.getElementById('rc-eligibilityrulejson').value = r.EligibilityRuleJson;
-  document.getElementById('rc-partner').value = r.Partner;
-  document.getElementById('rc-vouchertype').value = r.VoucherType;
-  document.getElementById('rc-expirydays').value = r.ExpiryDays;
-  document.getElementById('rc-status').value = r.Status;
-}
+// function editRewardCatalog(r) {
+//   document.getElementById('rc-id').value = r.RewardId;
+//   document.getElementById('rc-title').value = r.Title;
+//   document.getElementById('rc-description').value = r.Description;
+//   document.getElementById('rc-category').value = r.Category;
+//   document.getElementById('rc-coincost').value = r.CoinCost;
+//   document.getElementById('rc-stock').value = r.Stock;
+//   document.getElementById('rc-eligibilityrulejson').value = r.EligibilityRuleJson;
+//   document.getElementById('rc-partner').value = r.Partner;
+//   document.getElementById('rc-vouchertype').value = r.VoucherType;
+//   document.getElementById('rc-expirydays').value = r.ExpiryDays;
+//   document.getElementById('rc-status').value = r.Status;
+// }
 
-function saveRewardCatalog() {
-  const record = {
-    RewardId: document.getElementById('rc-id').value.trim(),
-    Title: document.getElementById('rc-title').value.trim(),
-    Description: document.getElementById('rc-description').value.trim(),
-    Category: document.getElementById('rc-category').value.trim(),
-    CoinCost: Number(document.getElementById('rc-coincost').value || 0),
-    Stock: Number(document.getElementById('rc-stock').value || 0),
-    EligibilityRuleJson: document.getElementById('rc-eligibilityrulejson').value.trim(),
-    Partner: document.getElementById('rc-partner').value.trim(),
-    VoucherType: document.getElementById('rc-vouchertype').value.trim(),
-    ExpiryDays: Number(document.getElementById('rc-expirydays').value || 0),
-    Status: document.getElementById('rc-status').value
-  };
-  if (!record.RewardId || !record.Title) { showAdminToast('Reward ID & Title wajib diisi.', 'error'); return; }
+// function saveRewardCatalog() {
+//   const record = {
+//     RewardId: document.getElementById('rc-id').value.trim(),
+//     Title: document.getElementById('rc-title').value.trim(),
+//     Description: document.getElementById('rc-description').value.trim(),
+//     Category: document.getElementById('rc-category').value.trim(),
+//     CoinCost: Number(document.getElementById('rc-coincost').value || 0),
+//     Stock: Number(document.getElementById('rc-stock').value || 0),
+//     EligibilityRuleJson: document.getElementById('rc-eligibilityrulejson').value.trim(),
+//     Partner: document.getElementById('rc-partner').value.trim(),
+//     VoucherType: document.getElementById('rc-vouchertype').value.trim(),
+//     ExpiryDays: Number(document.getElementById('rc-expirydays').value || 0),
+//     Status: document.getElementById('rc-status').value
+//   };
+//   if (!record.RewardId || !record.Title) { showAdminToast('Reward ID & Title wajib diisi.', 'error'); return; }
 
-  google.script.run
-    .withSuccessHandler(function(res) { showAdminToast('Reward ' + res.action + '.', 'success'); loadRewardCatalogList(); })
-    .withFailureHandler(showAdminError)
-    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'rewardcatalog', record: record });
-}
+//   google.script.run
+//     .withSuccessHandler(function(res) { showAdminToast('Reward ' + res.action + '.', 'success'); loadRewardCatalogList(); })
+//     .withFailureHandler(showAdminError)
+//     .saveMasterRecord({ nik: adminCurrentNik, masterType: 'rewardcatalog', record: record });
+// }
 
-function deleteRewardCatalog(id) {
-  if (!confirm('Hapus reward ' + id + '?')) return;
-  google.script.run
-    .withSuccessHandler(function() { showAdminToast('Reward dihapus.', 'success'); loadRewardCatalogList(); })
-    .withFailureHandler(showAdminError)
-    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'rewardcatalog', id: id });
-}
+// function deleteRewardCatalog(id) {
+//   if (!confirm('Hapus reward ' + id + '?')) return;
+//   google.script.run
+//     .withSuccessHandler(function() { showAdminToast('Reward dihapus.', 'success'); loadRewardCatalogList(); })
+//     .withFailureHandler(showAdminError)
+//     .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'rewardcatalog', id: id });
+// }
 // ---------- CLUBS ----------
 function loadClubList() {
   google.script.run
@@ -2048,4 +2092,87 @@ function deleteChallenge(id) {
     .withFailureHandler(showAdminError)
     .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'challenge', id: id });
 }
+// function importQuizFile() {
+//   const input = document.getElementById('quiz-import-file');
+//   if (!input.files.length) { showAdminToast('Pilih file dulu.', 'error'); return; }
+//   const file = input.files[0];
+//   const ext = file.name.split('.').pop().toLowerCase();
+
+//   if (ext === 'xlsx') {
+//     const reader = new FileReader();
+//     reader.onload = function() {
+//       const base64 = reader.result.split(',')[1];
+//       google.script.run
+//         .withSuccessHandler(function(res) {
+//           showAdminToast('Import selesai: ' + res.countCreated + ' dibuat, ' + res.countUpdated + ' diperbarui.', 'success');
+//           input.value = '';
+//           loadQuizList();
+//         })
+//         .withFailureHandler(showAdminError)
+//         .bulkImportQuizFromExcel({ nik: adminCurrentNik, base64Data: base64 });
+//     };
+//     reader.readAsDataURL(file);
+//   } else {
+//     const format = ext === 'json' ? 'json' : (ext === 'csv' ? 'csv' : 'txt');
+//     const reader = new FileReader();
+//     reader.onload = function() {
+//       google.script.run
+//         .withSuccessHandler(function(res) {
+//           showAdminToast('Import selesai: ' + res.countCreated + ' dibuat, ' + res.countUpdated + ' diperbarui.', 'success');
+//           input.value = '';
+//           loadQuizList();
+//         })
+//         .withFailureHandler(showAdminError)
+//         .bulkImportQuizFromText({ nik: adminCurrentNik, format: format, content: reader.result });
+//     };
+//     reader.readAsText(file);
+//   }
+// }
+
+  // // ---------- REWARD QUEUE ----------
+  // function loadRewardQueueList() {
+  //   document.getElementById('rewardqueue-list').innerHTML = '<p class="sub">Memuat...</p>';
+  //   google.script.run
+  //     .withSuccessHandler(renderRewardQueueList)
+  //     .withFailureHandler(showAdminError)
+  //     .listRewardRedemptions({ nik: adminCurrentNik, statusFilter: document.getElementById('rq-filter-status').value });
+  // }
+
+  // function renderRewardQueueList(rows) {
+  //   const el = document.getElementById('rewardqueue-list');
+  //   if (!rows.length) { el.innerHTML = '<p class="sub">Tidak ada redemption.</p>'; return; }
+
+  //   el.innerHTML = rows.map(function(r) {
+  //     const statusClass = r.Status === 'Fulfilled' ? 'Approved' : (r.Status === 'Cancelled' ? 'Revise' : 'Pending');
+  //     const actionBox = r.Status === 'Pending'
+  //       ? '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
+  //           '<button class="btn-ghost" style="width:auto;padding:8px 12px;" onclick="fulfillRedemption(\'' + r.ReferenceId + '\')">Tandai Selesai</button>' +
+  //           '<button class="btn-danger" style="width:auto;padding:8px 12px;border-radius:10px;border:none;color:#fff;" onclick="cancelRedemption(\'' + r.ReferenceId + '\')">Batalkan</button>' +
+  //         '</div>'
+  //       : (r.Notes ? '<div class="report-meta">Catatan: ' + r.Notes + '</div>' : '');
+
+  //     return '<div class="report-item">' +
+  //       '<span class="badge-status ' + statusClass + '">' + r.Status + '</span> ' +
+  //       '<b>' + r.RewardTitle + '</b> · ' + r.Nama + ' (' + r.NIK + ')' +
+  //       '<div class="report-meta">' + r.Timestamp + ' · ' + r.CoinCost + ' coin</div>' +
+  //       actionBox +
+  //     '</div>';
+  //   }).join('');
+  // }
+
+  // function fulfillRedemption(referenceId) {
+  //   google.script.run
+  //     .withSuccessHandler(function(res) { showAdminToast(res.message, 'success'); loadRewardQueueList(); })
+  //     .withFailureHandler(showAdminError)
+  //     .fulfillRewardRedemption({ adminNik: adminCurrentNik, referenceId: referenceId });
+  // }
+
+  // function cancelRedemption(referenceId) {
+  //   const reason = prompt('Alasan pembatalan?');
+  //   if (!reason) return;
+  //   google.script.run
+  //     .withSuccessHandler(function(res) { showAdminToast(res.message, 'success'); loadRewardQueueList(); })
+  //     .withFailureHandler(showAdminError)
+  //     .cancelRewardRedemption({ adminNik: adminCurrentNik, referenceId: referenceId, reason: reason });
+  // }
 </script>

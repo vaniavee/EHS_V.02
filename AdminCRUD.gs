@@ -66,11 +66,11 @@ function getMasterDefinition_(masterType) {
       idField: 'MappingId', 
       fields: EHS_SCHEMA['22_Master_PointMapping'] 
     },
-    rewardcatalog: { 
-      sheet: '23_Master_RewardCatalog', 
-      idField: 'RewardId', 
-      fields: EHS_SCHEMA['23_Master_RewardCatalog'] 
-      },
+    // rewardcatalog: { 
+    //   sheet: '23_Master_RewardCatalog', 
+    //   idField: 'RewardId', 
+    //   fields: EHS_SCHEMA['23_Master_RewardCatalog'] 
+    //   },
     club: { 
       sheet: '24_Master_Clubs', 
       idField: 'ClubId', 
@@ -426,3 +426,85 @@ function getCampaignOptions(payload) {
   return readObjects_(getSpreadsheet_().getSheetByName('06_Master_Campaigns'))
     .map(function(c) { return { id: c.CampaignId, title: c.Title }; });
 }
+// function bulkImportQuizFromText(payload) {
+//   assertCapability_(payload.nik, 'canManageMasterData');
+//   validateRequired_(payload, ['format', 'content']);
+
+//   let records;
+//   if (payload.format === 'json') {
+//     records = JSON.parse(payload.content);
+//   } else if (payload.format === 'csv') {
+//     records = parseDelimitedQuiz_(payload.content, ',');
+//   } else if (payload.format === 'txt') {
+//     records = parseDelimitedQuiz_(payload.content, '\t');
+//   } else {
+//     throw new Error('Format tidak dikenal: ' + payload.format);
+//   }
+
+//   if (!Array.isArray(records) || !records.length) throw new Error('Tidak ada data soal yang valid untuk diimport.');
+
+//   records.forEach(function(r, i) {
+//     if (!clean_(r.QuizId) || !clean_(r.CampaignId) || !clean_(r.QuestionText)) {
+//       throw new Error('Baris ' + (i + 2) + ': QuizId, CampaignId, dan QuestionText wajib diisi.');
+//     }
+//   });
+
+//   return bulkSaveMasterRecords({ nik: payload.nik, masterType: 'quiz', records: records });
+// }
+
+// Header wajib (urutan bebas, harus persis nama field schema):
+// SeasonId,QuizId,CampaignId,QuizScope,PeriodType,Difficulty,QuestionText,OptionA,OptionB,OptionC,OptionD,CorrectOption,Explanation,PointMappingId,Points,SortOrder,ShuffleOptions,Status,Source
+function parseDelimitedQuiz_(content, delimiter) {
+  const lines = content.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; });
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(delimiter).map(function(h) { return h.trim(); });
+  return lines.slice(1).map(function(line) {
+    const cols = line.split(delimiter);
+    const obj = {};
+    headers.forEach(function(h, i) { obj[h] = clean_(cols[i]); });
+    return obj;
+  });
+}
+
+// // Excel (.xlsx) — dikonversi via Google Drive API (Advanced Service).
+// // WAJIB aktifkan dulu: Apps Script editor -> Services (ikon +) -> cari "Drive API" -> Add.
+// function bulkImportQuizFromExcel(payload) {
+//   assertCapability_(payload.nik, 'canManageMasterData');
+//   validateRequired_(payload, ['base64Data']);
+
+//   const blob = Utilities.newBlob(Utilities.base64Decode(payload.base64Data), MimeType.MICROSOFT_EXCEL, 'quiz_import.xlsx');
+//   const tempFile = DriveApp.createFile(blob);
+
+//   let convertedFile;
+//   try {
+//     convertedFile = Drive.Files.copy({ title: 'quiz_import_temp_' + Date.now() }, tempFile.getId(), { convert: true });
+//   } catch (e) {
+//     tempFile.setTrashed(true);
+//     throw new Error('Gagal konversi Excel. Pastikan "Drive API" sudah diaktifkan di Services (Apps Script editor). Detail: ' + e.message);
+//   }
+
+//   const ss = SpreadsheetApp.openById(convertedFile.id);
+//   const sh = ss.getSheets()[0];
+//   const data = sh.getDataRange().getValues();
+//   const headers = data[0].map(function(h) { return clean_(h); });
+
+//   const records = data.slice(1)
+//     .filter(function(row) { return row.some(function(v) { return clean_(v) !== ''; }); })
+//     .map(function(row) {
+//       const obj = {};
+//       headers.forEach(function(h, i) { obj[h] = clean_(row[i]); });
+//       return obj;
+//     });
+
+//   DriveApp.getFileById(convertedFile.id).setTrashed(true);
+//   tempFile.setTrashed(true);
+
+//   if (!records.length) throw new Error('Tidak ada baris data ditemukan di file Excel.');
+//   records.forEach(function(r, i) {
+//     if (!clean_(r.QuizId) || !clean_(r.CampaignId) || !clean_(r.QuestionText)) {
+//       throw new Error('Baris ' + (i + 2) + ': QuizId, CampaignId, dan QuestionText wajib diisi.');
+//     }
+//   });
+
+//   return bulkSaveMasterRecords({ nik: payload.nik, masterType: 'quiz', records: records });
+// }

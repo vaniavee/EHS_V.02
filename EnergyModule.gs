@@ -98,9 +98,22 @@ function submitAwarenessSurvey(payload) {
   const availability = getTaskAvailability_(task, nik, seasonId);
   if (!availability.available) throw new Error(availability.reason);
 
+  // // --- Validasi minimal exposure media ---
+  // const campaignId = clean_(payload.campaignId || task.CampaignId);
+  // if (campaignId) {
+  //   const campaign = readObjects_(getSpreadsheet_().getSheetByName('06_Master_Campaigns'))
+  //     .find(function(c) { return clean_(c.CampaignId) === campaignId; });
+  //   const minSeconds = campaign ? Number(campaign.MinExposureSeconds || 0) : 0;
+  //   if (minSeconds > 0) {
+  //     const exposedSeconds = Number(payload.exposedSeconds || 0);
+  //     if (exposedSeconds < minSeconds) {
+  //       throw new Error('Anda harus membuka/menonton media minimal ' + minSeconds + ' detik sebelum submit. Baru ' + exposedSeconds + ' detik.');
+  //     }
+  //   }
+  // }
   const points = Number(task.Points);
   const title = task.Title;
-  const campaignId = clean_(payload.campaignId || task.CampaignId);
+  //const campaignId = clean_(payload.campaignId || task.CampaignId);
   const claimNumber = availability.used + 1;
   const referenceId = [seasonId, task.TaskId, nik, availability.periodKey, claimNumber].join(':');
 

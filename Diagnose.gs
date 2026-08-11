@@ -186,3 +186,8 @@ function TEST_migrate_master_data_batch2() {
   ensureSheet_(ss, '05_Master_QuizBank', EHS_SCHEMA['05_Master_QuizBank']);
   Logger.log('Migrasi batch 2 (versi field lengkap) selesai.');
 }
+function TEST_migrate_reward_redemptions() {
+  const ss = getSpreadsheet_();
+  ensureSheet_(ss, '27_DB_RewardRedemptions', EHS_SCHEMA['27_DB_RewardRedemptions']);
+  Logger.log('Sheet Reward Redemptions siap.');
+}

@@ -222,7 +222,8 @@
 
   function closeDatePopups() {
     ['from', 'to'].forEach(function(field) {
-      document.getElementById('mon-filter-' + field + '-popup').classList.remove('active');
+      const el = document.getElementById('mon-filter-' + field + '-popup');
+      if (el) el.classList.remove('active');
     });
   }
 

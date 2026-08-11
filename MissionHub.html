@@ -25,8 +25,16 @@
     document.getElementById('mh-cards').innerHTML = '';
 
     google.script.run
-      .withSuccessHandler(renderMissionHub)
-      .withFailureHandler(function(err) { alert(err.message || String(err)); })
+      .withSuccessHandler(function(data) {
+        try {
+          renderMissionHub(data);
+        } catch (e) {
+          alert('ERROR RENDER: ' + e.message + '\n\nDATA: ' + JSON.stringify(data));
+        }
+      })
+      .withFailureHandler(function(err) {
+        alert('ERROR SERVER: ' + (err.message || String(err)));
+      })
       .getMissionHubData({ nik: nik, pillar: pillar });
   }
 
