@@ -20,6 +20,8 @@
     <div class="pill" data-tab="club" onclick="switchAdminTab('club')">Clubs</div>
     <div class="pill" data-tab="missiontemplate" onclick="switchAdminTab('missiontemplate')">Mission Templates</div>
     <div class="pill" data-tab="challenge" onclick="switchAdminTab('challenge')">Challenges</div>
+    <div class="pill" data-tab="rewardcatalog" onclick="switchAdminTab('rewardcatalog')">Reward Catalog</div>
+    <div class="pill" data-tab="rewardqueue" onclick="switchAdminTab('rewardqueue')">Redemption Queue</div>
   </div>
 
   <!-- ===================== TAB: TASK ===================== -->
@@ -762,6 +764,7 @@
     document.getElementById('admin-tab-pointmapping').style.display = tab === 'pointmapping' ? '' : 'none';
     document.getElementById('admin-tab-journeyrule').style.display = tab === 'journeyrule' ? '' : 'none';
     document.getElementById('admin-tab-awareness').style.display = tab === 'awareness' ? '' : 'none';
+    document.getElementById('admin-tab-rewardcatalog').style.display = tab === 'rewardcatalog' ? '' : 'none';
     document.getElementById('admin-tab-club').style.display = tab === 'club' ? '' : 'none';
     document.getElementById('admin-tab-missiontemplate').style.display = tab === 'missiontemplate' ? '' : 'none';
     document.getElementById('admin-tab-challenge').style.display = tab === 'challenge' ? '' : 'none';
@@ -786,6 +789,53 @@
     else if (tab === 'rewardqueue') loadRewardQueueList();
     else { loadKabagList(); loadDepartmentList(); }
   }
+
+  // ---------- REWARD QUEUE ----------
+function loadRewardQueueList() {
+  document.getElementById('rewardqueue-list').innerHTML = '<p class="sub">Memuat...</p>';
+  google.script.run
+    .withSuccessHandler(renderRewardQueueList)
+    .withFailureHandler(showAdminError)
+    .listRewardRedemptions({ nik: adminCurrentNik, statusFilter: document.getElementById('rq-filter-status').value });
+}
+
+function renderRewardQueueList(rows) {
+  const el = document.getElementById('rewardqueue-list');
+  if (!rows.length) { el.innerHTML = '<p class="sub">Tidak ada redemption.</p>'; return; }
+
+  el.innerHTML = rows.map(function(r) {
+    const statusClass = r.Status === 'Fulfilled' ? 'Approved' : (r.Status === 'Cancelled' ? 'Revise' : 'Pending');
+    const actionBox = r.Status === 'Pending'
+      ? '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
+          '<button class="btn-ghost" style="width:auto;padding:8px 12px;" onclick="fulfillRedemption(\'' + r.ReferenceId + '\')">Tandai Selesai</button>' +
+          '<button class="btn-danger" style="width:auto;padding:8px 12px;border-radius:10px;border:none;color:#fff;" onclick="cancelRedemption(\'' + r.ReferenceId + '\')">Batalkan</button>' +
+        '</div>'
+      : (r.Notes ? '<div class="report-meta">Catatan: ' + r.Notes + '</div>' : '');
+
+    return '<div class="report-item">' +
+      '<span class="badge-status ' + statusClass + '">' + r.Status + '</span> ' +
+      '<b>' + r.RewardTitle + '</b> · ' + r.Nama + ' (' + r.NIK + ')' +
+      '<div class="report-meta">' + r.Timestamp + ' · ' + r.CoinCost + ' coin</div>' +
+      actionBox +
+    '</div>';
+  }).join('');
+}
+
+function fulfillRedemption(referenceId) {
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast(res.message, 'success'); loadRewardQueueList(); })
+    .withFailureHandler(showAdminError)
+    .fulfillRewardRedemption({ adminNik: adminCurrentNik, referenceId: referenceId });
+}
+
+function cancelRedemption(referenceId) {
+  const reason = prompt('Alasan pembatalan?');
+  if (!reason) return;
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast(res.message, 'success'); loadRewardQueueList(); })
+    .withFailureHandler(showAdminError)
+    .cancelRewardRedemption({ adminNik: adminCurrentNik, referenceId: referenceId, reason: reason });
+}
 
   // ---------- TASK ----------
   function loadTaskList() {
@@ -1789,69 +1839,70 @@ function deleteAwarenessContent(id) {
 }
 
 // ---------- REWARD CATALOG ----------
-// function loadRewardCatalogList() {
-//   google.script.run
-//     .withSuccessHandler(renderRewardCatalogList)
-//     .withFailureHandler(showAdminError)
-//     .getAdminMasterData({ nik: adminCurrentNik, masterType: 'rewardcatalog' });
-// }
+function loadRewardCatalogList() {
+  google.script.run
+    .withSuccessHandler(renderRewardCatalogList)
+    .withFailureHandler(showAdminError)
+    .getAdminMasterData({ nik: adminCurrentNik, masterType: 'rewardcatalog' });
+}
 
-// function renderRewardCatalogList(rows) {
-//   document.getElementById('rewardcatalog-list').innerHTML = rows.map(function(r) {
-//     return '<div class="report-item">' +
-//       '<b>' + r.RewardId + '</b> · ' + r.Title +
-//       '<div class="report-meta">' + (r.Category || '') + ' · ' + r.CoinCost + ' coin · Stok: ' + r.Stock + '</div>' +
-//       '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
-//       '<div style="margin-top:8px;">' +
-//         '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editRewardCatalog(' + JSON.stringify(r) + ')\'>Edit</button>' +
-//         '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteRewardCatalog(\'' + r.RewardId + '\')">Hapus</button>' +
-//       '</div></div>';
-//   }).join('');
-// }
+function renderRewardCatalogList(rows) {
+  document.getElementById('rewardcatalog-list').innerHTML = rows.map(function(r) {
+    return '<div class="report-item">' +
+      '<b>' + r.RewardId + '</b> · ' + r.Title +
+      '<div class="report-meta">' + (r.Category || '') + ' · ' + r.CoinCost + ' coin · Stok: ' + r.Stock + '</div>' +
+      '<span class="badge-status ' + (r.Status === 'Active' ? 'Approved' : 'Revise') + '">' + r.Status + '</span>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn-ghost" style="width:auto;padding:6px 12px;margin:0 6px 0 0;" onclick=\'editRewardCatalog(' + JSON.stringify(r) + ')\'>Edit</button>' +
+        '<button class="btn-danger" style="width:auto;padding:6px 12px;border-radius:10px;border:none;color:#fff;" onclick="deleteRewardCatalog(\'' + r.RewardId + '\')">Hapus</button>' +
+      '</div></div>';
+  }).join('');
+}
 
-// function editRewardCatalog(r) {
-//   document.getElementById('rc-id').value = r.RewardId;
-//   document.getElementById('rc-title').value = r.Title;
-//   document.getElementById('rc-description').value = r.Description;
-//   document.getElementById('rc-category').value = r.Category;
-//   document.getElementById('rc-coincost').value = r.CoinCost;
-//   document.getElementById('rc-stock').value = r.Stock;
-//   document.getElementById('rc-eligibilityrulejson').value = r.EligibilityRuleJson;
-//   document.getElementById('rc-partner').value = r.Partner;
-//   document.getElementById('rc-vouchertype').value = r.VoucherType;
-//   document.getElementById('rc-expirydays').value = r.ExpiryDays;
-//   document.getElementById('rc-status').value = r.Status;
-// }
+function editRewardCatalog(r) {
+  document.getElementById('rc-id').value = r.RewardId;
+  document.getElementById('rc-title').value = r.Title;
+  document.getElementById('rc-description').value = r.Description;
+  document.getElementById('rc-category').value = r.Category;
+  document.getElementById('rc-coincost').value = r.CoinCost;
+  document.getElementById('rc-stock').value = r.Stock;
+  document.getElementById('rc-eligibilityrulejson').value = r.EligibilityRuleJson;
+  document.getElementById('rc-partner').value = r.Partner;
+  document.getElementById('rc-vouchertype').value = r.VoucherType;
+  document.getElementById('rc-expirydays').value = r.ExpiryDays;
+  document.getElementById('rc-status').value = r.Status;
+}
 
-// function saveRewardCatalog() {
-//   const record = {
-//     RewardId: document.getElementById('rc-id').value.trim(),
-//     Title: document.getElementById('rc-title').value.trim(),
-//     Description: document.getElementById('rc-description').value.trim(),
-//     Category: document.getElementById('rc-category').value.trim(),
-//     CoinCost: Number(document.getElementById('rc-coincost').value || 0),
-//     Stock: Number(document.getElementById('rc-stock').value || 0),
-//     EligibilityRuleJson: document.getElementById('rc-eligibilityrulejson').value.trim(),
-//     Partner: document.getElementById('rc-partner').value.trim(),
-//     VoucherType: document.getElementById('rc-vouchertype').value.trim(),
-//     ExpiryDays: Number(document.getElementById('rc-expirydays').value || 0),
-//     Status: document.getElementById('rc-status').value
-//   };
-//   if (!record.RewardId || !record.Title) { showAdminToast('Reward ID & Title wajib diisi.', 'error'); return; }
+function saveRewardCatalog() {
+  const record = {
+    RewardId: document.getElementById('rc-id').value.trim(),
+    Title: document.getElementById('rc-title').value.trim(),
+    Description: document.getElementById('rc-description').value.trim(),
+    Category: document.getElementById('rc-category').value.trim(),
+    CoinCost: Number(document.getElementById('rc-coincost').value || 0),
+    Stock: Number(document.getElementById('rc-stock').value || 0),
+    EligibilityRuleJson: document.getElementById('rc-eligibilityrulejson').value.trim(),
+    Partner: document.getElementById('rc-partner').value.trim(),
+    VoucherType: document.getElementById('rc-vouchertype').value.trim(),
+    ExpiryDays: Number(document.getElementById('rc-expirydays').value || 0),
+    Status: document.getElementById('rc-status').value
+  };
+  if (!record.RewardId || !record.Title) { showAdminToast('Reward ID & Title wajib diisi.', 'error'); return; }
 
-//   google.script.run
-//     .withSuccessHandler(function(res) { showAdminToast('Reward ' + res.action + '.', 'success'); loadRewardCatalogList(); })
-//     .withFailureHandler(showAdminError)
-//     .saveMasterRecord({ nik: adminCurrentNik, masterType: 'rewardcatalog', record: record });
-// }
+  google.script.run
+    .withSuccessHandler(function(res) { showAdminToast('Reward ' + res.action + '.', 'success'); loadRewardCatalogList(); })
+    .withFailureHandler(showAdminError)
+    .saveMasterRecord({ nik: adminCurrentNik, masterType: 'rewardcatalog', record: record });
+}
 
-// function deleteRewardCatalog(id) {
-//   if (!confirm('Hapus reward ' + id + '?')) return;
-//   google.script.run
-//     .withSuccessHandler(function() { showAdminToast('Reward dihapus.', 'success'); loadRewardCatalogList(); })
-//     .withFailureHandler(showAdminError)
-//     .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'rewardcatalog', id: id });
-// }
+function deleteRewardCatalog(id) {
+  if (!confirm('Hapus reward ' + id + '?')) return;
+  google.script.run
+    .withSuccessHandler(function() { showAdminToast('Reward dihapus.', 'success'); loadRewardCatalogList(); })
+    .withFailureHandler(showAdminError)
+    .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'rewardcatalog', id: id });
+}
+
 // ---------- CLUBS ----------
 function loadClubList() {
   google.script.run
@@ -2129,50 +2180,50 @@ function deleteChallenge(id) {
 //   }
 // }
 
-  // // ---------- REWARD QUEUE ----------
-  // function loadRewardQueueList() {
-  //   document.getElementById('rewardqueue-list').innerHTML = '<p class="sub">Memuat...</p>';
-  //   google.script.run
-  //     .withSuccessHandler(renderRewardQueueList)
-  //     .withFailureHandler(showAdminError)
-  //     .listRewardRedemptions({ nik: adminCurrentNik, statusFilter: document.getElementById('rq-filter-status').value });
-  // }
+  // ---------- REWARD QUEUE ----------
+  function loadRewardQueueList() {
+    document.getElementById('rewardqueue-list').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(renderRewardQueueList)
+      .withFailureHandler(showAdminError)
+      .listRewardRedemptions({ nik: adminCurrentNik, statusFilter: document.getElementById('rq-filter-status').value });
+  }
 
-  // function renderRewardQueueList(rows) {
-  //   const el = document.getElementById('rewardqueue-list');
-  //   if (!rows.length) { el.innerHTML = '<p class="sub">Tidak ada redemption.</p>'; return; }
+  function renderRewardQueueList(rows) {
+    const el = document.getElementById('rewardqueue-list');
+    if (!rows.length) { el.innerHTML = '<p class="sub">Tidak ada redemption.</p>'; return; }
 
-  //   el.innerHTML = rows.map(function(r) {
-  //     const statusClass = r.Status === 'Fulfilled' ? 'Approved' : (r.Status === 'Cancelled' ? 'Revise' : 'Pending');
-  //     const actionBox = r.Status === 'Pending'
-  //       ? '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
-  //           '<button class="btn-ghost" style="width:auto;padding:8px 12px;" onclick="fulfillRedemption(\'' + r.ReferenceId + '\')">Tandai Selesai</button>' +
-  //           '<button class="btn-danger" style="width:auto;padding:8px 12px;border-radius:10px;border:none;color:#fff;" onclick="cancelRedemption(\'' + r.ReferenceId + '\')">Batalkan</button>' +
-  //         '</div>'
-  //       : (r.Notes ? '<div class="report-meta">Catatan: ' + r.Notes + '</div>' : '');
+    el.innerHTML = rows.map(function(r) {
+      const statusClass = r.Status === 'Fulfilled' ? 'Approved' : (r.Status === 'Cancelled' ? 'Revise' : 'Pending');
+      const actionBox = r.Status === 'Pending'
+        ? '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
+            '<button class="btn-ghost" style="width:auto;padding:8px 12px;" onclick="fulfillRedemption(\'' + r.ReferenceId + '\')">Tandai Selesai</button>' +
+            '<button class="btn-danger" style="width:auto;padding:8px 12px;border-radius:10px;border:none;color:#fff;" onclick="cancelRedemption(\'' + r.ReferenceId + '\')">Batalkan</button>' +
+          '</div>'
+        : (r.Notes ? '<div class="report-meta">Catatan: ' + r.Notes + '</div>' : '');
 
-  //     return '<div class="report-item">' +
-  //       '<span class="badge-status ' + statusClass + '">' + r.Status + '</span> ' +
-  //       '<b>' + r.RewardTitle + '</b> · ' + r.Nama + ' (' + r.NIK + ')' +
-  //       '<div class="report-meta">' + r.Timestamp + ' · ' + r.CoinCost + ' coin</div>' +
-  //       actionBox +
-  //     '</div>';
-  //   }).join('');
-  // }
+      return '<div class="report-item">' +
+        '<span class="badge-status ' + statusClass + '">' + r.Status + '</span> ' +
+        '<b>' + r.RewardTitle + '</b> · ' + r.Nama + ' (' + r.NIK + ')' +
+        '<div class="report-meta">' + r.Timestamp + ' · ' + r.CoinCost + ' coin</div>' +
+        actionBox +
+      '</div>';
+    }).join('');
+  }
 
-  // function fulfillRedemption(referenceId) {
-  //   google.script.run
-  //     .withSuccessHandler(function(res) { showAdminToast(res.message, 'success'); loadRewardQueueList(); })
-  //     .withFailureHandler(showAdminError)
-  //     .fulfillRewardRedemption({ adminNik: adminCurrentNik, referenceId: referenceId });
-  // }
+  function fulfillRedemption(referenceId) {
+    google.script.run
+      .withSuccessHandler(function(res) { showAdminToast(res.message, 'success'); loadRewardQueueList(); })
+      .withFailureHandler(showAdminError)
+      .fulfillRewardRedemption({ adminNik: adminCurrentNik, referenceId: referenceId });
+  }
 
-  // function cancelRedemption(referenceId) {
-  //   const reason = prompt('Alasan pembatalan?');
-  //   if (!reason) return;
-  //   google.script.run
-  //     .withSuccessHandler(function(res) { showAdminToast(res.message, 'success'); loadRewardQueueList(); })
-  //     .withFailureHandler(showAdminError)
-  //     .cancelRewardRedemption({ adminNik: adminCurrentNik, referenceId: referenceId, reason: reason });
-  // }
+  function cancelRedemption(referenceId) {
+    const reason = prompt('Alasan pembatalan?');
+    if (!reason) return;
+    google.script.run
+      .withSuccessHandler(function(res) { showAdminToast(res.message, 'success'); loadRewardQueueList(); })
+      .withFailureHandler(showAdminError)
+      .cancelRewardRedemption({ adminNik: adminCurrentNik, referenceId: referenceId, reason: reason });
+  }
 </script>

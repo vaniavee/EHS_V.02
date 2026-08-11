@@ -273,11 +273,12 @@ function getDashboardSummary(payload) {
 
   const seasonId = normalizeSeasonId_(payload.seasonId);
   const totalPoints = getTotalPointsForUser_(nik, seasonId);
+  const totalCoins = getTotalCoinsForUser_(nik, seasonId);
   const leaderboard = getLeaderboard_(seasonId, null, 9999);
   const myRank = leaderboard.find(function(r) { return r.nik === nik; });
 
   const result = {
-    user: user, seasonId: seasonId, totalPoints: totalPoints,
+    user: user, seasonId: seasonId, totalPoints: totalPoints, totalCoins: totalCoins,
     rank: myRank ? myRank.rank : '-', badge: resolveBadgeTier_(totalPoints)
   };
 

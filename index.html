@@ -29,10 +29,11 @@
   <div id="view-admin-help" style="display:none;"><?!= include('AdminHelpQueue'); ?></div>
   <div id="view-register" style="display:none;"><?!= include('Register'); ?></div>
   <div id="view-missionhub" style="display:none;"><?!= include('MissionHub'); ?></div>
+  <div id="view-reward" style="display:none;"><?!= include('RewardCatalogPage'); ?></div>
 
   <script>
     let EHS_CURRENT_NIK = null;
-    const EHS_VIEWS = ['login', 'register', 'dashboard', 'bmi', 'safety-report', 'safety-review', 'admin', 'monitor', 'health', 'energy', 'miniproject', 'leaderboard', 'help', 'admin-help', 'missionhub']; // 'task-review'
+    const EHS_VIEWS = ['login', 'register', 'dashboard', 'bmi', 'safety-report', 'safety-review', 'admin', 'monitor', 'health', 'energy', 'miniproject', 'leaderboard', 'help', 'admin-help', 'missionhub', 'reward']; // 'task-review'
     //let EHS_CURRENT_NIK = null;
     let EHS_CURRENT_IS_ADMIN = false;
 
@@ -112,6 +113,7 @@
         leaderboard: function() { showView('leaderboard'); initLeaderboardPage(EHS_CURRENT_NIK); },
         help: function() { showView('help'); initHelpPage(EHS_CURRENT_NIK, EHS_CURRENT_IS_ADMIN); },
         'admin-help': function() { showView('admin-help'); initAdminHelpQueue(EHS_CURRENT_NIK); },
+        reward: function() { showView('reward'); initRewardCatalogPage(EHS_CURRENT_NIK); },
       };
 
       if (typeof route[page] === 'function') {

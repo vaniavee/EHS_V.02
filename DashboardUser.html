@@ -55,7 +55,7 @@
     (u.isSupervisor ? 'Kepala Bagian/Supervisor (Leader)· ' + u.divisi : 'Karyawan (' + u.persona + ') . ' + u.divisi);
 
   document.getElementById('dash-badge').textContent = summary.badge.icon;
-  document.getElementById('dash-points').textContent = summary.totalPoints + ' Poin';
+  document.getElementById('dash-points').textContent = summary.totalPoints + ' Poin · ' + summary.totalCoins + ' 🪙';
   document.getElementById('dash-tier').textContent =
     summary.badge.name + ' · Rank #' + summary.rank +
     (summary.badge.next ? ' · ' + (summary.badge.next - summary.totalPoints) + ' poin lagi naik tier' : '');
@@ -115,6 +115,7 @@
       items = [
         { icon: '⚖️', label: 'Measure Your Body', page: 'bmi' },
         { icon: '🏆', label: 'Leaderboard', page: 'leaderboard' },
+        { icon: '🪙', label: 'Tukar Coin', page: 'reward' },
         { icon: '💬', label: 'Bantuan', page: 'help' }
       ];
     }

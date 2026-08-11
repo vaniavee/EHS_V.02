@@ -66,11 +66,11 @@ function getMasterDefinition_(masterType) {
       idField: 'MappingId', 
       fields: EHS_SCHEMA['22_Master_PointMapping'] 
     },
-    // rewardcatalog: { 
-    //   sheet: '23_Master_RewardCatalog', 
-    //   idField: 'RewardId', 
-    //   fields: EHS_SCHEMA['23_Master_RewardCatalog'] 
-    //   },
+    rewardcatalog: { 
+      sheet: '23_Master_RewardCatalog', 
+      idField: 'RewardId', 
+      fields: EHS_SCHEMA['23_Master_RewardCatalog'] 
+      },
     club: { 
       sheet: '24_Master_Clubs', 
       idField: 'ClubId', 
