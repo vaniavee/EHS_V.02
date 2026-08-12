@@ -38,7 +38,8 @@ const EHS_SCHEMA = {
   '02_Master_Users': [
     'NIK', 'Nama', 'Divisi', 'No_WA',
     'IsAdmin', 'IsSupervisor', 'DivisiDiawasi', 'ProgramPreferences',
-    'ProfileInterests','IsRegistered','Active', 'TanggalDitambahkan', 'DitambahkanOleh'
+    'ProfileInterests','IsRegistered','Active', 'TanggalDitambahkan', 'DitambahkanOleh',
+    'StreakCount', 'LastActiveDate'
   ],
   '03_Master_Task': [
     'TaskId', 'Pillar', 'Category', 'Level', 'Title', 'Points','DomainXP', 'CoinReward',
@@ -634,3 +635,5 @@ function seedFaqData_(ss) {
   ];
   sh.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
 }
+
+

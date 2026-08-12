@@ -15,21 +15,25 @@
 </head>
 <body>
   <div id="view-login"><?!= include('Login'); ?></div>
-  <div id="view-dashboard" style="display:none;"><?!= include('DashboardUser'); ?></div>
-  <div id="view-bmi" style="display:none;"><?!= include('BmiForm'); ?></div>
-  <div id="view-safety-report" style="display:none;"><?!= include('SafetyReport'); ?></div>
-  <div id="view-safety-review" style="display:none;"><?!= include('SafetyReviewQueue'); ?></div>
-  <div id="view-admin" style="display:none;"><?!= include('DashboardAdmin'); ?></div>
-  <div id="view-monitor" style="display:none;"><?!= include('AdminMonitor'); ?></div>
-  <div id="view-health" style="display:none;"><?!= include('HealthTask'); ?></div>
-  <div id="view-energy" style="display:none;"><?!= include('EnergyTask'); ?></div>
-  <div id="view-miniproject" style="display:none;"><?!= include('MiniProjectForm'); ?></div>
-  <div id="view-leaderboard" style="display:none;"><?!= include('LeaderboardPage'); ?></div>
-  <div id="view-help" style="display:none;"><?!= include('Help'); ?></div>
-  <div id="view-admin-help" style="display:none;"><?!= include('AdminHelpQueue'); ?></div>
   <div id="view-register" style="display:none;"><?!= include('Register'); ?></div>
-  <div id="view-missionhub" style="display:none;"><?!= include('MissionHub'); ?></div>
-  <div id="view-reward" style="display:none;"><?!= include('RewardCatalogPage'); ?></div>
+  <div id="view-shell" style="display:none;">
+    <?!= include('AppShell'); ?> </div>
+
+  <div id="legacy-views-holder" style="display:none;">
+    <div id="view-dashboard"><?!= include('DashboardUser'); ?></div>
+    <div id="view-bmi"><?!= include('BmiForm'); ?></div>
+    <div id="view-safety-report" ><?!= include('SafetyReport'); ?></div>
+    <div id="view-safety-review" ><?!= include('SafetyReviewQueue'); ?></div>
+    <div id="view-admin" ><?!= include('DashboardAdmin'); ?></div>
+    <div id="view-monitor" ><?!= include('AdminMonitor'); ?></div>
+    <div id="view-health" ><?!= include('HealthTask'); ?></div>
+    <div id="view-energy" ><?!= include('EnergyTask'); ?></div>
+    <div id="view-miniproject" ><?!= include('MiniProjectForm'); ?></div>
+    <div id="view-leaderboard" ><?!= include('LeaderboardPage'); ?></div>
+    <div id="view-help" ><?!= include('Help'); ?></div>
+    <div id="view-admin-help" ><?!= include('AdminHelpQueue'); ?></div>
+    <div id="view-missionhub" ><?!= include('MissionHub'); ?></div>
+    <div id="view-reward" ><?!= include('RewardCatalogPage'); ?></div>
 
   <script>
     let EHS_CURRENT_NIK = null;
@@ -37,28 +41,45 @@
     //let EHS_CURRENT_NIK = null;
     let EHS_CURRENT_IS_ADMIN = false;
 
-    function showView(name) {
-      const viewId = 'view-' + name;
-      const target = document.getElementById(viewId);
-      if (!target) {
-        console.warn('View tidak ditemukan:', name);
-        if (name !== 'login') showView('login');
-        return;
-      }
-
-      const allViews = Array.from(document.querySelectorAll('body > div[id^="view-"]'));
-      allViews.forEach(function(viewEl) {
-        viewEl.style.display = (viewEl.id === viewId) ? '' : 'none';
-        viewEl.hidden = viewEl.id !== viewId;
-      });
-
-      target.hidden = false;
-      target.style.display = '';
-
-      if (!EHS_VIEWS.includes(name)) {
-        EHS_VIEWS.push(name);
-      }
+  function showView(name) {
+    if (name === 'login' || name === 'register') {
+      document.getElementById('view-shell').style.display = 'none';
+      document.getElementById('view-login').style.display = name === 'login' ? '' : 'none';
+      document.getElementById('view-register').style.display = name === 'register' ? '' : 'none';
+      return;
     }
+    document.getElementById('view-login').style.display = 'none';
+    document.getElementById('view-register').style.display = 'none';
+    document.getElementById('view-shell').style.display = '';
+
+    EHS_VIEWS.forEach(function(v) {
+      const el = document.getElementById('view-' + v);
+      if (el) el.style.display = (v === name) ? '' : 'none';
+    });
+    setShellActiveNav(name);
+  }
+    // function showView(name) {
+    //   const viewId = 'view-' + name;
+    //   const target = document.getElementById(viewId);
+    //   if (!target) {
+    //     console.warn('View tidak ditemukan:', name);
+    //     if (name !== 'login') showView('login');
+    //     return;
+    //   }
+
+    //   const allViews = Array.from(document.querySelectorAll('body > div[id^="view-"]'));
+    //   allViews.forEach(function(viewEl) {
+    //     viewEl.style.display = (viewEl.id === viewId) ? '' : 'none';
+    //     viewEl.hidden = viewEl.id !== viewId;
+    //   });
+
+    //   target.hidden = false;
+    //   target.style.display = '';
+
+    //   if (!EHS_VIEWS.includes(name)) {
+    //     EHS_VIEWS.push(name);
+    //   }
+    // }
 
     function boot() {
       const savedNik = localStorage.getItem('ehs_nik');
@@ -77,6 +98,7 @@
           EHS_CURRENT_IS_ADMIN = user.isAdmin;
           localStorage.setItem('ehs_nik', user.nik);
           showView('dashboard');
+          initAppShell(user);
           loadDashboard(user.nik);
         })
         .withFailureHandler(function(err) {
@@ -131,6 +153,13 @@
     }
 
     boot();
+    document.addEventListener('DOMContentLoaded', function() {
+      const holder = document.getElementById('legacy-views-holder');
+      const target = document.getElementById('shell-content');
+      if (holder && target) {
+        while (holder.firstChild) target.appendChild(holder.firstChild);
+      }
+});
   </script>
 </body>
 </html>

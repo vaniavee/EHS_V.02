@@ -196,3 +196,8 @@ function TEST_migrate_notifications() {
   ensureSheet_(ss, '28_DB_Notifications', EHS_SCHEMA['28_DB_Notifications']);
   Logger.log('Sheet Notifications siap.');
 }
+function TEST_migrate_streak_columns() {
+  const ss = getSpreadsheet_();
+  ensureSheet_(ss, EHS.sheets.users, EHS_SCHEMA[EHS.sheets.users]);
+  Logger.log('Kolom Streak siap.');
+}

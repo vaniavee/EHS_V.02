@@ -1,0 +1,206 @@
+<style>
+  .shell-wrap { display: flex; min-height: 100vh; }
+  .shell-sidebar {
+    width: 240px; flex-shrink: 0; background: var(--green-900); color: #fff;
+    padding: 20px 14px; transition: width 0.2s ease; overflow: hidden;
+  }
+  .shell-sidebar.collapsed { width: 68px; padding: 20px 10px; }
+  .shell-sidebar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .shell-logo { font-weight: 800; font-size: 16px; white-space: nowrap; }
+  .shell-sidebar.collapsed .shell-logo { display: none; }
+  .shell-collapse-btn { background: rgba(255,255,255,0.1); border: none; color: #fff; border-radius: 8px; width: 28px; height: 28px; cursor: pointer; flex-shrink: 0; }
+  .shell-nav-item {
+    display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px;
+    cursor: pointer; margin-bottom: 4px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.75);
+    white-space: nowrap; overflow: hidden;
+  }
+  .shell-nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .shell-nav-item.active { background: rgba(255,255,255,0.15); color: #fff; }
+  .shell-nav-icon { font-size: 17px; width: 20px; text-align: center; flex-shrink: 0; }
+  .shell-sidebar.collapsed .shell-nav-label { display: none; }
+  .shell-nav-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.4); margin: 16px 0 6px 12px; }
+  .shell-sidebar.collapsed .shell-nav-section-title { display: none; }
+
+  .shell-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .shell-topbar {
+    display: flex; align-items: center; justify-content: flex-end; gap: 18px;
+    padding: 14px 24px; background: var(--surface); box-shadow: var(--shadow); position: relative; z-index: 50;
+  }
+  .shell-streak { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 14px; color: var(--green-900); }
+  .shell-content { flex: 1; padding: 20px 24px; }
+
+  @media (max-width: 720px) {
+    .shell-sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; width: 240px; }
+    .shell-sidebar:not(.mobile-open) { width: 0; padding: 0; }
+    .shell-topbar { padding: 12px 14px; }
+    .shell-content { padding: 14px; }
+  }
+</style>
+
+<div class="shell-wrap">
+  <div class="shell-sidebar" id="shell-sidebar">
+    <div class="shell-sidebar-header">
+      <span class="shell-logo">EHS App</span>
+      <button class="shell-collapse-btn" onclick="toggleSidebar()">☰</button>
+    </div>
+    <div id="shell-nav-list"></div>
+  </div>
+
+  <div class="shell-main">
+    <div class="shell-topbar">
+      <div class="shell-streak" id="shell-streak" style="display:none;">🔥 <span id="shell-streak-count">0</span> Hari Streak</div>
+
+      <div class="notif-bell-wrap" onclick="toggleNotifDropdown()">
+        <span class="notif-bell">🔔</span>
+        <span class="notif-badge" id="notif-badge-count" style="display:none;">0</span>
+        <div class="notif-dropdown" id="notif-dropdown">
+          <div class="notif-dropdown-header">
+            <b>Notifikasi</b>
+            <button class="btn-ghost" style="width:auto;padding:4px 10px;margin:0;font-size:11px;" onclick="markAllNotifRead(event)">Tandai semua dibaca</button>
+          </div>
+          <div id="notif-list"><p class="sub" style="padding:12px;">Memuat...</p></div>
+        </div>
+      </div>
+
+      <div class="shell-profile" onclick="navigateTo('profile')" style="cursor:pointer;display:flex;align-items:center;gap:8px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--green-900);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;" id="shell-profile-initial">?</div>
+      </div>
+    </div>
+
+    <div class="shell-content" id="shell-content"></div>
+  </div>
+</div>
+
+<script>
+  let shellCurrentUser = null;
+
+  const SHELL_NAV_ITEMS_USER = [
+    { section: 'Menu' },
+    { icon: '📊', label: 'Dashboard', page: 'program' },
+    { icon: '⚖️', label: 'Measure Your Body', page: 'bmi' },
+    { icon: '🏆', label: 'Leaderboard', page: 'leaderboard' },
+    { icon: '🪙', label: 'Tukar Coin', page: 'reward' },
+    { icon: '💬', label: 'Bantuan', page: 'help' },
+    { section: 'Program' },
+    { icon: '❤️', label: 'Health Task', page: 'health' },
+    { icon: '⚡', label: 'Energy Task', page: 'energy' },
+    { icon: '🛡️', label: 'Safety Task', page: 'safety-report' },
+    { icon: '🌱', label: 'Sustainability', page: 'sustainability' }
+  ];
+
+  const SHELL_NAV_ITEMS_ADMIN = [
+    { section: 'Overview' },
+    { icon: '📊', label: 'Dashboard', page: 'program' },
+    { section: 'Persetujuan' },
+    { icon: '✅', label: 'Review Queue', page: 'review-queue' },
+    { icon: '🪙', label: 'Redemption Queue', page: 'rewardqueue' },
+    { section: 'Kelola' },
+    { icon: '⚙️', label: 'Kelola Master Data', page: 'admin' },
+    { icon: '❓', label: 'Kelola Pertanyaan', page: 'admin-help' },
+    { icon: '🏆', label: 'Leaderboard', page: 'leaderboard' }
+  ];
+
+  function initAppShell(user) {
+    shellCurrentUser = user;
+    document.getElementById('shell-profile-initial').textContent = (user.nama || '?').charAt(0).toUpperCase();
+
+    const items = user.isAdmin ? SHELL_NAV_ITEMS_ADMIN : SHELL_NAV_ITEMS_USER;
+    document.getElementById('shell-nav-list').innerHTML = items.map(function(i) {
+      if (i.section) return '<div class="shell-nav-section-title">' + i.section + '</div>';
+      return '<div class="shell-nav-item" data-page="' + i.page + '" onclick="navigateTo(\'' + i.page + '\')">' +
+        '<span class="shell-nav-icon">' + i.icon + '</span>' +
+        '<span class="shell-nav-label">' + i.label + '</span>' +
+      '</div>';
+    }).join('');
+
+    loadNotifSummary();
+    if (!user.isAdmin) loadShellStreak();
+  }
+
+  function toggleSidebar() {
+    document.getElementById('shell-sidebar').classList.toggle('collapsed');
+    document.getElementById('shell-sidebar').classList.toggle('mobile-open');
+  }
+
+  function loadShellStreak() {
+    google.script.run
+      .withSuccessHandler(function(summary) {
+        if (summary.streak > 0) {
+          document.getElementById('shell-streak').style.display = 'flex';
+          document.getElementById('shell-streak-count').textContent = summary.streak;
+        }
+      })
+      .withFailureHandler(function() {})
+      .getDashboardSummary({ nik: EHS_CURRENT_NIK });
+  }
+
+  function setShellActiveNav(page) {
+    document.querySelectorAll('.shell-nav-item').forEach(function(el) {
+      el.classList.toggle('active', el.dataset.page === page);
+    });
+  }
+
+  // ---------- NOTIFIKASI (dipakai bersama user & admin) ----------
+  function loadNotifSummary() {
+    google.script.run
+      .withSuccessHandler(function(summary) {
+        const badge = document.getElementById('notif-badge-count');
+        if (summary.totalUnread > 0) {
+          badge.textContent = summary.totalUnread > 99 ? '99+' : summary.totalUnread;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
+      })
+      .withFailureHandler(function() {})
+      .getUnreadNotificationSummary({ nik: EHS_CURRENT_NIK });
+  }
+
+  function toggleNotifDropdown() {
+    const dropdown = document.getElementById('notif-dropdown');
+    const willShow = !dropdown.classList.contains('show');
+    dropdown.classList.toggle('show', willShow);
+    if (willShow) loadNotifList();
+  }
+
+  function loadNotifList() {
+    document.getElementById('notif-list').innerHTML = '<p class="sub" style="padding:12px;">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(renderNotifList)
+      .withFailureHandler(function() {})
+      .getMyNotifications({ nik: EHS_CURRENT_NIK });
+  }
+
+  function renderNotifList(rows) {
+    const el = document.getElementById('notif-list');
+    if (!rows.length) { el.innerHTML = '<p class="sub" style="padding:12px;">Belum ada notifikasi.</p>'; return; }
+    el.innerHTML = rows.map(function(r) {
+      const unreadClass = r.IsRead !== 'Yes' ? 'unread' : '';
+      return '<div class="notif-item ' + unreadClass + '" onclick=\'handleNotifClick("' + r.NotificationId + '", "' + (r.RelatedPage || '') + '")\'>' +
+        '<p class="notif-item-title">' + r.Title + '</p>' +
+        '<p class="notif-item-msg">' + r.Message + '</p>' +
+        '<p class="notif-item-time">' + r.CreatedAt + '</p>' +
+      '</div>';
+    }).join('');
+  }
+
+  function handleNotifClick(notificationId, relatedPage) {
+    google.script.run.withSuccessHandler(function() { loadNotifSummary(); }).markNotificationRead({ nik: EHS_CURRENT_NIK, notificationId: notificationId });
+    document.getElementById('notif-dropdown').classList.remove('show');
+    if (relatedPage) navigateTo(relatedPage);
+  }
+
+  function markAllNotifRead(event) {
+    event.stopPropagation();
+    google.script.run
+      .withSuccessHandler(function() { loadNotifSummary(); loadNotifList(); })
+      .markAllNotificationsRead({ nik: EHS_CURRENT_NIK });
+  }
+
+  document.addEventListener('click', function(e) {
+    const wrap = document.querySelector('.notif-bell-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+      document.getElementById('notif-dropdown').classList.remove('show');
+    }
+  });
+</script>

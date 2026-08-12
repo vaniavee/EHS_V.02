@@ -40,6 +40,7 @@ function awardPoints_(user, pillar, taskId, referenceId, points, note, campaignI
     const pts = Number(points || 0);
     const cn = Number(coin || 0);
     if (pts > 0 || cn > 0) {
+      updateUserStreak_(user.nik);
       const parts = [];
       if (pts > 0) parts.push('+' + pts + ' XP');
       if (cn > 0) parts.push('+' + cn + ' Coin');
