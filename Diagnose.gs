@@ -191,3 +191,8 @@ function TEST_migrate_reward_redemptions() {
   ensureSheet_(ss, '27_DB_RewardRedemptions', EHS_SCHEMA['27_DB_RewardRedemptions']);
   Logger.log('Sheet Reward Redemptions siap.');
 }
+function TEST_migrate_notifications() {
+  const ss = getSpreadsheet_();
+  ensureSheet_(ss, '28_DB_Notifications', EHS_SCHEMA['28_DB_Notifications']);
+  Logger.log('Sheet Notifications siap.');
+}

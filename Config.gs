@@ -148,6 +148,9 @@ const EHS_SCHEMA = {
   'Timestamp', 'ReferenceId', 'SeasonId', 'NIK', 'Nama', 'Divisi',
   'RewardId', 'RewardTitle', 'CoinCost', 'Status', 'Notes', 'FulfilledBy', 'FulfilledAt'
   ],
+  '28_DB_Notifications': [
+  'NotificationId', 'NIK', 'Title', 'Message', 'RelatedPage', 'RelatedRefId', 'IsRead', 'CreatedAt'
+  ],
 };
 
 // Fungsi utama untuk menginisialisasiseluruh sistem ketika aplikasi pertama kali dipasang
@@ -631,5 +634,3 @@ function seedFaqData_(ss) {
   ];
   sh.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
 }
-
-

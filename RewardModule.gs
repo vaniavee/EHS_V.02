@@ -113,6 +113,8 @@ function redeemReward(payload) {
       RewardId: payload.rewardId, RewardTitle: row[col.Title], CoinCost: coinCost, Status: 'Pending',
       Notes: '', FulfilledBy: '', FulfilledAt: ''
     });
+    createNotification_(nik, 'Redeem Berhasil!', 'Anda berhasil redeem "' + row[col.Title] + '" seharga ' + coinCost + ' coin. Menunggu diproses Admin.', 'reward', referenceId);
+    notifyAdmins_('Redemption Baru', user.nama + ' redeem "' + row[col.Title] + '", menunggu diproses.', 'rewardqueue', referenceId);
 
     return { ok: true, message: 'Reward "' + row[col.Title] + '" berhasil di-redeem, -' + coinCost + ' coin. Menunggu diproses Admin EHS.' };
   } finally {
@@ -158,7 +160,9 @@ function fulfillRewardRedemption(payload) {
   sh.getRange(rowIdx + 1, col.Notes + 1).setValue(clean_(payload.notes));
   sh.getRange(rowIdx + 1, col.FulfilledBy + 1).setValue(admin.nama);
   sh.getRange(rowIdx + 1, col.FulfilledAt + 1).setValue(now_());
-
+  
+  createNotification_(clean_(data[rowIdx][col.NIK]), 'Reward Siap Diambil!', 'Redemption "' + clean_(data[rowIdx][col.RewardTitle]) + '" sudah diproses Admin.', 'reward', payload.referenceId);
+  
   return { ok: true, message: 'Redemption ditandai selesai diproses.' };
 }
 

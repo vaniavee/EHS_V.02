@@ -21,24 +21,43 @@ function awardPoints_(user, pillar, taskId, referenceId, points, note, campaignI
     if (exists) return 0;
 
     appendObjectRow_(EHS.sheets.pointsLedger, {
-      Timestamp: now_(),
-      SeasonId: sid,
-      Pillar: pillar,
-      TaskId: taskId || '',
+      Timestamp: now_(), 
+      SeasonId: sid, 
+      Pillar: pillar, 
+      TaskId: taskId || '', 
       CampaignId: campaignId || '',
-      NIK: user.nik,
-      Nama: user.nama,
-      Divisi: user.divisi,
+      NIK: user.nik, 
+      Nama: user.nama, 
+      Divisi: user.divisi, 
       ReferenceId: referenceId,
-      Points: Number(points || 0),
-      DomainXP: Number(domainXp || 0),
-      Coin: Number(coin || 0),
+      Points: Number(points || 0), 
+      DomainXP: Number(domainXp || 0), 
+      Coin: Number(coin || 0), 
       Note: note || ''
     });
-    return Number(points || 0); // tetap Number, supaya semua caller lama tidak perlu diubah
+
+    // --- Notifikasi otomatis untuk reward positif ---
+    const pts = Number(points || 0);
+    const cn = Number(coin || 0);
+    if (pts > 0 || cn > 0) {
+      const parts = [];
+      if (pts > 0) parts.push('+' + pts + ' XP');
+      if (cn > 0) parts.push('+' + cn + ' Coin');
+      createNotification_(user.nik, 'Reward Diterima!', (note || 'Aktivitas') + ' — ' + parts.join(', ') + '.', mapPillarToPage_(pillar), referenceId);
+    }
+
+    return Number(points || 0);
   } finally {
     lock.releaseLock();
   }
+}
+
+function mapPillarToPage_(pillar) {
+  const p = clean_(pillar).toLowerCase();
+  if (p === 'health') return 'health';
+  if (p === 'energy') return 'energy';
+  if (p === 'safety') return 'safety-report';
+  return '';
 }
 
 /**
@@ -185,6 +204,9 @@ function submitHealthTaskDetailed(payload) {
 
   if (isAuto) {
     awardPoints_(user, task.Pillar, task.TaskId, referenceId, points, task.Title, task.CampaignId, seasonId);
+  }
+  if (!isAuto) {
+  notifyAdmins_('Task Health/Energy Baru', user.nama + ' submit "' + task.Title + '", menunggu verifikasi.', 'health-monitor', referenceId);
   }
 
   return {

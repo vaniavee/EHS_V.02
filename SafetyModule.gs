@@ -93,7 +93,9 @@ function submitSafetyReport(payload) {
       'Safety Talk - ' + divisi, '', seasonId
     );
   }
-
+  if (jenis !== 'ST') {
+  notifyAdmins_('Laporan Safety Baru', jenis + ' dari ' + divisi + ' oleh ' + user.nama + ' menunggu review.', 'safety-review', referenceId);
+  }
   return {
     ok: true,
     status: status,
