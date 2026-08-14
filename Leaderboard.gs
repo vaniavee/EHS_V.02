@@ -33,7 +33,7 @@ function getTotalPointsForUser_(nik, seasonId) {
     .filter(function(r) {
       return normalizeNikLenient_(r.NIK) === nik && clean_(r.SeasonId) === seasonId;
     });
-  return rows.reduce(function(sum, r) { return sum + Number(r.Points || 0); }, 0);
+  return rows.reduce(function(sum, r) { const n = Number(r.Points); return sum + (isNaN(n) ? 0 : n); }, 0);
 }
 
 function getMonitorData(payload) {
@@ -154,7 +154,7 @@ function getTotalDomainXpForUser_(nik, seasonId, pillar) {
 function getTotalCoinsForUser_(nik, seasonId) {
   const rows = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.pointsLedger))
     .filter(function(r) { return normalizeNikLenient_(r.NIK) === nik && clean_(r.SeasonId) === seasonId; });
-  return rows.reduce(function(sum, r) { return sum + Number(r.Coin || 0); }, 0);
+  return rows.reduce(function(sum, r) { const n = Number(r.Coin); return sum + (isNaN(n) ? 0 : n); }, 0);
 }
 
 const EHS_DOMAIN_META = {

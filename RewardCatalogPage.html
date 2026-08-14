@@ -35,6 +35,10 @@
   }
 
   function renderRewardCatalog(data) {
+    if (!data || data.__error) {
+      showRewardToast('Gagal memuat katalog reward: ' + (data && data.message ? data.message : 'response kosong'), 'error');
+      return;
+    }
     document.getElementById('reward-my-coins').textContent = data.myCoins + ' Coin';
     const el = document.getElementById('reward-catalog-list');
     if (!data.rewards.length) { el.innerHTML = '<p class="sub">Belum ada reward tersedia.</p>'; return; }

@@ -4,17 +4,6 @@
       <p class="dash-greeting" id="dash-greeting">Halo!</p>
       <p class="dash-role" id="dash-role"></p>
     </div>
-    <div class="notif-bell-wrap" onclick="toggleNotifDropdown()">
-      <span class="notif-bell">🔔</span>
-      <span class="notif-badge" id="notif-badge-count" style="display:none;">0</span>
-      <div class="notif-dropdown" id="notif-dropdown">
-        <div class="notif-dropdown-header">
-          <b>Notifikasi</b>
-          <button class="btn-ghost" style="width:auto;padding:4px 10px;margin:0;font-size:11px;" onclick="markAllNotifRead(event)">Tandai semua dibaca</button>
-        </div>
-        <div id="notif-list"><p class="sub" style="padding:12px;">Memuat...</p></div>
-      </div>
-    </div>
     <button class="btn-ghost btn-logout" onclick="logout()">Keluar</button>
   </div>
 
@@ -59,6 +48,10 @@
   }
 
   function renderDashboard(summary) {
+  if (!summary || summary.__error) {
+    alert('Gagal memuat dashboard: ' + (summary && summary.message ? summary.message : 'response kosong'));
+    return;
+  }
   const u = summary.user;
   document.getElementById('dash-greeting').textContent = 'Halo, ' + u.nama + '!';
   document.getElementById('dash-role').textContent =
@@ -74,11 +67,24 @@
   if (summary.domains) {
     document.getElementById('domain-grid').style.display = '';
     renderDomainCards(summary.domains);
+  } else {
+    loadDomainOverviewAsync(u.nik, summary.seasonId);
   }
 
   renderMenu(u);
   loadNotifSummary();
 }
+
+  function loadDomainOverviewAsync(nik, seasonId) {
+    google.script.run
+      .withSuccessHandler(function(domains) {
+        if (!domains) return;
+        document.getElementById('domain-grid').style.display = '';
+        renderDomainCards(domains);
+      })
+      .withFailureHandler(function(err) { console.warn('gagal load domain overview:', err); })
+      .getDomainOverview({ nik: nik, seasonId: seasonId });
+  }
 
   function renderDomainCards(domains) {
     const el = document.getElementById('domain-grid');
@@ -139,67 +145,5 @@
         '<span class="label">' + i.label + '</span>' +
       '</div>';
     }).join('');
-  }
-  function loadNotifSummary() {
-  google.script.run
-    .withSuccessHandler(function(summary) {
-      const badge = document.getElementById('notif-badge-count');
-      if (summary.totalUnread > 0) {
-        badge.textContent = summary.totalUnread > 99 ? '99+' : summary.totalUnread;
-        badge.style.display = 'flex';
-      } else {
-        badge.style.display = 'none';
-      }
-    })
-    .withFailureHandler(function() {})
-    .getUnreadNotificationSummary({ nik: EHS_CURRENT_NIK });
-}
-
-function toggleNotifDropdown() {
-  const dropdown = document.getElementById('notif-dropdown');
-  const willShow = !dropdown.classList.contains('show');
-  dropdown.classList.toggle('show', willShow);
-  if (willShow) loadNotifList();
-}
-
-function loadNotifList() {
-  document.getElementById('notif-list').innerHTML = '<p class="sub" style="padding:12px;">Memuat...</p>';
-  google.script.run
-    .withSuccessHandler(renderNotifList)
-    .withFailureHandler(function() {})
-    .getMyNotifications({ nik: EHS_CURRENT_NIK });
-}
-
-function renderNotifList(rows) {
-  const el = document.getElementById('notif-list');
-  if (!rows.length) { el.innerHTML = '<p class="sub" style="padding:12px;">Belum ada notifikasi.</p>'; return; }
-  el.innerHTML = rows.map(function(r) {
-    const unreadClass = r.IsRead !== 'Yes' ? 'unread' : '';
-    return '<div class="notif-item ' + unreadClass + '" onclick=\'handleNotifClick("' + r.NotificationId + '", "' + (r.RelatedPage || '') + '")\'>' +
-      '<p class="notif-item-title">' + r.Title + '</p>' +
-      '<p class="notif-item-msg">' + r.Message + '</p>' +
-      '<p class="notif-item-time">' + r.CreatedAt + '</p>' +
-    '</div>';
-  }).join('');
-}
-
-function handleNotifClick(notificationId, relatedPage) {
-  google.script.run.withSuccessHandler(function() { loadNotifSummary(); }).markNotificationRead({ nik: EHS_CURRENT_NIK, notificationId: notificationId });
-  document.getElementById('notif-dropdown').classList.remove('show');
-  if (relatedPage) navigateTo(relatedPage);
-}
-
-function markAllNotifRead(event) {
-  event.stopPropagation();
-  google.script.run
-    .withSuccessHandler(function() { loadNotifSummary(); loadNotifList(); })
-    .markAllNotificationsRead({ nik: EHS_CURRENT_NIK });
-}
-
-document.addEventListener('click', function(e) {
-  const wrap = document.querySelector('.notif-bell-wrap');
-  if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('notif-dropdown').classList.remove('show');
-  }
-});
+  };
 </script>

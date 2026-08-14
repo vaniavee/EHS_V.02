@@ -113,7 +113,7 @@ function submitAwarenessSurvey(payload) {
   // }
   const points = Number(task.Points);
   const title = task.Title;
-  //const campaignId = clean_(payload.campaignId || task.CampaignId);
+  const campaignId = clean_(payload.campaignId || task.CampaignId);
   const claimNumber = availability.used + 1;
   const referenceId = [seasonId, task.TaskId, nik, availability.periodKey, claimNumber].join(':');
 
@@ -219,6 +219,8 @@ function submitMiniProject(payload) {
     EstimasiDampak: payload.estimasiDampak || '', AnggotaTim: (payload.anggotaTim || []).join(', '),
     Status: 'Pending', Points: Number(task.Points), AdminFeedback: '', PeriodKey: availability.periodKey
   });
+  
+  notifyAdmins_('Mini Project Baru', user.nama + ' mengirim Mini Project: ' + payload.judulProject, 'admin', referenceId);
 
   return { ok: true, message: 'Mini Project terkirim, menunggu review Panel EHS.' };
 }

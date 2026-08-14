@@ -125,7 +125,7 @@
   function loadShellStreak() {
     google.script.run
       .withSuccessHandler(function(summary) {
-        if (summary.streak > 0) {
+        if (summary && !summary.__error && summary.streak > 0) {
           document.getElementById('shell-streak').style.display = 'flex';
           document.getElementById('shell-streak-count').textContent = summary.streak;
         }

@@ -56,17 +56,34 @@ function getHeaderIndex_(headers, candidates) {
 }
 
 // Membaca worksheet menjadi array objek
+// Di-cache per eksekusi (bukan lintas request) supaya sheet yang sama gak
+// dibaca ulang berkali-kali dalam satu panggilan seperti getDashboardSummary.
+// Aman karena tiap request Apps Script punya konteks eksekusi baru (variabel
+// global reset tiap kali). JANGAN pakai readObjects_ setelah menulis ke sheet
+// yang sama dalam eksekusi yang sama — hasilnya bakal basi (pakai getRange
+// langsung buat kasus read-after-write).
+var _readObjectsCache_ = {};
+
 function readObjects_(sh) {
-  if (!sh || sh.getLastRow() < 2) return [];
+  if (!sh) return [];
+  const cacheKey = sh.getSheetId();
+  if (_readObjectsCache_.hasOwnProperty(cacheKey)) return _readObjectsCache_[cacheKey];
+
+  if (sh.getLastRow() < 2) {
+    _readObjectsCache_[cacheKey] = [];
+    return [];
+  }
   const values = sh.getRange(1, 1, sh.getLastRow(), sh.getLastColumn()).getDisplayValues();
   const headers = values.shift().map(clean_);
-  return values
+  const result = values
     .filter(function(row) { return row.some(function(v) { return clean_(v) !== ''; }); })
     .map(function(row) {
       const obj = {};
       headers.forEach(function(h, i) { obj[h] = row[i]; });
       return obj;
     });
+  _readObjectsCache_[cacheKey] = result;
+  return result;
 }
 
 // Menambahkan satu baris data berdasarkan nama header

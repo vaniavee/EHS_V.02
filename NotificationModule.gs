@@ -20,27 +20,37 @@ function notifyAdmins_(title, message, relatedPage, relatedRefId) {
   });
 }
 
-function getMyNotifications(payload) {
-  validateRequired_(payload, ['nik']);
-  const nik = normalizeNik_(payload.nik);
-  const rows = readObjects_(getSpreadsheet_().getSheetByName('28_DB_Notifications'))
-    .filter(function(r) { return normalizeNikLenient_(r.NIK) === nik; });
-  rows.sort(function(a, b) { return new Date(b.CreatedAt) - new Date(a.CreatedAt); });
-  return rows.slice(0, 30);
+function getUnreadNotificationSummary(payload) {
+  try {
+    validateRequired_(payload, ['nik']);
+    const nik = normalizeNik_(payload.nik);
+    const rows = readObjects_(getSpreadsheet_().getSheetByName('28_DB_Notifications'))
+      .filter(function(r) { return normalizeNikLenient_(r.NIK) === nik && clean_(r.IsRead) !== 'Yes'; });
+
+    const byPage = {};
+    rows.forEach(function(r) {
+      const page = clean_(r.RelatedPage) || 'general';
+      byPage[page] = (byPage[page] || 0) + 1;
+    });
+    return { totalUnread: rows.length, byPage: byPage };
+  } catch (e) {
+    Logger.log('getUnreadNotificationSummary error: ' + (e && e.stack || e));
+    return { totalUnread: 0, byPage: {} };
+  }
 }
 
-function getUnreadNotificationSummary(payload) {
-  validateRequired_(payload, ['nik']);
-  const nik = normalizeNik_(payload.nik);
-  const rows = readObjects_(getSpreadsheet_().getSheetByName('28_DB_Notifications'))
-    .filter(function(r) { return normalizeNikLenient_(r.NIK) === nik && clean_(r.IsRead) !== 'Yes'; });
-
-  const byPage = {};
-  rows.forEach(function(r) {
-    const page = clean_(r.RelatedPage) || 'general';
-    byPage[page] = (byPage[page] || 0) + 1;
-  });
-  return { totalUnread: rows.length, byPage: byPage };
+function getMyNotifications(payload) {
+  try {
+    validateRequired_(payload, ['nik']);
+    const nik = normalizeNik_(payload.nik);
+    const rows = readObjects_(getSpreadsheet_().getSheetByName('28_DB_Notifications'))
+      .filter(function(r) { return normalizeNikLenient_(r.NIK) === nik; });
+    rows.sort(function(a, b) { return new Date(b.CreatedAt) - new Date(a.CreatedAt); });
+    return rows.slice(0, 30);
+  } catch (e) {
+    Logger.log('getMyNotifications error: ' + (e && e.stack || e));
+    return [];
+  }
 }
 
 function markNotificationRead(payload) {

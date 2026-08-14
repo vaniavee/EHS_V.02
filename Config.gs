@@ -635,5 +635,3 @@ function seedFaqData_(ss) {
   ];
   sh.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
 }
-
-
