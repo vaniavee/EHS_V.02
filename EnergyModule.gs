@@ -233,7 +233,6 @@ function listMiniProjectsForReview(payload) {
 }
 
 function approveMiniProject(payload) {
-  const admin = assertCapability_(payload.adminNik, 'canApproveAllReports');
   const sh = getSpreadsheet_().getSheetByName('16_DB_MiniProjects');
   const data = sh.getDataRange().getValues();
   const headers = data[0]; const col = {};
@@ -241,11 +240,11 @@ function approveMiniProject(payload) {
   const rowIndex = data.findIndex(function(r) { return clean_(r[col.ReferenceId]) === clean_(payload.referenceId); });
   if (rowIndex === -1) throw new Error('Mini Project tidak ditemukan.');
   const row = data[rowIndex];
+  assertCanApprove_(payload.adminNik, clean_(row[col.Divisi]));
 
   sh.getRange(rowIndex + 1, col.Status + 1).setValue('Approved');
   awardPoints_({ nik: row[col.NIK], nama: row[col.Nama], divisi: row[col.Divisi] },
     'Energy', 'E03', clean_(row[col.ReferenceId]), Number(row[col.Points]), row[col.JudulProject], '', clean_(row[col.SeasonId]));
-
   return { ok: true, message: 'Mini Project disetujui, +' + row[col.Points] + ' poin.' };
 }
 

@@ -124,7 +124,6 @@ function countSafetyReportsInPeriod_(nik, jenis, seasonId, periodKey) {
  */
 // Menyetujui laporan Safety Walk/Hazard serta memberikan poin
 function approveSafetyReport(payload) {
-  const admin = assertCapability_(payload.adminNik, 'canApproveAllReports');
   validateRequired_(payload, ['referenceId']);
 
   const sh = getSpreadsheet_().getSheetByName(EHS.sheets.safetyReports);
@@ -146,6 +145,7 @@ function approveSafetyReport(payload) {
   if (rowIndex === -1) throw new Error('Laporan tidak ditemukan: ' + payload.referenceId);
   if (rowIndex === 0) throw new Error('Referensi tidak valid.');
 
+  const admin = assertCanApprove_(payload.adminNik, clean_(row[divisiCol]))
   const row = data[rowIndex];
   if (clean_(row[statusCol]) !== 'Pending') {
     throw new Error('Laporan ini sudah direview sebelumnya (status: ' + row[statusCol] + ').');

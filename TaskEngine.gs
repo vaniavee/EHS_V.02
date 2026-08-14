@@ -230,9 +230,7 @@ function isSameDay_(date1, date2) {
  * Admin approve klaim Health/Energy yang statusnya Pending -> poin masuk ledger.
  */
 function approveHealthClaim(payload) {
-  assertCapability_(payload.adminNik, 'canApproveAllReports');
   validateRequired_(payload, ['referenceId']);
-
   const sh = getSpreadsheet_().getSheetByName(EHS.sheets.taskClaims);
   const data = sh.getDataRange().getValues();
   const headers = data[0];
@@ -242,23 +240,20 @@ function approveHealthClaim(payload) {
   const rowIndex = data.findIndex(function(r) { return clean_(r[col.ReferenceId]) === clean_(payload.referenceId); });
   if (rowIndex === -1) throw new Error('Klaim tidak ditemukan.');
   const row = data[rowIndex];
+  assertCanApprove_(payload.adminNik, clean_(row[col.Divisi]));
   if (clean_(row[col.Status]) !== 'Pending') throw new Error('Klaim sudah direview sebelumnya.');
 
   sh.getRange(rowIndex + 1, col.Status + 1).setValue('Approved');
-
   awardPoints_(
     { nik: row[col.NIK], nama: row[col.Nama], divisi: row[col.Divisi] },
     row[col.Pillar], row[col.TaskId], clean_(row[col.ReferenceId]), Number(row[col.Points]),
     row[col.Note], '', clean_(row[col.SeasonId])
   );
-
-  return { ok: true, message: 'Klaim disetujui, +' + row[col.Points] + ' poin dicatat.' };
+  return { ok: true, message: 'Klaim disetujui, +' + row[col.Points] + ' poin.' };
 }
 
 function reviseHealthClaim(payload) {
-  assertCapability_(payload.adminNik, 'canApproveAllReports');
   validateRequired_(payload, ['referenceId', 'feedback']);
-
   const sh = getSpreadsheet_().getSheetByName(EHS.sheets.taskClaims);
   const data = sh.getDataRange().getValues();
   const headers = data[0];
@@ -267,11 +262,11 @@ function reviseHealthClaim(payload) {
 
   const rowIndex = data.findIndex(function(r) { return clean_(r[col.ReferenceId]) === clean_(payload.referenceId); });
   if (rowIndex === -1) throw new Error('Klaim tidak ditemukan.');
+  assertCanApprove_(payload.adminNik, clean_(data[rowIndex][col.Divisi]));
 
   sh.getRange(rowIndex + 1, col.Status + 1).setValue('Revise');
   const existingNote = clean_(data[rowIndex][col.Note]);
-  sh.getRange(rowIndex + 1, col.Note + 1).setValue(existingNote + ' | Revisi Admin: ' + payload.feedback);
-
+  sh.getRange(rowIndex + 1, col.Note + 1).setValue(existingNote + ' | Revisi: ' + payload.feedback);
   return { ok: true, message: 'Klaim dikembalikan untuk revisi.' };
 }
 

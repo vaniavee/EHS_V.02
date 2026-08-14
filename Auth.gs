@@ -261,3 +261,10 @@ function getDashboardSummary(payload) {
     return { __error: true, message: (e && e.message) || String(e) };
   }
 }
+function assertCanApprove_(nik, targetDivisi) {
+  const user = getUserProfile_(nik);
+  if (!user.active) throw new Error('User tidak aktif atau tidak ditemukan.');
+  if (user.isAdmin) return user;
+  if (user.isSupervisor && targetDivisi && user.divisiDiawasi.indexOf(clean_(targetDivisi)) !== -1) return user;
+  throw new Error('Akses ditolak. Anda tidak berwenang approval untuk divisi ini.');
+}
