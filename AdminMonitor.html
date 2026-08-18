@@ -7,12 +7,24 @@
     <div style="flex:1;">
       <div class="card" style="padding:14px;">
         <div class="filter-row">
-          <select id="mon-filter-divisi"><option value="">Semua Divisi</option></select>
-          <select id="mon-filter-status">
+          <div class="date-wrapper" style="width:200px;">
+            <input id="mon-filter-divisi" type="text" list="mon-divisi-list" placeholder="Semua Divisi" autocomplete="off">
+            <datalist id="mon-divisi-list"></datalist>
+          </div>
+          <select id="mon-filter-status" class="monitor-status-filter">
             <option value="">Semua Status</option>
             <option value="Approved">Approved</option>
             <option value="Pending">Pending</option>
             <option value="Revise">Revise</option>
+          </select>
+          <select id="mon-filter-kategori" class="monitor-kategori-filter" style="display:none;width:180px;flex:0 0 180px;">
+            <option value="">Semua Kategori</option>
+            <option value="Underweight">Underweight</option>
+            <option value="Normal">Normal</option>
+            <option value="Overweight">Overweight</option>
+            <option value="Obesitas I">Obesitas I</option>
+            <option value="Obesitas II">Obesitas II</option>
+            <option value="Obesitas III">Obesitas III</option>
           </select>
           <div class="date-group">
             <div class="date-wrapper">
@@ -44,9 +56,7 @@
       </div>
     </div>
 
-    <div class="split-detail" id="monitor-detail" style="flex:1;max-width:420px;">
-      <p class="sub" style="padding:20px;">Klik baris dengan status Pending untuk melakukan review.</p>
-    </div>
+    <div class="split-detail" id="monitor-detail" style="flex:1;max-width:420px;"></div>
   </div>
 </div>
 
@@ -141,6 +151,16 @@
     margin: 0;
     flex: 0 0 auto;
   }
+  #mon-filter-divisi {
+    width: 200px;
+    padding: 7px 10px;
+    font-size: 13px;
+    height: 36px;
+    min-height: 36px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+  }
   .table-wrap { overflow-x: auto; background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); margin-top: 14px; }
   .data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
   .data-table th {
@@ -161,10 +181,15 @@
     const titles = { health: 'Pantau Health Task', energy: 'Pantau Energy Task', bmi: 'Data BMI Karyawan' };
     document.getElementById('monitor-title').textContent = titles[type];
 
+    const isBmi = type === 'bmi';
+    document.querySelector('.monitor-status-filter').style.display = isBmi ? 'none' : '';
+    document.querySelector('.monitor-kategori-filter').style.display = isBmi ? '' : 'none';
+    document.getElementById('monitor-detail').style.display = isBmi ? 'none' : '';
+
     google.script.run
       .withSuccessHandler(function(divisiList) {
-        const sel = document.getElementById('mon-filter-divisi');
-        sel.innerHTML = '<option value="">Semua Divisi</option>' + divisiList.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
+        document.getElementById('mon-divisi-list').innerHTML =
+          divisiList.map(function(d) { return '<option value="' + d + '">'; }).join('');
       })
       .getDistinctDivisions();
 
@@ -174,6 +199,7 @@
   function resetMonitorFilter() {
     document.getElementById('mon-filter-divisi').value = '';
     document.getElementById('mon-filter-status').value = '';
+    document.getElementById('mon-filter-kategori').value = '';
     document.getElementById('mon-filter-from').value = '';
     document.getElementById('mon-filter-to').value = '';
     applyMonitorFilter();
@@ -193,6 +219,7 @@
         nik: monitorCurrentNik, type: monitorCurrentType,
         divisi: document.getElementById('mon-filter-divisi').value,
         status: document.getElementById('mon-filter-status').value,
+        kategori: document.getElementById('mon-filter-kategori').value,
         dateFrom: getDateValue('mon-filter-from'),
         dateTo: getDateValue('mon-filter-to')
       });
