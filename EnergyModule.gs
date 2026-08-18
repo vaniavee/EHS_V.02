@@ -255,3 +255,19 @@ function getCampaignById(payload) {
   if (!campaign) throw new Error('Campaign tidak ditemukan.');
   return campaign;
 }
+
+function reviseMiniProject(payload) {
+  validateRequired_(payload, ['referenceId', 'feedback']);
+  const sh = getSpreadsheet_().getSheetByName('16_DB_MiniProjects');
+  const data = sh.getDataRange().getValues();
+  const headers = data[0]; const col = {};
+  headers.forEach(function(h, i) { col[h] = i; });
+  const rowIndex = data.findIndex(function(r) { return clean_(r[col.ReferenceId]) === clean_(payload.referenceId); });
+  if (rowIndex === -1) throw new Error('Mini Project tidak ditemukan.');
+  assertCanApprove_(payload.adminNik, clean_(data[rowIndex][col.Divisi]));
+
+  sh.getRange(rowIndex + 1, col.Status + 1).setValue('Revise');
+  const existing = clean_(data[rowIndex][col.AdminFeedback]);
+  sh.getRange(rowIndex + 1, col.AdminFeedback + 1).setValue(existing + ' | Revisi: ' + payload.feedback);
+  return { ok: true, message: 'Mini Project dikembalikan untuk revisi.' };
+}
