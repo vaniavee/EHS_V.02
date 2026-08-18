@@ -81,6 +81,7 @@ function getMonitorDataFiltered(payload) {
 
   if (payload.divisi) rows = rows.filter(function(r) { return clean_(r.Divisi) === payload.divisi; });
   if (payload.status) rows = rows.filter(function(r) { return clean_(r.Status) === payload.status; });
+  if (payload.kategori) rows = rows.filter(function(r) { return clean_(r.Kategori_BMI) === payload.kategori; });
   if (payload.dateFrom) rows = rows.filter(function(r) { return new Date(r.Timestamp) >= new Date(payload.dateFrom); });
   if (payload.dateTo) rows = rows.filter(function(r) { return new Date(r.Timestamp) <= new Date(payload.dateTo + 'T23:59:59'); });
 
@@ -88,16 +89,20 @@ function getMonitorDataFiltered(payload) {
   return rows;
 }
 
+/**
+ * Daftar divisi unik untuk dropdown filter — dipakai Leaderboard & Admin Monitor.
+ * Sumber: sheet master 18_Master_Departments (bukan distinct dari Users), supaya
+ * semua divisi yang terdaftar perusahaan muncul di filter — termasuk yang belum
+ * punya user terdaftar sama sekali.
+ * Tanpa capability check karena ini cuma daftar nama divisi, bukan data sensitif.
+ */
 function getDistinctDivisions() {
-  const users = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.users));
+  const rows = readObjects_(getSpreadsheet_().getSheetByName('18_Master_Departments'));
   const set = {};
-  users.forEach(function(u) { if (clean_(u.Divisi)) set[clean_(u.Divisi)] = true; });
+  rows.forEach(function(d) { if (clean_(d.Name)) set[clean_(d.Name)] = true; });
   return Object.keys(set).sort();
 }
-
-
 /**
- * Leaderboard dengan filter pilar + divisi (opsional keduanya).
  * pillar: null = gabungan 3 pilar, atau 'Health'/'Safety'/'Energy'.
  * divisi: '' = semua divisi, atau nama divisi spesifik.
  */
@@ -129,17 +134,6 @@ function getLeaderboardFiltered(payload) {
     .sort(function(a, b) { return b.points - a.points; })
     .slice(0, limit)
     .map(function(r, i) { return Object.assign({ rank: i + 1 }, r, { badge: resolveBadgeTier_(r.points) }); });
-}
-
-/**
- * Daftar divisi unik untuk dropdown filter — dipakai Leaderboard & Admin Monitor.
- * Tanpa capability check karena ini cuma daftar nama divisi, bukan data sensitif.
- */
-function getDistinctDivisions() {
-  const users = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.users));
-  const set = {};
-  users.forEach(function(u) { if (clean_(u.Divisi)) set[clean_(u.Divisi)] = true; });
-  return Object.keys(set).sort();
 }
 
 function getTotalDomainXpForUser_(nik, seasonId, pillar) {

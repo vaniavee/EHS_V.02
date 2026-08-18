@@ -12,9 +12,8 @@
 
   <div class="card" style="padding:12px;margin-bottom:12px;">
     <label style="margin:0 0 6px;">Filter Divisi</label>
-    <select id="lb-filter-divisi" onchange="loadLeaderboard()">
-      <option value="">Semua Divisi</option>
-    </select>
+    <input id="lb-filter-divisi" type="text" list="lb-divisi-list" placeholder="Semua Divisi" autocomplete="off" onchange="loadLeaderboard()">
+    <datalist id="lb-divisi-list"></datalist>
   </div>
 
   <div id="leaderboard-list"><p class="sub">Memuat...</p></div>
@@ -58,9 +57,8 @@
 
     google.script.run
       .withSuccessHandler(function(divisiList) {
-        const sel = document.getElementById('lb-filter-divisi');
-        sel.innerHTML = '<option value="">Semua Divisi</option>' +
-          divisiList.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
+        document.getElementById('lb-divisi-list').innerHTML =
+          divisiList.map(function(d) { return '<option value="' + d + '">'; }).join('');
       })
       .withFailureHandler(function(err) { showLeaderboardToast(err.message || String(err), 'error'); })
       .getDistinctDivisions();

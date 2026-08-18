@@ -145,12 +145,11 @@ function approveSafetyReport(payload) {
   if (rowIndex === -1) throw new Error('Laporan tidak ditemukan: ' + payload.referenceId);
   if (rowIndex === 0) throw new Error('Referensi tidak valid.');
 
-  const admin = assertCanApprove_(payload.adminNik, clean_(row[divisiCol]))
   const row = data[rowIndex];
   if (clean_(row[statusCol]) !== 'Pending') {
     throw new Error('Laporan ini sudah direview sebelumnya (status: ' + row[statusCol] + ').');
   }
-
+  const admin = assertCanApprove_(payload.adminNik, clean_(row[divisiCol]))
   const jenis = clean_(row[jenisCol]);
   const severity = clean_(payload.finalSeverity || row[severityCol] || 'Low');
   const points = jenis === 'SW'
