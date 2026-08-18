@@ -84,7 +84,6 @@ function redeemReward(payload) {
     const row = data[rowIdx];
 
     if (clean_(row[col.Status]) !== 'Active') throw new Error('Reward ini sudah tidak aktif.');
-
     const stock = Number(row[col.Stock] || 0);
     if (stock <= 0) throw new Error('Stok reward ini sudah habis.');
 
@@ -96,10 +95,8 @@ function redeemReward(payload) {
     const eligibility = evaluateRewardEligibility_(user, totalPoints, row[col.EligibilityRuleJson]);
     if (!eligibility.eligible) throw new Error(eligibility.reason);
 
-    // Kurangi stok
     sh.getRange(rowIdx + 1, col.Stock + 1).setValue(stock - 1);
 
-    // Catat pengurangan Coin sebagai entri negatif di ledger (audit trail konsisten dengan pola awardPoints_)
     const referenceId = ['REDEEM', seasonId, payload.rewardId, nik, Date.now()].join(':');
     appendObjectRow_(EHS.sheets.pointsLedger, {
       Timestamp: now_(), SeasonId: seasonId, Pillar: 'Reward', TaskId: 'REDEEM_' + payload.rewardId,
@@ -107,16 +104,16 @@ function redeemReward(payload) {
       Points: 0, DomainXP: 0, Coin: -coinCost, Note: 'Redeem: ' + row[col.Title]
     });
 
-    // Catat sebagai permintaan redemption -> menunggu fulfillment Admin
+    // Auto-fulfilled — tidak lagi menunggu admin.
     appendObjectRow_('27_DB_RewardRedemptions', {
       Timestamp: now_(), ReferenceId: referenceId, SeasonId: seasonId, NIK: nik, Nama: user.nama, Divisi: user.divisi,
-      RewardId: payload.rewardId, RewardTitle: row[col.Title], CoinCost: coinCost, Status: 'Pending',
-      Notes: '', FulfilledBy: '', FulfilledAt: ''
+      RewardId: payload.rewardId, RewardTitle: row[col.Title], CoinCost: coinCost, Status: 'Fulfilled',
+      Notes: 'Auto-redeemed', FulfilledBy: 'System', FulfilledAt: now_()
     });
-    createNotification_(nik, 'Redeem Berhasil!', 'Anda berhasil redeem "' + row[col.Title] + '" seharga ' + coinCost + ' coin. Menunggu diproses Admin.', 'reward', referenceId);
-    notifyAdmins_('Redemption Baru', user.nama + ' redeem "' + row[col.Title] + '", menunggu diproses.', 'rewardqueue', referenceId);
 
-    return { ok: true, message: 'Reward "' + row[col.Title] + '" berhasil di-redeem, -' + coinCost + ' coin. Menunggu diproses Admin EHS.' };
+    createNotification_(nik, 'Redeem Berhasil!', 'Anda berhasil redeem "' + row[col.Title] + '" seharga ' + coinCost + ' coin.', 'reward', referenceId);
+
+    return { ok: true, message: 'Reward "' + row[col.Title] + '" berhasil di-redeem, -' + coinCost + ' coin.' };
   } finally {
     lock.releaseLock();
   }
