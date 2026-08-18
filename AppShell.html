@@ -102,11 +102,23 @@
     { icon: '🏆', label: 'Leaderboard', page: 'leaderboard' }
   ];
 
+  const SHELL_NAV_ITEMS_SUPERVISOR = [
+  { section: 'Menu' },
+  { icon: '📊', label: 'Dashboard', page: 'analytics' },
+  { icon: '🎮', label: 'Program', page: 'dashboard' },
+  { icon: '✅', label: 'Review Queue', page: 'review-queue' },
+  { icon: '⚖️', label: 'Measure Your Body', page: 'bmi' },
+  { icon: '🏆', label: 'Leaderboard', page: 'leaderboard' },
+  { icon: '🪙', label: 'Tukar Coin', page: 'reward' },
+  { icon: '💬', label: 'Bantuan', page: 'help' }
+];
+
   function initAppShell(user) {
     shellCurrentUser = user;
     document.getElementById('shell-profile-initial').textContent = (user.nama || '?').charAt(0).toUpperCase();
 
-    const items = user.isAdmin ? SHELL_NAV_ITEMS_ADMIN : SHELL_NAV_ITEMS_USER;
+    const items = user.isAdmin ? SHELL_NAV_ITEMS_ADMIN
+      : (user.isSupervisor ? SHELL_NAV_ITEMS_SUPERVISOR : SHELL_NAV_ITEMS_USER);
     document.getElementById('shell-nav-list').innerHTML = items.map(function(i) {
       if (i.section) return '<div class="shell-nav-section-title">' + i.section + '</div>';
       return '<div class="shell-nav-item" data-page="' + i.page + '" onclick="navigateTo(\'' + i.page + '\')">' +
@@ -114,7 +126,7 @@
         '<span class="shell-nav-label">' + i.label + '</span>' +
       '</div>';
     }).join('');
-
+    
     loadNotifSummary();
     if (!user.isAdmin) loadShellStreak();
   }

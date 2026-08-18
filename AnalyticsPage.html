@@ -1,0 +1,78 @@
+<div id="analytics-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Dashboard Analitik</h2>
+  <p class="sub" id="analytics-subtitle">Insight personal berbasis aktivitas & kondisi fisik.</p>
+
+  <div class="card" id="analytics-admin-search" style="display:none;">
+    <label>Cari NIK Karyawan</label>
+    <div style="display:flex;gap:8px;">
+      <input id="analytics-nik-input" placeholder="Contoh: 00180" style="flex:1;">
+      <button class="btn-primary" style="width:auto;margin:0;padding:0 16px;" onclick="loadInsightForTarget()">Cari</button>
+    </div>
+  </div>
+
+  <div id="analytics-insight-card"><p class="sub">Memuat...</p></div>
+</div>
+
+<style>
+  .insight-card { border-radius: 20px; padding: 20px; color: #fff; box-shadow: var(--shadow); }
+  .insight-card.level-success { background: linear-gradient(135deg, #1c6a41 0%, #0f3d26 100%); }
+  .insight-card.level-warning { background: linear-gradient(135deg, #c9772f 0%, #8a4a1a 100%); }
+  .insight-card.level-danger { background: linear-gradient(135deg, #b3261e 0%, #6b1310 100%); }
+  .insight-status { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.85; margin-bottom: 6px; }
+  .insight-title { font-size: 18px; font-weight: 800; margin: 0 0 12px; }
+  .insight-section { margin-top: 14px; }
+  .insight-section-label { font-size: 11px; font-weight: 800; text-transform: uppercase; opacity: 0.7; margin-bottom: 4px; }
+  .insight-section-text { font-size: 14px; line-height: 1.5; }
+</style>
+
+<script>
+  let analyticsCurrentNik = null;
+
+  function initAnalyticsPage(nik, isAdmin) {
+    analyticsCurrentNik = nik;
+
+    if (isAdmin) {
+      document.getElementById('analytics-admin-search').style.display = '';
+      document.getElementById('analytics-subtitle').textContent = 'Cari karyawan untuk melihat insight & rekomendasi tindakan HSE.';
+      document.getElementById('analytics-insight-card').innerHTML = '<p class="sub">Masukkan NIK untuk melihat insight.</p>';
+    } else {
+      document.getElementById('analytics-subtitle').textContent = 'Insight personal berdasarkan aktivitasmu.';
+      loadMyInsight();
+    }
+  }
+
+  function loadMyInsight() {
+    document.getElementById('analytics-insight-card').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(function(insight) { renderInsightCard(insight, false); })
+      .withFailureHandler(showAnalyticsError)
+      .getMyInsight({ nik: analyticsCurrentNik });
+  }
+
+  function loadInsightForTarget() {
+    const targetNik = document.getElementById('analytics-nik-input').value.trim();
+    if (!targetNik) return;
+    document.getElementById('analytics-insight-card').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(function(insight) { renderInsightCard(insight, true); })
+      .withFailureHandler(showAnalyticsError)
+      .getUserInsightForAdmin({ adminNik: analyticsCurrentNik, targetNik: targetNik });
+  }
+
+  function renderInsightCard(insight, isAdminView) {
+    document.getElementById('analytics-insight-card').innerHTML =
+      '<div class="insight-card level-' + insight.level + '">' +
+        '<div class="insight-status">' + insight.statusTipe + '</div>' +
+        '<div class="insight-title">' + (isAdminView ? 'Insight Karyawan' : 'Insight Untukmu') + '</div>' +
+        '<div class="insight-section"><div class="insight-section-label">Dampak di Lapangan</div><div class="insight-section-text">' + insight.insightDampak + '</div></div>' +
+        (isAdminView
+          ? '<div class="insight-section"><div class="insight-section-label">Rekomendasi untuk Admin/HSE</div><div class="insight-section-text">' + insight.rekomendasiAdmin + '</div></div>'
+          : '<div class="insight-section"><div class="insight-section-label">Rekomendasi</div><div class="insight-section-text">' + insight.rekomendasiUser + '</div></div>') +
+      '</div>';
+  }
+
+  function showAnalyticsError(err) {
+    document.getElementById('analytics-insight-card').innerHTML = '<p class="sub" style="color:var(--danger);">' + (err.message || String(err)) + '</p>';
+  }
+</script>
