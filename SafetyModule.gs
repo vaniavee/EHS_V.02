@@ -94,8 +94,9 @@ function submitSafetyReport(payload) {
     );
   }
   if (jenis !== 'ST') {
-  notifyAdmins_('Laporan Safety Baru', jenis + ' dari ' + divisi + ' oleh ' + user.nama + ' menunggu review.', 'safety-review', referenceId);
+  notifyAdmins_('Laporan Safety Baru', jenis + ' dari ' + divisi + ' oleh ' + user.nama + ' menunggu review.', 'review-queue', referenceId);
   }
+  updateUserStreak_(nik);
   return {
     ok: true,
     status: status,
@@ -179,7 +180,6 @@ function approveSafetyReport(payload) {
 
 // Mengembalikan laporan kepada supervisor untuk diperbaiki
 function reviseSafetyReport(payload) {
-  const admin = assertCapability_(payload.adminNik, 'canApproveAllReports');
   validateRequired_(payload, ['referenceId', 'feedback']);
 
   const sh = getSpreadsheet_().getSheetByName(EHS.sheets.safetyReports);
@@ -190,9 +190,11 @@ function reviseSafetyReport(payload) {
   const feedbackCol = headers.indexOf('AdminFeedback');
   const reviewedByCol = headers.indexOf('ReviewedBy');
   const reviewedAtCol = headers.indexOf('ReviewedAt');
+  const divisiCol = headers.indexOf('DivisiDilaporkan');
 
   const rowIndex = data.findIndex(function(r) { return clean_(r[refCol]) === clean_(payload.referenceId); });
   if (rowIndex === -1) throw new Error('Laporan tidak ditemukan: ' + payload.referenceId);
+  const admin = assertCanApprove_(payload.adminNik, clean_(data[rowIndex][divisiCol]));
 
   sh.getRange(rowIndex + 1, statusCol + 1).setValue('Revise');
   sh.getRange(rowIndex + 1, feedbackCol + 1).setValue(clean_(payload.feedback));

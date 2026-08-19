@@ -206,8 +206,9 @@ function submitHealthTaskDetailed(payload) {
   if (isAuto) {
     awardPoints_(user, task.Pillar, task.TaskId, referenceId, points, task.Title, task.CampaignId, seasonId);
   }
+  updateUserStreak_(nik); // streak dihitung dari aktivitas submit hari ini, bukan nunggu approval
   if (!isAuto) {
-  notifyAdmins_('Task Health/Energy Baru', user.nama + ' submit "' + task.Title + '", menunggu verifikasi.', 'health-monitor', referenceId);
+  notifyAdmins_('Task Health/Energy Baru', user.nama + ' submit "' + task.Title + '", menunggu verifikasi.', 'review-queue', referenceId);
   }
 
   return {

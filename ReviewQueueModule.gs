@@ -9,41 +9,48 @@ function getUnifiedReviewQueue(payload) {
   if (!user.active) throw new Error('User tidak aktif.');
   if (!user.isAdmin && !user.isSupervisor) throw new Error('Akses ditolak.');
 
+  // statusFilter: '' (semua), 'Pending' (Menunggu Persetujuan), 'Approved' (Disetujui), 'Revise' (Ditolak)
+  const statusFilter = clean_(payload.statusFilter || 'Pending');
+  const matchStatus = function(s) { return !statusFilter || clean_(s) === statusFilter; };
+
   const scopeDivisions = user.isAdmin ? null : user.divisiDiawasi;
   const items = [];
 
   readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.taskClaims))
-    .filter(function(r) { return clean_(r.Status) === 'Pending'; })
+    .filter(function(r) { return matchStatus(r.Status); })
     .forEach(function(r) {
       if (scopeDivisions && scopeDivisions.indexOf(clean_(r.Divisi)) === -1) return;
       items.push({
         source: 'taskclaim', referenceId: r.ReferenceId, pillar: r.Pillar, typeLabel: r.TaskId,
         nik: r.NIK, nama: r.Nama, divisi: r.Divisi, title: r.Note || r.TaskId,
-        timestamp: r.Timestamp, points: r.Points, detail: r.Detail, buktiUrl: r.BuktiUrl
+        timestamp: r.Timestamp, points: r.Points, detail: r.Detail, buktiUrl: r.BuktiUrl,
+        status: r.Status
       });
     });
 
   readObjects_(getSpreadsheet_().getSheetByName('16_DB_MiniProjects'))
-    .filter(function(r) { return clean_(r.Status) === 'Pending'; })
+    .filter(function(r) { return matchStatus(r.Status); })
     .forEach(function(r) {
       if (scopeDivisions && scopeDivisions.indexOf(clean_(r.Divisi)) === -1) return;
       items.push({
-        source: 'miniproject', referenceId: r.ReferenceId, pillar: 'Energy', typeLabel: 'Mini Project',
+        source: 'miniproject', referenceId: r.ReferenceId, pillar: 'Sustainability', typeLabel: 'Mini Project',
         nik: r.NIK, nama: r.Nama, divisi: r.Divisi, title: r.JudulProject,
         timestamp: r.Timestamp, points: r.Points,
         detail: JSON.stringify({ areaKerja: r.AreaKerja, masalah: r.DeskripsiMasalah, tindakan: r.TindakanPerbaikan, dampak: r.EstimasiDampak }),
-        buktiUrl: r.FotoAfterUrl || r.FotoBeforeUrl
+        buktiUrl: r.FotoAfterUrl || r.FotoBeforeUrl,
+        status: r.Status
       });
     });
 
   readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.safetyReports))
-    .filter(function(r) { return clean_(r.Status) === 'Pending'; })
+    .filter(function(r) { return matchStatus(r.Status); })
     .forEach(function(r) {
       if (scopeDivisions && scopeDivisions.indexOf(clean_(r.DivisiDilaporkan)) === -1) return;
       items.push({
         source: 'safety', referenceId: r.ReferenceId, pillar: 'Safety', typeLabel: r.JenisLaporan,
         nik: r.SupervisorNik, nama: r.SupervisorNama, divisi: r.DivisiDilaporkan, title: r.Deskripsi,
-        timestamp: r.Timestamp, points: 0, detail: JSON.stringify({ severity: r.Severity }), buktiUrl: r.BuktiUrl
+        timestamp: r.Timestamp, points: r.Points || 0, detail: JSON.stringify({ severity: r.Severity }), buktiUrl: r.BuktiUrl,
+        status: r.Status
       });
     });
 

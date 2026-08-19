@@ -8,6 +8,17 @@
     <div class="pill" data-pillar="Health" onclick="switchReviewPillar('Health')">Health</div>
     <div class="pill" data-pillar="Energy" onclick="switchReviewPillar('Energy')">Energy</div>
     <div class="pill" data-pillar="Safety" onclick="switchReviewPillar('Safety')">Safety</div>
+    <div class="pill" data-pillar="Sustainability" onclick="switchReviewPillar('Sustainability')">Sustainability</div>
+  </div>
+
+  <div style="margin-bottom:14px;max-width:280px;">
+    <label style="margin:0 0 6px;">Filter Status</label>
+    <select id="rq-status-filter" onchange="loadReviewQueue()">
+      <option value="Pending">Menunggu Persetujuan</option>
+      <option value="Approved">Disetujui</option>
+      <option value="Revise">Ditolak</option>
+      <option value="">Semua</option>
+    </select>
   </div>
 
   <div class="split-layout">
@@ -38,7 +49,7 @@
     google.script.run
       .withSuccessHandler(function(items) { rqAllItems = items || []; renderReviewList(); })
       .withFailureHandler(function(err) { showRqToast(err.message || String(err), 'error'); })
-      .getUnifiedReviewQueue({ nik: rqCurrentNik });
+      .getUnifiedReviewQueue({ nik: rqCurrentNik, statusFilter: document.getElementById('rq-status-filter').value });
   }
 
   function switchReviewPillar(pillar) {
@@ -55,11 +66,17 @@
     el.innerHTML = filtered.map(function(i) {
       const activeClass = i.referenceId === rqSelectedRef ? 'active' : '';
       return '<div class="report-row ' + activeClass + '" onclick=\'selectReviewItem(' + JSON.stringify(i) + ')\'>' +
-        '<span class="badge-status Pending">' + i.pillar + '</span> <b>' + i.typeLabel + '</b>' +
+        '<span class="badge-status ' + i.status + '">' + i.pillar + ' · ' + statusLabel_(i.status) + '</span> <b>' + i.typeLabel + '</b>' +
         '<div class="report-meta">' + i.nama + ' · ' + i.divisi + '</div>' +
         '<div class="report-meta">' + i.timestamp + '</div>' +
       '</div>';
     }).join('');
+  }
+
+  function statusLabel_(status) {
+    if (status === 'Approved') return 'Disetujui';
+    if (status === 'Revise') return 'Ditolak';
+    return 'Menunggu';
   }
 
   function selectReviewItem(item) {
@@ -80,18 +97,20 @@
 
     document.getElementById('rq-detail').innerHTML =
       '<div style="padding:20px;">' +
-        '<span class="badge-status Pending">' + item.pillar + '</span> <b style="font-size:18px;">' + item.typeLabel + '</b>' +
+        '<span class="badge-status ' + item.status + '">' + item.pillar + ' · ' + statusLabel_(item.status) + '</span> <b style="font-size:18px;">' + item.typeLabel + '</b>' +
         '<p class="report-meta">' + item.nama + ' (' + item.nik + ') · ' + item.divisi + '</p>' +
         '<p class="report-meta">' + item.timestamp + (item.points ? ' · ' + item.points + ' poin' : '') + '</p>' +
         '<p style="margin-top:10px;">' + (item.title || '') + '</p>' +
         detailHtml +
         (item.buktiUrl ? '<img src="' + item.buktiUrl + '" style="width:100%;border-radius:12px;margin-top:10px;">' : '<p class="sub" style="margin-top:10px;">Tidak ada bukti foto.</p>') +
-        '<label style="margin-top:14px;">Feedback (untuk revisi)</label>' +
-        '<input type="text" id="rq-fb" placeholder="Tulis feedback...">' +
-        '<div style="display:flex;gap:8px;margin-top:10px;">' +
-          '<button class="btn-primary" style="margin:0;" onclick="approveReviewItem(\'' + item.source + '\', \'' + item.referenceId + '\')">Setujui</button>' +
-          '<button class="btn-primary btn-danger" style="margin:0;" onclick="reviseReviewItem(\'' + item.source + '\', \'' + item.referenceId + '\')">Minta Revisi</button>' +
-        '</div>' +
+        (item.status === 'Pending'
+          ? '<label style="margin-top:14px;">Feedback (untuk revisi)</label>' +
+            '<input type="text" id="rq-fb" placeholder="Tulis feedback...">' +
+            '<div style="display:flex;gap:8px;margin-top:10px;">' +
+              '<button class="btn-primary" style="margin:0;" onclick="approveReviewItem(\'' + item.source + '\', \'' + item.referenceId + '\')">Setujui</button>' +
+              '<button class="btn-primary btn-danger" style="margin:0;" onclick="reviseReviewItem(\'' + item.source + '\', \'' + item.referenceId + '\')">Minta Revisi</button>' +
+            '</div>'
+          : '<p class="sub" style="margin-top:14px;">Item ini sudah diproses (' + statusLabel_(item.status) + '), tidak perlu tindakan lagi.</p>') +
       '</div>';
   }
 

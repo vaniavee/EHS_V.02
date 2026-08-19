@@ -187,6 +187,7 @@ function submitEnergyActionReport(payload) {
   });
 
   if (isAuto) awardPoints_(user, 'Energy', task.TaskId, referenceId, points, task.Title, task.CampaignId, seasonId);
+  updateUserStreak_(nik);
 
   return {
     ok: true, points: points,
@@ -220,7 +221,8 @@ function submitMiniProject(payload) {
     Status: 'Pending', Points: Number(task.Points), AdminFeedback: '', PeriodKey: availability.periodKey
   });
   
-  notifyAdmins_('Mini Project Baru', user.nama + ' mengirim Mini Project: ' + payload.judulProject, 'admin', referenceId);
+  notifyAdmins_('Mini Project Baru', user.nama + ' mengirim Mini Project: ' + payload.judulProject, 'review-queue', referenceId);
+  updateUserStreak_(nik);
 
   return { ok: true, message: 'Mini Project terkirim, menunggu review Panel EHS.' };
 }

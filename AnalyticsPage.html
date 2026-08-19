@@ -109,6 +109,16 @@
 
   function loadExecutiveCharts() {
     document.getElementById('analytics-charts').innerHTML =
+      '<div class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">' +
+        '<div style="flex:1;min-width:160px;"><label style="margin:0 0 6px;">Divisi</label>' +
+          '<input id="chart-filter-divisi" type="text" list="chart-divisi-list" placeholder="Semua Divisi" autocomplete="off">' +
+          '<datalist id="chart-divisi-list"></datalist></div>' +
+        '<div style="flex:1;min-width:130px;"><label style="margin:0 0 6px;">Dari Tanggal</label><input id="chart-filter-from" type="date"></div>' +
+        '<div style="flex:1;min-width:130px;"><label style="margin:0 0 6px;">Sampai Tanggal</label><input id="chart-filter-to" type="date"></div>' +
+        '<button class="btn-primary" style="width:auto;margin:0;padding:0 18px;height:44px;" onclick="loadExecutiveChartsData()">Terapkan</button>' +
+        '<button class="btn-ghost" style="width:auto;margin:0;padding:0 18px;height:44px;" onclick="resetExecutiveChartFilter()">Reset</button>' +
+      '</div>' +
+
       '<div class="chart-card"><h3>📈 Trend & Velocity — Submission per Pilar (6 Bulan Terakhir)</h3>' +
       '<div class="chart-canvas-wrap"><canvas id="chart-trend"></canvas></div>' +
       '<div class="insight-narrative" id="insight-trend">Memuat insight...</div></div>' +
@@ -121,12 +131,35 @@
       '<div class="chart-canvas-wrap"><canvas id="chart-dept"></canvas></div>' +
       '<div class="insight-narrative" id="insight-dept">Memuat insight...</div></div>';
 
+    google.script.run
+      .withSuccessHandler(function(divisiList) {
+        document.getElementById('chart-divisi-list').innerHTML = divisiList.map(function(d) { return '<option value="' + d + '">'; }).join('');
+      })
+      .getDistinctDivisions();
+
+    loadExecutiveChartsData();
+  }
+
+  function resetExecutiveChartFilter() {
+    document.getElementById('chart-filter-divisi').value = '';
+    document.getElementById('chart-filter-from').value = '';
+    document.getElementById('chart-filter-to').value = '';
+    loadExecutiveChartsData();
+  }
+
+  function loadExecutiveChartsData() {
+    const filterPayload = {
+      nik: analyticsCurrentNik,
+      divisi: document.getElementById('chart-filter-divisi').value,
+      dateFrom: document.getElementById('chart-filter-from').value,
+      dateTo: document.getElementById('chart-filter-to').value
+    };
     google.script.run.withSuccessHandler(renderTrendChart).withFailureHandler(showAnalyticsError)
-      .getTrendAnalysis({ nik: analyticsCurrentNik });
+      .getTrendAnalysis(filterPayload);
     google.script.run.withSuccessHandler(renderDomainChart).withFailureHandler(showAnalyticsError)
-      .getDomainDistribution({ nik: analyticsCurrentNik });
+      .getDomainDistribution(filterPayload);
     google.script.run.withSuccessHandler(renderDeptChart).withFailureHandler(showAnalyticsError)
-      .getDepartmentComparison({ nik: analyticsCurrentNik });
+      .getDepartmentComparison(filterPayload);
   }
 
   function setInsightBox(elId, insight) {

@@ -40,7 +40,7 @@ function buildKpiSet_(role, data, scope, seasonId) {
   let scopedUsers, scopedClaims, scopedSafety, scopedMini;
 
   if (role === 'admin') {
-    scopedUsers = data.users.filter(function(u) { return isActiveUser_(u); });
+    scopedUsers = data.users.filter(function(u) { return isActiveUser_(u) && !isTrue_(u.IsAdmin); });
     scopedClaims = data.claims; scopedSafety = data.safety; scopedMini = data.miniProjects;
   } else if (role === 'supervisor') {
     const divisiSet = scope || [];
@@ -135,11 +135,19 @@ function getTrendAnalysis(payload) {
   validateRequired_(payload, ['nik']);
   assertCapability_(payload.nik, 'canViewAdminDashboard');
   const monthsBack = payload.monthsBack || 6;
+  const divisi = clean_(payload.divisi || '');
+  const dateFrom = payload.dateFrom ? new Date(payload.dateFrom) : null;
+  const dateTo = payload.dateTo ? new Date(payload.dateTo) : null;
 
-  const claims = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.taskClaims))
+  let claims = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.taskClaims))
     .filter(function(r) { return clean_(r.Status) === 'Approved'; });
-  const safety = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.safetyReports))
+  let safety = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.safetyReports))
     .filter(function(r) { return clean_(r.Status) === 'Approved'; });
+
+  if (divisi) claims = claims.filter(function(r) { return clean_(r.Divisi) === divisi; });
+  if (divisi) safety = safety.filter(function(r) { return clean_(r.DivisiDilaporkan) === divisi; });
+  if (dateFrom) { claims = claims.filter(function(r) { return new Date(r.Timestamp) >= dateFrom; }); safety = safety.filter(function(r) { return new Date(r.Timestamp) >= dateFrom; }); }
+  if (dateTo) { claims = claims.filter(function(r) { return new Date(r.Timestamp) <= dateTo; }); safety = safety.filter(function(r) { return new Date(r.Timestamp) <= dateTo; }); }
 
   const months = lastNMonthKeys_(monthsBack);
   const series = { Health: [], Energy: [], Safety: [], SafetySeverityIndex: [] };
@@ -196,19 +204,27 @@ function getDomainDistribution(payload) {
   validateRequired_(payload, ['nik']);
   assertCapability_(payload.nik, 'canViewAdminDashboard');
   const seasonId = getActiveSeason_().SeasonId;
+  const divisi = clean_(payload.divisi || '');
+  const dateFrom = payload.dateFrom ? new Date(payload.dateFrom) : null;
+  const dateTo = payload.dateTo ? new Date(payload.dateTo) : null;
+  const inRange = function(ts) { const d = new Date(ts); return (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo); };
 
-  const claims = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.taskClaims))
-    .filter(function(r) { return clean_(r.SeasonId) === seasonId && clean_(r.Status) === 'Approved'; });
-  const safetyCount = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.safetyReports))
-    .filter(function(r) { return clean_(r.SeasonId) === seasonId && clean_(r.Status) === 'Approved'; }).length;
-  const sustainCount = readObjects_(getSpreadsheet_().getSheetByName('16_DB_MiniProjects'))
-    .filter(function(r) { return clean_(r.SeasonId) === seasonId && clean_(r.Status) === 'Approved'; }).length;
+  let claims = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.taskClaims))
+    .filter(function(r) { return clean_(r.SeasonId) === seasonId && clean_(r.Status) === 'Approved' && inRange(r.Timestamp); });
+  let safetyRows = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.safetyReports))
+    .filter(function(r) { return clean_(r.SeasonId) === seasonId && clean_(r.Status) === 'Approved' && inRange(r.Timestamp); });
+  let miniRows = readObjects_(getSpreadsheet_().getSheetByName('16_DB_MiniProjects'))
+    .filter(function(r) { return clean_(r.SeasonId) === seasonId && clean_(r.Status) === 'Approved' && inRange(r.Timestamp); });
+
+  if (divisi) claims = claims.filter(function(r) { return clean_(r.Divisi) === divisi; });
+  if (divisi) safetyRows = safetyRows.filter(function(r) { return clean_(r.DivisiDilaporkan) === divisi; });
+  if (divisi) miniRows = miniRows.filter(function(r) { return clean_(r.Divisi) === divisi; });
 
   const dist = {
     Health: claims.filter(function(r) { return clean_(r.Pillar) === 'Health'; }).length,
     Energy: claims.filter(function(r) { return clean_(r.Pillar) === 'Energy'; }).length,
-    Safety: safetyCount,
-    Sustainability: sustainCount
+    Safety: safetyRows.length,
+    Sustainability: miniRows.length
   };
   const total = dist.Health + dist.Energy + dist.Safety + dist.Sustainability;
 
@@ -231,12 +247,15 @@ function getDepartmentComparison(payload) {
   validateRequired_(payload, ['nik']);
   assertCapability_(payload.nik, 'canViewAdminDashboard');
   const seasonId = getActiveSeason_().SeasonId;
+  const dateFrom = payload.dateFrom ? new Date(payload.dateFrom) : null;
+  const dateTo = payload.dateTo ? new Date(payload.dateTo) : null;
+  const inRange = function(ts) { const d = new Date(ts); return (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo); };
 
-  const users = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.users)).filter(function(u) { return isActiveUser_(u); });
+  const users = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.users)).filter(function(u) { return isActiveUser_(u) && !isTrue_(u.IsAdmin); });
   const ledger = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.pointsLedger))
-    .filter(function(r) { return clean_(r.SeasonId) === seasonId; });
+    .filter(function(r) { return clean_(r.SeasonId) === seasonId && inRange(r.Timestamp); });
   const claims = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.taskClaims))
-    .filter(function(r) { return clean_(r.SeasonId) === seasonId && clean_(r.Status) === 'Approved'; });
+    .filter(function(r) { return clean_(r.SeasonId) === seasonId && clean_(r.Status) === 'Approved' && inRange(r.Timestamp); });
 
   const divisiList = {};
   users.forEach(function(u) { const d = clean_(u.Divisi); if (d) { divisiList[d] = divisiList[d] || { total: 0, active: {} }; divisiList[d].total++; } });
