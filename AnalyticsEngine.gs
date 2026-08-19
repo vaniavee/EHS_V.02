@@ -19,32 +19,32 @@ function getExecutiveKpiCards(payload) {
 
   const allUsers = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.users));
   const claims = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.taskClaims))
-    .filter(function(r) { return clean_(r.SeasonId) === seasonId && clean_(r.Status) === 'Approved'; });
+    .filter(function(r) { return clean_(r.SeasonId) === seasonId; }); // semua status — "Total Submissions" = semua yang pernah diajukan
   const safety = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.safetyReports))
-    .filter(function(r) { return clean_(r.SeasonId) === seasonId && clean_(r.Status) === 'Approved'; });
+    .filter(function(r) { return clean_(r.SeasonId) === seasonId; });
   const miniProjects = readObjects_(getSpreadsheet_().getSheetByName('16_DB_MiniProjects'))
-    .filter(function(r) { return clean_(r.SeasonId) === seasonId && clean_(r.Status) === 'Approved'; });
+    .filter(function(r) { return clean_(r.SeasonId) === seasonId; });
 
-  if (user.isAdmin) {
-    return buildKpiSet_('admin', { claims: claims, safety: safety, miniProjects: miniProjects, users: allUsers }, null);
-  }
+  const data = { claims: claims, safety: safety, miniProjects: miniProjects, users: allUsers };
+
+  if (user.isAdmin) return buildKpiSet_('admin', data, null, seasonId);
   if (user.isSupervisor) {
     const viewScope = payload.viewScope === 'self' ? 'self' : 'team';
-    if (viewScope === 'self') return buildKpiSet_('karyawan', { claims: claims, safety: safety, miniProjects: miniProjects, users: allUsers }, nik, seasonId);
-    return buildKpiSet_('supervisor', { claims: claims, safety: safety, miniProjects: miniProjects, users: allUsers }, user.divisiDiawasi || []);
+    if (viewScope === 'self') return buildKpiSet_('karyawan', data, nik, seasonId);
+    return buildKpiSet_('supervisor', data, user.divisiDiawasi || [], seasonId);
   }
-  return buildKpiSet_('karyawan', { claims: claims, safety: safety, miniProjects: miniProjects, users: allUsers }, nik, seasonId);
+  return buildKpiSet_('karyawan', data, nik, seasonId);
 }
 
 function buildKpiSet_(role, data, scope, seasonId) {
   let scopedUsers, scopedClaims, scopedSafety, scopedMini;
 
   if (role === 'admin') {
-    scopedUsers = data.users.filter(function(u) { return truthy_(u.Active); });
+    scopedUsers = data.users.filter(function(u) { return isActiveUser_(u); });
     scopedClaims = data.claims; scopedSafety = data.safety; scopedMini = data.miniProjects;
   } else if (role === 'supervisor') {
     const divisiSet = scope || [];
-    scopedUsers = data.users.filter(function(u) { return truthy_(u.Active) && divisiSet.indexOf(clean_(u.Divisi)) !== -1; });
+    scopedUsers = data.users.filter(function(u) { return isActiveUser_(u) && divisiSet.indexOf(clean_(u.Divisi)) !== -1; });
     const nikSet = {}; scopedUsers.forEach(function(u) { nikSet[normalizeNikLenient_(u.NIK)] = true; });
     scopedClaims = data.claims.filter(function(r) { return nikSet[normalizeNikLenient_(r.NIK)]; });
     scopedSafety = data.safety.filter(function(r) { return divisiSet.indexOf(clean_(r.DivisiDilaporkan)) !== -1; });
@@ -53,7 +53,7 @@ function buildKpiSet_(role, data, scope, seasonId) {
     const targetNik = scope;
     scopedUsers = data.users.filter(function(u) { return normalizeNikLenient_(u.NIK) === targetNik; });
     scopedClaims = data.claims.filter(function(r) { return normalizeNikLenient_(r.NIK) === targetNik; });
-    scopedSafety = data.safety.filter(function(r) { return false; }); // safety report tidak per-nik (dilaporkan oleh supervisor), skip untuk kartu individu
+    scopedSafety = data.safety.filter(function(r) { return normalizeNikLenient_(r.SupervisorNik) === targetNik; }); // SupervisorNik = NIK pelapor (nama kolom lama, bukan berarti harus role Supervisor)
     scopedMini = data.miniProjects.filter(function(r) { return normalizeNikLenient_(r.NIK) === targetNik; });
   }
 
@@ -63,7 +63,10 @@ function buildKpiSet_(role, data, scope, seasonId) {
   const sustainCount = scopedMini.length;
 
   if (role === 'admin') {
-    const activeParticipants = uniqueNikCount_(scopedClaims.concat(scopedMini));
+    const activeParticipants = uniqueNikCount_(
+      scopedClaims.concat(scopedMini)
+        .concat(scopedSafety.map(function(r) { return { NIK: r.SupervisorNik }; }))
+    );
     return {
       role: 'admin',
       cards: [
@@ -78,8 +81,11 @@ function buildKpiSet_(role, data, scope, seasonId) {
   }
 
   if (role === 'supervisor') {
-    const teamPoints = sumPoints_(scopedClaims) + sumPoints_(scopedSafety) + sumPoints_(scopedMini);
-    const activeParticipants = uniqueNikCount_(scopedClaims.concat(scopedMini));
+    const teamPoints = sumPoints_(scopedClaims.filter(approvedOnly_)) + sumPoints_(scopedSafety.filter(approvedOnly_)) + sumPoints_(scopedMini.filter(approvedOnly_));
+    const activeParticipants = uniqueNikCount_(
+      scopedClaims.concat(scopedMini)
+        .concat(scopedSafety.map(function(r) { return { NIK: r.SupervisorNik }; }))
+    );
     return {
       role: 'supervisor',
       cards: [
@@ -100,7 +106,7 @@ function buildKpiSet_(role, data, scope, seasonId) {
   const badge = resolveBadgeTier_(totalPoints);
   const streak = getUserStreak_(scope);
   const lb = getLeaderboard_(seasonIdActive, null, 9999);
-  const myRank = lb.find(function(r) { return normalizeNikLenient_(r.NIK) === scope; });
+  const myRank = lb.find(function(r) { return normalizeNikLenient_(r.nik) === scope; });
 
   return {
     role: 'karyawan',
@@ -117,8 +123,10 @@ function buildKpiSet_(role, data, scope, seasonId) {
   };
 }
 
-function truthy_(v) { return v === true || clean_(v).toUpperCase() === 'TRUE' || clean_(v) === '1'; }
-function uniqueNikCount_(rows) { const s = {}; rows.forEach(function(r) { s[normalizeNikLenient_(r.NIK)] = true; }); return Object.keys(s).length; }
+// Konvensi "aktif" disamakan dengan Auth.gs: aktif kecuali eksplisit "no" (bukan harus literal TRUE).
+function isActiveUser_(u) { return clean_(u.Active).toLowerCase() !== 'no'; }
+function approvedOnly_(r) { return clean_(r.Status) === 'Approved'; }
+function uniqueNikCount_(rows) { const s = {}; rows.forEach(function(r) { const k = normalizeNikLenient_(r.NIK); if (k) s[k] = true; }); return Object.keys(s).length; }
 function sumPoints_(rows) { return rows.reduce(function(sum, r) { const n = Number(r.Points); return sum + (isNaN(n) ? 0 : n); }, 0); }
 
 // ---------- CHART 1: Trend & Velocity (monthly, per pilar) ----------
@@ -224,7 +232,7 @@ function getDepartmentComparison(payload) {
   assertCapability_(payload.nik, 'canViewAdminDashboard');
   const seasonId = getActiveSeason_().SeasonId;
 
-  const users = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.users)).filter(function(u) { return truthy_(u.Active); });
+  const users = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.users)).filter(function(u) { return isActiveUser_(u); });
   const ledger = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.pointsLedger))
     .filter(function(r) { return clean_(r.SeasonId) === seasonId; });
   const claims = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.taskClaims))
