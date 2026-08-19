@@ -76,7 +76,7 @@
 
   const SHELL_NAV_ITEMS_USER = [
     { section: 'Menu' },
-    { icon: '📊', label: 'Dashboard', page: 'program' },
+    { icon: '📊', label: 'Dashboard', page: 'analytics' },
     { icon: '⚖️', label: 'Measure Your Body', page: 'bmi' },
     { icon: '🏆', label: 'Leaderboard', page: 'leaderboard' },
     { icon: '🪙', label: 'Tukar Coin', page: 'reward' },
@@ -90,7 +90,7 @@
 
   const SHELL_NAV_ITEMS_ADMIN = [
     { section: 'Overview' },
-    { icon: '📊', label: 'Dashboard', page: 'program' },
+    { icon: '📊', label: 'Dashboard', page: 'analytics' },
     { section: 'Persetujuan' },
     { icon: '✅', label: 'Review Queue', page: 'review-queue' },
     { icon: '🪙', label: 'Redemption Queue', page: 'rewardqueue' },
@@ -126,7 +126,7 @@
         '<span class="shell-nav-label">' + i.label + '</span>' +
       '</div>';
     }).join('');
-    
+
     loadNotifSummary();
     if (!user.isAdmin) loadShellStreak();
   }

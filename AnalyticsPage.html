@@ -3,18 +3,47 @@
   <h2>Dashboard Analitik</h2>
   <p class="sub" id="analytics-subtitle">Insight personal berbasis aktivitas & kondisi fisik.</p>
 
+  <div id="analytics-scope-toggle" style="display:none;margin-bottom:10px;">
+    <button class="pill" id="scope-btn-team" onclick="switchAnalyticsScope('team')">Tim Saya</button>
+    <button class="pill" id="scope-btn-self" onclick="switchAnalyticsScope('self')">Saya Sendiri</button>
+  </div>
+
+  <div id="analytics-kpi-row" class="kpi-row"></div>
+
+  <div id="analytics-charts"></div>
+
   <div class="card" id="analytics-admin-search" style="display:none;">
-    <label>Cari NIK Karyawan</label>
+    <label>Cari NIK Karyawan (Insight Personal)</label>
     <div style="display:flex;gap:8px;">
       <input id="analytics-nik-input" placeholder="Contoh: 00180" style="flex:1;">
       <button class="btn-primary" style="width:auto;margin:0;padding:0 16px;" onclick="loadInsightForTarget()">Cari</button>
     </div>
   </div>
 
-  <div id="analytics-insight-card"><p class="sub">Memuat...</p></div>
+  <div id="analytics-insight-card"></div>
 </div>
 
 <style>
+  .kpi-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+  .kpi-card {
+    flex: 1 1 150px; min-width: 150px; background: var(--surface); border-radius: 16px;
+    padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .kpi-card .kpi-icon { font-size: 20px; }
+  .kpi-card .kpi-value { font-size: 22px; font-weight: 800; color: var(--green-900); margin-top: 4px; }
+  .kpi-card .kpi-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .chart-card { background: var(--surface); border-radius: 16px; padding: 18px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .chart-card h3 { margin: 0 0 12px; font-size: 15px; }
+  .chart-canvas-wrap { position: relative; height: 260px; }
+  .insight-narrative {
+    margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5;
+  }
+  .insight-narrative.level-success { background: #e6f4ea; color: var(--green-900); }
+  .insight-narrative.level-warning { background: #fdf1e0; color: #8a4a1a; }
+  .insight-narrative.level-danger { background: #fde2de; color: #6b1310; }
+  .insight-narrative.level-info { background: var(--surface-2); color: var(--muted); }
+
   .insight-card { border-radius: 20px; padding: 20px; color: #fff; box-shadow: var(--shadow); }
   .insight-card.level-success { background: linear-gradient(135deg, #1c6a41 0%, #0f3d26 100%); }
   .insight-card.level-warning { background: linear-gradient(135deg, #c9772f 0%, #8a4a1a 100%); }
@@ -26,20 +55,138 @@
   .insight-section-text { font-size: 14px; line-height: 1.5; }
 </style>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
   let analyticsCurrentNik = null;
+  let analyticsIsAdmin = false;
+  let analyticsIsSupervisor = false;
+  let analyticsCharts = {};
 
   function initAnalyticsPage(nik, isAdmin) {
     analyticsCurrentNik = nik;
+    analyticsIsAdmin = !!isAdmin;
+
+    document.getElementById('analytics-insight-card').innerHTML = '';
+    document.getElementById('analytics-charts').innerHTML = '';
 
     if (isAdmin) {
       document.getElementById('analytics-admin-search').style.display = '';
-      document.getElementById('analytics-subtitle').textContent = 'Cari karyawan untuk melihat insight & rekomendasi tindakan HSE.';
-      document.getElementById('analytics-insight-card').innerHTML = '<p class="sub">Masukkan NIK untuk melihat insight.</p>';
+      document.getElementById('analytics-subtitle').textContent = 'Ringkasan eksekutif seluruh perusahaan, cari karyawan untuk insight personal.';
+      loadKpiCards();
+      loadExecutiveCharts();
     } else {
       document.getElementById('analytics-subtitle').textContent = 'Insight personal berdasarkan aktivitasmu.';
+      loadKpiCards();
       loadMyInsight();
     }
+  }
+
+  function loadKpiCards(viewScope) {
+    document.getElementById('analytics-kpi-row').innerHTML = '<p class="sub">Memuat ringkasan...</p>';
+    google.script.run
+      .withSuccessHandler(function(res) {
+        analyticsIsSupervisor = res.role === 'supervisor';
+        document.getElementById('analytics-scope-toggle').style.display = analyticsIsSupervisor ? 'flex' : 'none';
+        if (analyticsIsSupervisor) {
+          document.getElementById('scope-btn-team').classList.toggle('active', (viewScope || 'team') === 'team');
+          document.getElementById('scope-btn-self').classList.toggle('active', viewScope === 'self');
+        }
+        renderKpiCards(res.cards);
+      })
+      .withFailureHandler(showAnalyticsError)
+      .getExecutiveKpiCards({ nik: analyticsCurrentNik, viewScope: viewScope || 'team' });
+  }
+
+  function switchAnalyticsScope(scope) { loadKpiCards(scope); }
+
+  function renderKpiCards(cards) {
+    document.getElementById('analytics-kpi-row').innerHTML = cards.map(function(c) {
+      return '<div class="kpi-card"><div class="kpi-icon">' + c.icon + '</div>' +
+        '<div class="kpi-value">' + c.value + '</div>' +
+        '<div class="kpi-label">' + c.label + '</div></div>';
+    }).join('');
+  }
+
+  function loadExecutiveCharts() {
+    document.getElementById('analytics-charts').innerHTML =
+      '<div class="chart-card"><h3>📈 Trend & Velocity — Submission per Pilar (6 Bulan Terakhir)</h3>' +
+      '<div class="chart-canvas-wrap"><canvas id="chart-trend"></canvas></div>' +
+      '<div class="insight-narrative" id="insight-trend">Memuat insight...</div></div>' +
+
+      '<div class="chart-card"><h3>🍩 Distribusi Domain — Proporsi Submission per Pilar</h3>' +
+      '<div class="chart-canvas-wrap"><canvas id="chart-domain"></canvas></div>' +
+      '<div class="insight-narrative" id="insight-domain">Memuat insight...</div></div>' +
+
+      '<div class="chart-card"><h3>📊 Perbandingan Departemen — Total Poin & Tingkat Partisipasi</h3>' +
+      '<div class="chart-canvas-wrap"><canvas id="chart-dept"></canvas></div>' +
+      '<div class="insight-narrative" id="insight-dept">Memuat insight...</div></div>';
+
+    google.script.run.withSuccessHandler(renderTrendChart).withFailureHandler(showAnalyticsError)
+      .getTrendAnalysis({ nik: analyticsCurrentNik });
+    google.script.run.withSuccessHandler(renderDomainChart).withFailureHandler(showAnalyticsError)
+      .getDomainDistribution({ nik: analyticsCurrentNik });
+    google.script.run.withSuccessHandler(renderDeptChart).withFailureHandler(showAnalyticsError)
+      .getDepartmentComparison({ nik: analyticsCurrentNik });
+  }
+
+  function setInsightBox(elId, insight) {
+    const el = document.getElementById(elId);
+    el.className = 'insight-narrative level-' + insight.level;
+    el.textContent = insight.text;
+  }
+
+  function renderTrendChart(data) {
+    setInsightBox('insight-trend', data.insight);
+    if (analyticsCharts.trend) analyticsCharts.trend.destroy();
+    analyticsCharts.trend = new Chart(document.getElementById('chart-trend'), {
+      type: 'line',
+      data: {
+        labels: data.months,
+        datasets: [
+          { label: 'Health', data: data.series.Health, borderColor: '#e05a6e', tension: 0.3 },
+          { label: 'Energy', data: data.series.Energy, borderColor: '#e0a03a', tension: 0.3 },
+          { label: 'Safety Reports', data: data.series.Safety, borderColor: '#3a7ce0', tension: 0.3 },
+          { label: 'Severity-Weighted Index', data: data.series.SafetySeverityIndex, borderColor: '#b3261e', borderDash: [5, 4], tension: 0.3 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  function renderDomainChart(data) {
+    setInsightBox('insight-domain', data.insight);
+    if (analyticsCharts.domain) analyticsCharts.domain.destroy();
+    const d = data.distribution;
+    analyticsCharts.domain = new Chart(document.getElementById('chart-domain'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Health', 'Energy', 'Safety', 'Sustainability'],
+        datasets: [{ data: [d.Health, d.Energy, d.Safety, d.Sustainability], backgroundColor: ['#e05a6e', '#e0a03a', '#3a7ce0', '#3ea06a'] }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  function renderDeptChart(data) {
+    setInsightBox('insight-dept', data.insight);
+    if (analyticsCharts.dept) analyticsCharts.dept.destroy();
+    analyticsCharts.dept = new Chart(document.getElementById('chart-dept'), {
+      data: {
+        labels: data.rows.map(function(r) { return r.divisi; }),
+        datasets: [
+          { type: 'bar', label: 'Total Poin', data: data.rows.map(function(r) { return r.totalPoints; }), backgroundColor: '#1c6a41', yAxisID: 'y' },
+          { type: 'line', label: 'Participation Rate (%)', data: data.rows.map(function(r) { return r.participationRate; }), borderColor: '#e0a03a', yAxisID: 'y1', tension: 0.3 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          y: { type: 'linear', position: 'left', title: { display: true, text: 'Total Poin' } },
+          y1: { type: 'linear', position: 'right', title: { display: true, text: 'Partisipasi %' }, grid: { drawOnChartArea: false }, min: 0, max: 100 }
+        },
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
   }
 
   function loadMyInsight() {
@@ -73,6 +220,7 @@
   }
 
   function showAnalyticsError(err) {
-    document.getElementById('analytics-insight-card').innerHTML = '<p class="sub" style="color:var(--danger);">' + (err.message || String(err)) + '</p>';
+    const msg = '<p class="sub" style="color:var(--danger);">' + (err.message || String(err)) + '</p>';
+    document.getElementById('analytics-kpi-row').innerHTML = msg;
   }
 </script>
