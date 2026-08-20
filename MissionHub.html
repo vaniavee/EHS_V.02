@@ -54,8 +54,8 @@
     cards.push('<div class="mh-card"><div class="mh-card-label">Continue Learning</div>' +
       (data.continueLearning
         ? '<div class="mh-card-title">' + data.continueLearning.title + '</div>' +
-          '<div class="mh-card-desc">' + data.continueLearning.mediaType + '</div>' +
-          '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList()">Continue Learning</button>'
+          '<div class="mh-card-desc">' + data.continueLearning.contentType + '</div>' +
+          '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList(\'awareness\')">Continue Learning</button>'
         : '<div class="mh-card-desc mh-card-empty">Belum ada media baru untuk dilanjutkan.</div>') +
     '</div>');
 
@@ -63,7 +63,7 @@
       (data.recommended
         ? '<div class="mh-card-title">' + data.recommended.title + '</div>' +
           '<div class="mh-card-desc">' + (data.recommended.description || '') + ' · +' + data.recommended.points + ' XP</div>' +
-          '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList()">Open Mission</button>'
+          '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList(\'missions\')">Open Mission</button>'
         : '<div class="mh-card-desc mh-card-empty">Tidak ada mission direkomendasikan saat ini.</div>') +
     '</div>');
 
@@ -71,24 +71,23 @@
       (data.challenge.length
         ? data.challenge.map(function(c) {
             return '<div class="mh-card-title">' + c.title + '</div>' +
-              '<div class="mh-card-desc">' + (c.description || '') + ' · +' + c.points + ' XP</div>';
-          }).join('') + '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList()">Open Challenge</button>'
+              '<div class="mh-card-desc">' + (c.description || '') + ' · ' + c.doneCount + '/' + c.totalCount + '</div>';
+          }).join('') + '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList(\'challenges\')">Open Challenge</button>'
         : '<div class="mh-card-desc mh-card-empty">Belum ada challenge aktif untuk pilar ini.</div>') +
     '</div>');
 
     cards.push('<div class="mh-card"><div class="mh-card-label">Awareness → Impact</div>' +
       (data.awareness.length
         ? '<div class="mh-card-desc">' + data.awareness.length + ' media awareness tersedia.</div>' +
-          '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList()">Explore Learning</button>'
+          '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList(\'awareness\')">Explore Learning</button>'
         : '<div class="mh-card-desc mh-card-empty">Belum ada media awareness untuk pilar ini.</div>') +
     '</div>');
 
     document.getElementById('mh-cards').innerHTML = cards.join('');
   }
 
-  function mhOpenPillarList() {
-    if (mhCurrentPillar === 'Energy') { showView('energy'); initEnergyTask(mhCurrentNik); return; }
-    if (mhCurrentPillar === 'Health') { showView('health'); initHealthTask(mhCurrentNik); return; }
-    if (mhCurrentPillar === 'Safety') { navigateTo('safety-report'); return; }
+  function mhOpenPillarList(tab) {
+    showView('pillar-mission-list');
+    initPillarMissionList(mhCurrentNik, mhCurrentPillar, tab || 'missions');
   }
 </script>

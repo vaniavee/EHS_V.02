@@ -299,42 +299,16 @@ function getMissionHubData(payload) {
   const seasonId = normalizeSeasonId_(payload.seasonId);
   const pillar = clean_(payload.pillar);
 
-  let tasks;
-  if (pillar === 'Safety') {
-    tasks = getSafetyMissionsForUser({ nik: nik, seasonId: seasonId }).map(function(m) {
-      return Object.assign({}, m, { groupTag: '', campaignId: '' });
-    });
-  } else {
-    tasks = getTasksForUser({ nik: nik, pillar: pillar, seasonId: seasonId }).map(function(t) {
-      const rawTask = getTaskById_(t.taskId, seasonId) || {};
-      return Object.assign({}, t, { groupTag: clean_(rawTask.GroupTag) });
-    });
-  }
+  const missions = getMissionsForPillar_(nik, pillar, seasonId);
+  const challenges = getChallengesForPillar_(nik, pillar, seasonId);
+  const awareness = getAwarenessForPillar_(pillar, seasonId);
 
   return {
     pillar: pillar,
-    recommended: pickRecommendedTask_(tasks),
-    challenge: tasks.filter(function(t) { return t.groupTag === 'Challenge'; }),
-    awareness: tasks.filter(function(t) { return t.groupTag === 'Awareness'; }),
-    continueLearning: getContinueLearningCampaign_(tasks)
+    recommended: pickRecommendedMission_(missions),
+    missions: missions,
+    challenge: challenges,
+    awareness: awareness,
+    continueLearning: awareness.length ? awareness[0] : null
   };
-}
-
-function pickRecommendedTask_(tasks) {
-  const priority = { Required: 0, Recommended: 1, Optional: 2 };
-  const candidates = tasks.filter(function(t) { return t.available; });
-  candidates.sort(function(a, b) {
-    return (priority[a.obligationLevel] !== undefined ? priority[a.obligationLevel] : 3) -
-           (priority[b.obligationLevel] !== undefined ? priority[b.obligationLevel] : 3);
-  });
-  return candidates[0] || null;
-}
-
-function getContinueLearningCampaign_(tasks) {
-  const nextTask = tasks.find(function(t) { return t.campaignId && t.available; });
-  if (!nextTask) return null;
-  const campaign = readObjects_(getSpreadsheet_().getSheetByName('06_Master_Campaigns'))
-    .find(function(c) { return clean_(c.CampaignId) === clean_(nextTask.campaignId); });
-  if (!campaign) return null;
-  return { campaignId: campaign.CampaignId, title: campaign.Title, mediaType: campaign.MediaType, taskId: nextTask.taskId };
 }

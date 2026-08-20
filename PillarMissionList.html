@@ -1,0 +1,168 @@
+<div id="pml-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="pmlBackToHub()">← Kembali</button>
+  <h2 id="pml-title">Missions</h2>
+  <p class="sub" id="pml-subtitle"></p>
+
+  <div class="pill-group" style="margin-bottom:14px;">
+    <div class="pill" id="pml-tab-missions" onclick="pmlSwitchTab('missions')">Missions</div>
+    <div class="pill" id="pml-tab-challenges" onclick="pmlSwitchTab('challenges')">Challenges</div>
+    <div class="pill" id="pml-tab-awareness" onclick="pmlSwitchTab('awareness')">Awareness</div>
+  </div>
+
+  <div id="pml-list"><p class="sub">Memuat...</p></div>
+</div>
+
+<div id="pml-modal-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 id="pml-modal-title" style="margin:0;">Isi Data</h3>
+      <button class="btn-ghost" style="width:auto;padding:6px 12px;" onclick="pmlCloseModal()">✕</button>
+    </div>
+    <div id="pml-modal-body"></div>
+    <button class="btn-primary" id="pml-modal-submit-btn" onclick="pmlSubmitModal()">Kirim</button>
+  </div>
+</div>
+
+<div id="toast-pml" class="toast"></div>
+
+<script>
+  let pmlCurrentNik = null;
+  let pmlCurrentPillar = null;
+  let pmlCurrentTab = 'missions';
+  let pmlData = null;
+  let pmlSelectedMission = null;
+
+  function initPillarMissionList(nik, pillar, tab) {
+    pmlCurrentNik = nik;
+    pmlCurrentPillar = pillar;
+    pmlCurrentTab = tab || 'missions';
+    document.getElementById('pml-title').textContent = pillar;
+    document.getElementById('pml-subtitle').textContent = 'Missions, challenges, dan media awareness untuk pilar ' + pillar + '.';
+    pmlLoad();
+  }
+
+  function pmlBackToHub() {
+    showView('missionhub');
+    initMissionHub(pmlCurrentNik, pmlCurrentPillar);
+  }
+
+  function pmlLoad() {
+    document.getElementById('pml-list').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(function(data) { pmlData = data; pmlSwitchTab(pmlCurrentTab); })
+      .withFailureHandler(function(err) { showPmlToast(err.message || String(err), 'error'); })
+      .getMissionHubData({ nik: pmlCurrentNik, pillar: pmlCurrentPillar });
+  }
+
+  function pmlSwitchTab(tab) {
+    pmlCurrentTab = tab;
+    ['missions', 'challenges', 'awareness'].forEach(function(t) {
+      document.getElementById('pml-tab-' + t).classList.toggle('active', t === tab);
+    });
+    if (!pmlData) return;
+    if (tab === 'missions') renderPmlMissions_(pmlData.missions);
+    if (tab === 'challenges') renderPmlChallenges_(pmlData.challenge);
+    if (tab === 'awareness') renderPmlAwareness_(pmlData.awareness);
+  }
+
+  function renderPmlMissions_(missions) {
+    const el = document.getElementById('pml-list');
+    if (!missions.length) { el.innerHTML = '<p class="sub">Belum ada mission aktif untuk pilar ini.</p>'; return; }
+    el.innerHTML = missions.map(function(m) {
+      const quota = m.used + '/' + m.limit + ' (' + m.frequencyType + ')';
+      const disabled = m.available ? '' : 'disabled';
+      const buttonLabel = m.available ? 'Isi Data' : 'Kuota Habis';
+      const reasonLine = !m.available && m.reason ? '<div class="report-meta" style="color:var(--danger);margin-top:4px;">' + m.reason + '</div>' : '';
+      return '<div class="card" style="padding:14px;margin-bottom:10px;">' + pmlObligationBadge_(m.obligationLevel) +
+        '<b>' + m.title + '</b>' +
+        '<div class="report-meta">' + (m.description || '') + '</div>' +
+        '<div class="report-meta">Kuota: ' + quota + ' · +' + m.points + ' XP' + (m.coin ? ' · +' + m.coin + ' Coin' : '') + '</div>' +
+        (m.safetyWarning ? '<div class="report-meta" style="color:var(--danger);">⚠ ' + m.safetyWarning + '</div>' : '') +
+        reasonLine +
+        '<button class="btn-primary" style="margin-top:10px;" ' + disabled + ' onclick=\'pmlOpenModal(' + JSON.stringify(m) + ')\'>' + buttonLabel + '</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function pmlObligationBadge_(level) {
+    const map = { Required: { label: 'Wajib', cls: 'Revise' }, Recommended: { label: 'Disarankan', cls: 'Pending' }, Optional: { label: 'Opsional', cls: 'Approved' } };
+    const m = map[level] || map.Recommended;
+    return '<span class="badge-status ' + m.cls + '" style="margin-bottom:6px;display:inline-block;">' + m.label + '</span><br>';
+  }
+
+  function renderPmlChallenges_(challenges) {
+    const el = document.getElementById('pml-list');
+    if (!challenges.length) { el.innerHTML = '<p class="sub">Belum ada challenge aktif untuk pilar ini.</p>'; return; }
+    el.innerHTML = challenges.map(function(c) {
+      return '<div class="card" style="padding:14px;margin-bottom:10px;">' +
+        '<b>' + c.title + '</b> <span class="report-meta">(' + c.challengeType + ')</span>' +
+        '<div class="report-meta">' + (c.description || '') + '</div>' +
+        '<div style="background:var(--surface-2);border-radius:8px;height:10px;margin-top:10px;overflow:hidden;">' +
+          '<div style="height:100%;width:' + c.progressPct + '%;background:linear-gradient(90deg,#1c6a41,#3ea06a);"></div>' +
+        '</div>' +
+        '<div class="report-meta" style="margin-top:6px;">' + c.doneCount + '/' + c.totalCount + ' mission selesai (' + c.progressPct + '%)' +
+          (c.rewardCoin ? ' · Bonus ' + c.rewardCoin + ' Coin saat lengkap' : '') + '</div>' +
+        '<button class="btn-ghost" style="width:auto;margin-top:10px;padding:8px 14px;" onclick="pmlSwitchTab(\'missions\')">Lihat Mission Terkait</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderPmlAwareness_(items) {
+    const el = document.getElementById('pml-list');
+    if (!items.length) { el.innerHTML = '<p class="sub">Belum ada media awareness untuk pilar ini.</p>'; return; }
+    el.innerHTML = items.map(function(a) {
+      return '<div class="card" style="padding:14px;margin-bottom:10px;">' +
+        '<span class="badge-status Pending" style="margin-bottom:6px;display:inline-block;">' + a.contentType + '</span><br>' +
+        '<b>' + a.title + '</b>' +
+        '<div class="report-meta">' + (a.summary || '') + '</div>' +
+        '<div class="report-meta">' + a.estimatedMinutes + ' menit' + (a.lightXp ? ' · +' + a.lightXp + ' Light XP' : '') + '</div>' +
+        (a.mediaUrl ? '<a href="' + a.mediaUrl + '" target="_blank" style="display:block;margin-top:8px;font-weight:700;color:var(--green-900);">Buka Media →</a>' : '') +
+        '<button class="btn-primary" style="margin-top:10px;" onclick="pmlMarkAwarenessComplete(\'' + a.contentId + '\')">Mark Complete</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function pmlMarkAwarenessComplete(contentId) {
+    google.script.run
+      .withSuccessHandler(function(res) { showPmlToast(res.message, 'success'); })
+      .withFailureHandler(function(err) { showPmlToast(err.message || String(err), 'error'); })
+      .markAwarenessComplete({ nik: pmlCurrentNik, contentId: contentId });
+  }
+
+  function pmlOpenModal(mission) {
+    pmlSelectedMission = mission;
+    document.getElementById('pml-modal-title').textContent = mission.title;
+    document.getElementById('pml-modal-body').innerHTML =
+      '<label>What did you do?</label><textarea id="pml-note" placeholder="Ceritakan apa yang kamu lakukan..."></textarea>' +
+      (mission.validationMethod !== 'Auto'
+        ? '<p class="sub" style="margin-top:8px;">Mission ini butuh verifikasi (' + mission.validationMethod + '). Form bukti detail untuk mission jenis ini masih dalam pengembangan — untuk sekarang catatan singkat di atas akan dikirim ke admin.</p>'
+        : '<p class="sub" style="margin-top:8px;">Mission ini auto-approve begitu dikirim.</p>');
+    document.getElementById('pml-modal-overlay').classList.add('show');
+  }
+
+  function pmlCloseModal() { document.getElementById('pml-modal-overlay').classList.remove('show'); }
+
+  function pmlSubmitModal() {
+    const note = document.getElementById('pml-note').value.trim();
+    const btn = document.getElementById('pml-modal-submit-btn');
+    btn.disabled = true; btn.textContent = 'Mengirim...';
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false; btn.textContent = 'Kirim';
+        pmlCloseModal();
+        showPmlToast(res.message, 'success');
+        pmlLoad();
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false; btn.textContent = 'Kirim';
+        showPmlToast(err.message || String(err), 'error');
+      })
+      .submitMissionClaim({ nik: pmlCurrentNik, missionId: pmlSelectedMission.missionId, note: note });
+  }
+
+  function showPmlToast(msg, type) {
+    const t = document.getElementById('toast-pml');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    if (type !== 'error') setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+</script>
