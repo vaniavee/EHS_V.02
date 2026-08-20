@@ -62,8 +62,9 @@ const EHS_SCHEMA = {
   '06_Master_Campaigns': [
     'CampaignId', 'Title', 'MediaType', 'MediaUrl', 'Tagline', 'Description',
     'SubmissionMode', 'MinExposureSeconds', 'SurveyPoints', 'SelfEvalPoints',
-    'Status', 'SeasonId','CampaignId', 'PeriodType','ExpectedAction', 'SurveyPointMappingId',
-    'QuizPointMappingId','SortOrder','UpdatedAt'
+    'Status', 'SeasonId', 'PeriodType', 'ExpectedAction', 'SurveyPointMappingId',
+    'QuizPointMappingId', 'SortOrder', 'UpdatedAt',
+    'StartDate', 'EndDate', 'Theme', 'ExpectedKeyMessage', 'SelfEvalPointMappingId'
   ],
   '07_Master_SurveyQuestions': ['QuestionId', 'Dimension', 'QuestionText', 'Scale', 'EvaluationLevel', 'Order', 'Status'
   ],

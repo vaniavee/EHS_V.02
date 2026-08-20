@@ -121,13 +121,19 @@ function saveMasterRecord(payload) {
     if (clean_(data[i][idCol]) === idValue) { rowIndex = i; break; }
   }
 
-  // Auto-timestamp UpdatedAt kalau field ini ada di definisi — abaikan apapun yang dikirim frontend.
-  if (def.fields.indexOf('UpdatedAt') !== -1) {
+  // Auto-timestamp UpdatedAt kalau kolom ini ada di sheet — abaikan apapun yang dikirim frontend.
+  if (headers.indexOf('UpdatedAt') !== -1) {
     payload.record.UpdatedAt = now_();
   }
 
-  const rowValues = def.fields.map(function(f) {
-    return payload.record.hasOwnProperty(f) ? payload.record[f] : '';
+  // PENTING: nulis berdasarkan HEADER ASLI SHEET (headers), bukan def.fields.
+  // def.fields cuma dipakai untuk hal lain (mis. validasi/dokumentasi) — kalau
+  // isinya gak persis sama urutan kolom fisik sheet, nulis pakai def.fields
+  // bakal nggeser semua kolom setelah titik yang beda. Nulis berdasarkan
+  // `headers` (dibaca langsung dari sheet di atas) selalu align, apapun
+  // urutan kolomnya, dan otomatis ngikut kalau ada kolom baru ditambah di sheet.
+  const rowValues = headers.map(function(h) {
+    return payload.record.hasOwnProperty(h) ? payload.record[h] : '';
   });
 
   if (rowIndex === -1) {
@@ -178,8 +184,8 @@ function bulkSaveMasterRecords(payload) {
   payload.records.forEach(function(record) {
     const idValue = clean_(record[def.idField]);
     if (!idValue) return;
-    const rowValues = def.fields.map(function(f) {
-      return record.hasOwnProperty(f) ? record[f] : '';
+    const rowValues = headers.map(function(h) {
+      return record.hasOwnProperty(h) ? record[h] : '';
     });
 
     if (existingIndex[idValue] === undefined) {
