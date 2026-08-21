@@ -61,6 +61,25 @@
         <option value="auto">auto</option><option value="semiauto">semiauto</option>
         <option value="verifier">verifier</option><option value="panel">panel</option>
       </select>
+      <label>Approval oleh</label>
+      <select id="task-approver">
+        <option value="Admin">Admin saja</option>
+        <option value="Admin,Supervisor">Admin &amp; Supervisor divisi terkait</option>
+      </select>
+      <label>Form Type (form apa yang dibuka user saat klaim task ini)</label>
+      <select id="task-formtype">
+        <option value="Legacy">Legacy (form lama sesuai TaskId, default)</option>
+        <option value="LogActivity">Log Activity (KM/TPP/EM/KWC)</option>
+        <option value="SubmitMission">Submit Mission</option>
+        <option value="CreateFinding">Create Finding</option>
+        <option value="Quiz">Quiz</option>
+        <option value="SurveyIndividual">Survey Individu</option>
+        <option value="SurveyGroup">Survey Kelompok</option>
+        <option value="MiniProject">Mini Project</option>
+        <option value="SafetyReport">Safety Report (ST/SW/Hazard)</option>
+        <option value="ObsIndividual">Observasi Individu (belum ada form-nya)</option>
+        <option value="ObsGroup">Observasi Kelompok (belum ada form-nya)</option>
+      </select>
       <label>Level Kewajiban</label>
       <select id="task-obligation">
         <option value="Required">Required (wajib)</option>
@@ -644,6 +663,19 @@
       <option value="Verifier">Verifier</option>
       <option value="Panel">Panel</option>
     </select>
+    <label>Form Type (form apa yang dibuka user saat klaim mission ini)</label>
+    <select id="mt-formtype">
+      <option value="SubmitMission">Submit Mission</option>
+      <option value="CreateFinding">Create Finding</option>
+      <option value="LogActivity">Log Activity (KM/TPP/EM/KWC)</option>
+      <option value="Quiz">Quiz</option>
+      <option value="SurveyIndividual">Survey Individu</option>
+      <option value="SurveyGroup">Survey Kelompok</option>
+      <option value="MiniProject">Mini Project</option>
+      <option value="SafetyReport">Safety Report (ST/SW/Hazard)</option>
+      <option value="ObsIndividual">Observasi Individu (belum ada form-nya)</option>
+      <option value="ObsGroup">Observasi Kelompok (belum ada form-nya)</option>
+    </select>
     <label>Base XP</label>
     <input id="mt-basexp" type="number" value="0">
     <label>Domain XP</label>
@@ -869,6 +901,8 @@ function cancelRedemption(referenceId) {
     document.getElementById('task-freqtype').value = t.FrequencyType;
     document.getElementById('task-freqlimit').value = t.FrequencyLimit;
     document.getElementById('task-validation').value = t.Validation;
+    document.getElementById('task-approver').value = t.ApprovedBy || 'Admin';
+    document.getElementById('task-formtype').value = t.FormType || 'Legacy';
     document.getElementById('task-status').value = t.Status;
     document.getElementById('task-campaignid').value = t.CampaignId || '';
     document.getElementById('task-obligation').value = t.ObligationLevel || 'Recommended';
@@ -886,6 +920,8 @@ function cancelRedemption(referenceId) {
       FrequencyType: document.getElementById('task-freqtype').value,
       FrequencyLimit: Number(document.getElementById('task-freqlimit').value),
       Validation: document.getElementById('task-validation').value,
+      ApprovedBy: document.getElementById('task-approver').value,
+      FormType: document.getElementById('task-formtype').value,
       Status: document.getElementById('task-status').value,
       SeasonId: 'S01',
       CampaignId: document.getElementById('task-campaignid').value.trim(),
@@ -2008,6 +2044,7 @@ function editMissionTemplate(r) {
   document.getElementById('mt-locationrequirement').value = r.LocationRequirement;
   document.getElementById('mt-evidencerequirement').value = r.EvidenceRequirement;
   document.getElementById('mt-validationmethod').value = r.ValidationMethod || 'Auto';
+  document.getElementById('mt-formtype').value = r.FormType || 'SubmitMission';
   document.getElementById('mt-basexp').value = r.BaseXP;
   document.getElementById('mt-domainxp').value = r.DomainXP;
   document.getElementById('mt-sustainabilitycontribution').value = r.SustainabilityContribution;
@@ -2044,6 +2081,7 @@ function saveMissionTemplate() {
     LocationRequirement: document.getElementById('mt-locationrequirement').value.trim(),
     EvidenceRequirement: document.getElementById('mt-evidencerequirement').value.trim(),
     ValidationMethod: document.getElementById('mt-validationmethod').value,
+    FormType: document.getElementById('mt-formtype').value,
     BaseXP: Number(document.getElementById('mt-basexp').value || 0),
     DomainXP: Number(document.getElementById('mt-domainxp').value || 0),
     SustainabilityContribution: Number(document.getElementById('mt-sustainabilitycontribution').value || 0),
@@ -2146,40 +2184,4 @@ function deleteChallenge(id) {
     .withFailureHandler(showAdminError)
     .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'challenge', id: id });
 }
-// function importQuizFile() {
-//   const input = document.getElementById('quiz-import-file');
-//   if (!input.files.length) { showAdminToast('Pilih file dulu.', 'error'); return; }
-//   const file = input.files[0];
-//   const ext = file.name.split('.').pop().toLowerCase();
-
-//   if (ext === 'xlsx') {
-//     const reader = new FileReader();
-//     reader.onload = function() {
-//       const base64 = reader.result.split(',')[1];
-//       google.script.run
-//         .withSuccessHandler(function(res) {
-//           showAdminToast('Import selesai: ' + res.countCreated + ' dibuat, ' + res.countUpdated + ' diperbarui.', 'success');
-//           input.value = '';
-//           loadQuizList();
-//         })
-//         .withFailureHandler(showAdminError)
-//         .bulkImportQuizFromExcel({ nik: adminCurrentNik, base64Data: base64 });
-//     };
-//     reader.readAsDataURL(file);
-//   } else {
-//     const format = ext === 'json' ? 'json' : (ext === 'csv' ? 'csv' : 'txt');
-//     const reader = new FileReader();
-//     reader.onload = function() {
-//       google.script.run
-//         .withSuccessHandler(function(res) {
-//           showAdminToast('Import selesai: ' + res.countCreated + ' dibuat, ' + res.countUpdated + ' diperbarui.', 'success');
-//           input.value = '';
-//           loadQuizList();
-//         })
-//         .withFailureHandler(showAdminError)
-//         .bulkImportQuizFromText({ nik: adminCurrentNik, format: format, content: reader.result });
-//     };
-//     reader.readAsText(file);
-//   }
-// }
 </script>

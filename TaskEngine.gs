@@ -299,16 +299,18 @@ function getMissionHubData(payload) {
   const seasonId = normalizeSeasonId_(payload.seasonId);
   const pillar = clean_(payload.pillar);
 
-  const missions = getMissionsForPillar_(nik, pillar, seasonId);
+  const missions = getAllMissionsForPillar_(nik, pillar, seasonId); // gabungan Task lama + Mission baru
   const challenges = getChallengesForPillar_(nik, pillar, seasonId);
-  const awareness = getAwarenessForPillar_(pillar, seasonId);
+  const awareness = getAwarenessForPillar_(nik, pillar, seasonId);
 
   return {
     pillar: pillar,
     recommended: pickRecommendedMission_(missions),
     missions: missions,
     challenge: challenges,
+    nextChallenge: pickNextChallenge_(challenges), // untuk card ringkasan di hub — 1 saja, bukan semua
     awareness: awareness,
-    continueLearning: awareness.length ? awareness[0] : null
+    nextAwareness: pickNextAwareness_(awareness), // untuk card ringkasan di hub — 1 saja, bukan semua
+    continueLearning: pickNextAwareness_(awareness)
   };
 }

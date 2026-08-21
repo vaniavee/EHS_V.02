@@ -13,7 +13,7 @@ function getMasterDefinition_(masterType) {
       sheet: EHS.sheets.tasks,
       idField: 'TaskId',
       fields: ['TaskId', 'Pillar', 'Category', 'Level', 'Title', 'Points', 'DomainXP', 'CoinReward',
-               'Description', 'FrequencyType', 'FrequencyLimit', 'Validation',
+               'Description', 'FrequencyType', 'FrequencyLimit', 'Validation', 'ApprovedBy', 'FormType',
                'ObligationLevel', 'Status', 'SeasonId', 'CampaignId', 'GroupTag']
     },
     quiz: {

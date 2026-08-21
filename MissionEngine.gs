@@ -15,6 +15,21 @@ function tagsInclude_(tagsField, pillar) {
   return clean_(tagsField).split(',').map(function(s) { return s.trim(); }).indexOf(pillar) !== -1;
 }
 
+/**
+ * Sustainability bukan pilar "berdiri sendiri" — dia adalah gabungan lintas
+ * pilar (lihat SDD/PRD). Jadi untuk pillar==='Sustainability', item apapun
+ * yang tag-nya menyentuh ≥2 pilar otomatis dianggap masuk Sustainability,
+ * TANPA perlu literally di-tag "Sustainability" di sheet. Pillar lain
+ * (Energy/Safety/Health) tetap exact-match seperti biasa.
+ */
+function matchesPillarFilter_(tagsField, pillar) {
+  const tags = clean_(tagsField).split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  if (pillar === 'Sustainability') {
+    return tags.length >= 2 || tags.indexOf('Sustainability') !== -1;
+  }
+  return tags.indexOf(pillar) !== -1;
+}
+
 function isContentLive_(row) {
   const now = new Date();
   if (row.PublishDate && new Date(row.PublishDate) > now) return false;
@@ -29,15 +44,16 @@ function getMissionsForPillar_(nik, pillar, seasonId) {
     .filter(function(m) {
       return clean_(m.Status).toLowerCase() === 'active' &&
              clean_(m.SeasonId) === seasonId &&
-             tagsInclude_(m.DomainTags, pillar);
+             matchesPillarFilter_(m.DomainTags, pillar);
     });
 
   return rows.map(function(m) {
     const pseudoTask = { TaskId: m.MissionId, FrequencyType: m.FrequencyType, FrequencyLimit: m.FrequencyLimit };
     const availability = getTaskAvailability_(pseudoTask, nik, seasonId);
     return {
-      missionId: m.MissionId, title: m.Title, description: m.Description,
+      source: 'mission', missionId: m.MissionId, title: m.Title, description: m.Description,
       obligationLevel: mapRequirementLabel_(m.RequirementLabel),
+      formType: clean_(m.FormType || 'SubmitMission'),
       points: Number(m.BaseXP || 0), domainXp: Number(m.DomainXP || 0), coin: Number(m.RewardCoin || 0),
       estimatedMinutes: Number(m.EstimatedMinutes || 0),
       validationMethod: clean_(m.ValidationMethod || 'Auto'),
@@ -50,6 +66,32 @@ function getMissionsForPillar_(nik, pillar, seasonId) {
       frequencyType: availability.frequencyType, reason: availability.reason
     };
   });
+}
+
+/**
+ * Task lama (03_Master_Task) dipetakan ke bentuk yang sama dengan Mission,
+ * supaya "Recommended" bisa pilih dari GABUNGAN dua sumber (Task lama +
+ * Mission baru) — bukan cuma salah satu.
+ */
+function getLegacyTasksForPillar_(nik, pillar, seasonId) {
+  const tasks = getTasksForUser({ nik: nik, pillar: pillar, seasonId: seasonId });
+  return tasks.map(function(t) {
+    const rawTask = getTaskById_(t.taskId, seasonId) || {};
+    return {
+      source: 'task', missionId: t.taskId, title: t.title, description: t.description,
+      obligationLevel: t.obligationLevel, formType: clean_(rawTask.FormType || 'Legacy'),
+      points: t.points, domainXp: Number(rawTask.DomainXP || 0), coin: Number(rawTask.CoinReward || 0),
+      estimatedMinutes: 0, validationMethod: clean_(rawTask.Validation || 'auto'),
+      evidenceRequirement: '', locationRequirement: '', safetyWarning: '',
+      relatedContentIds: '', relatedChallengeId: '',
+      available: t.available, used: t.used, limit: t.limit,
+      frequencyType: t.frequencyType, reason: t.reason
+    };
+  });
+}
+
+function getAllMissionsForPillar_(nik, pillar, seasonId) {
+  return getLegacyTasksForPillar_(nik, pillar, seasonId).concat(getMissionsForPillar_(nik, pillar, seasonId));
 }
 
 function mapRequirementLabel_(label) {
@@ -115,7 +157,7 @@ function getChallengesForPillar_(nik, pillar, seasonId) {
     .filter(function(c) {
       return clean_(c.Status).toLowerCase() === 'active' &&
              clean_(c.SeasonId) === seasonId &&
-             tagsInclude_(c.DomainTags, pillar);
+             matchesPillarFilter_(c.DomainTags, pillar);
     });
 
   const claimedMissionIds = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.taskClaims))
@@ -130,19 +172,31 @@ function getChallengesForPillar_(nik, pillar, seasonId) {
       challengeType: clean_(c.ChallengeType || 'Individual'), missionIds: missionIds,
       progressPct: missionIds.length ? Math.round((doneCount / missionIds.length) * 100) : 0,
       doneCount: doneCount, totalCount: missionIds.length,
+      isComplete: missionIds.length > 0 && doneCount === missionIds.length,
       rewardCoin: Number(c.RewardCoin || 0), bonusScore: Number(c.BonusIntegratedScore || 0)
     };
   });
 }
 
+// Ambil 1 challenge yang belum lengkap (buat card ringkasan di Mission Hub).
+// Kalau semua udah lengkap, kasih yang terakhir (biar user tetap lihat sesuatu, dengan status "Selesai").
+function pickNextChallenge_(challenges) {
+  if (!challenges.length) return null;
+  return challenges.find(function(c) { return !c.isComplete; }) || challenges[challenges.length - 1];
+}
+
 // ---------- Awareness Content ----------
 
-function getAwarenessForPillar_(pillar, seasonId) {
+function getAwarenessForPillar_(nik, pillar, seasonId) {
+  const doneContentIds = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.pointsLedger))
+    .filter(function(r) { return normalizeNikLenient_(r.NIK) === nik; })
+    .map(function(r) { return clean_(r.ReferenceId).split(':')[1]; }); // format ReferenceId: seasonId:contentId:nik
+
   return readObjects_(getSpreadsheet_().getSheetByName('20_Master_AwarenessContent'))
     .filter(function(a) {
       return clean_(a.Status).toLowerCase() === 'active' &&
              clean_(a.SeasonId) === seasonId &&
-             tagsInclude_(a.DomainTags, pillar) &&
+             matchesPillarFilter_(a.DomainTags, pillar) &&
              isContentLive_(a);
     })
     .map(function(a) {
@@ -150,10 +204,17 @@ function getAwarenessForPillar_(pillar, seasonId) {
         contentId: a.ContentId, title: a.Title, summary: a.Summary,
         contentType: clean_(a.ContentType), mediaUrl: clean_(a.MediaUrl), thumbnailUrl: clean_(a.ThumbnailUrl),
         estimatedMinutes: Number(a.EstimatedMinutes || 0), lightXp: Number(a.LightXP || 0),
-        requirementLabel: clean_(a.RequirementLabel)
+        requirementLabel: clean_(a.RequirementLabel), sortOrder: Number(a.SortOrder || 0),
+        isComplete: doneContentIds.indexOf(clean_(a.ContentId)) !== -1
       };
     })
-    .sort(function(a, b) { return (a.sortOrder || 0) - (b.sortOrder || 0); });
+    .sort(function(a, b) { return a.sortOrder - b.sortOrder; });
+}
+
+// Ambil 1 konten awareness yang belum diselesaikan (buat card ringkasan di Mission Hub).
+function pickNextAwareness_(items) {
+  if (!items.length) return null;
+  return items.find(function(a) { return !a.isComplete; }) || items[items.length - 1];
 }
 
 function markAwarenessComplete(payload) {

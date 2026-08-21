@@ -54,7 +54,7 @@
     cards.push('<div class="mh-card"><div class="mh-card-label">Continue Learning</div>' +
       (data.continueLearning
         ? '<div class="mh-card-title">' + data.continueLearning.title + '</div>' +
-          '<div class="mh-card-desc">' + data.continueLearning.contentType + '</div>' +
+          '<div class="mh-card-desc">' + data.continueLearning.contentType + (data.continueLearning.isComplete ? ' · Selesai' : '') + '</div>' +
           '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList(\'awareness\')">Continue Learning</button>'
         : '<div class="mh-card-desc mh-card-empty">Belum ada media baru untuk dilanjutkan.</div>') +
     '</div>');
@@ -68,17 +68,18 @@
     '</div>');
 
     cards.push('<div class="mh-card"><div class="mh-card-label">Challenge</div>' +
-      (data.challenge.length
-        ? data.challenge.map(function(c) {
-            return '<div class="mh-card-title">' + c.title + '</div>' +
-              '<div class="mh-card-desc">' + (c.description || '') + ' · ' + c.doneCount + '/' + c.totalCount + '</div>';
-          }).join('') + '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList(\'challenges\')">Open Challenge</button>'
+      (data.nextChallenge
+        ? '<div class="mh-card-title">' + data.nextChallenge.title + '</div>' +
+          '<div class="mh-card-desc">' + (data.nextChallenge.description || '') + ' · ' + data.nextChallenge.doneCount + '/' + data.nextChallenge.totalCount +
+          (data.nextChallenge.isComplete ? ' · Selesai! 🎉' : '') + '</div>' +
+          '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList(\'challenges\')">Open Challenge</button>'
         : '<div class="mh-card-desc mh-card-empty">Belum ada challenge aktif untuk pilar ini.</div>') +
     '</div>');
 
     cards.push('<div class="mh-card"><div class="mh-card-label">Awareness → Impact</div>' +
-      (data.awareness.length
-        ? '<div class="mh-card-desc">' + data.awareness.length + ' media awareness tersedia.</div>' +
+      (data.nextAwareness
+        ? '<div class="mh-card-title">' + data.nextAwareness.title + '</div>' +
+          '<div class="mh-card-desc">' + data.nextAwareness.contentType + (data.nextAwareness.isComplete ? ' · Selesai' : '') + '</div>' +
           '<button class="btn-primary" style="margin:0;" onclick="mhOpenPillarList(\'awareness\')">Explore Learning</button>'
         : '<div class="mh-card-desc mh-card-empty">Belum ada media awareness untuk pilar ini.</div>') +
     '</div>');
