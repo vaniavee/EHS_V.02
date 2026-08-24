@@ -83,7 +83,9 @@ const EHS_SCHEMA = {
   '13_DB_SafetyReports': [
     'Timestamp', 'SeasonId', 'ReferenceId', 'SupervisorNik', 'SupervisorNama',
     'DivisiDilaporkan', 'JenisLaporan', 'Deskripsi', 'BuktiUrl', 'Severity',
-    'Status', 'AdminFeedback', 'Points', 'PeriodKey', 'ReviewedBy', 'ReviewedAt'
+    'Status', 'AdminFeedback', 'Points', 'PeriodKey', 'ReviewedBy', 'ReviewedAt',
+    'Location', 'EvidenceUrl', 'AdditionalNote',
+    'Domain', 'Category', 'InitialRecommendation'
   ],
   '14_DB_HelpRequests': [
     'Timestamp', 'RequestId', 'NIK', 'Nama', 'Question', 'Status',

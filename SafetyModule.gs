@@ -66,7 +66,11 @@ function submitSafetyReport(payload) {
   if (payload.buktiBase64) {
     buktiUrlFinal = uploadPhotoToDrive_(payload.buktiBase64, payload.buktiMime, payload.buktiFileName);
   }
-  appendObjectRow_(EHS.sheets.safetyReports, {
+
+  // Field tambahan: ST/SW pakai gaya "Submit Mission" (Location, Evidence URL,
+  // catatan tambahan/refleksi); Hazard pakai gaya "Create Finding" (Domain,
+  // Category, Risk/Impact Level = Severity, Initial Recommendation).
+  const record = {
     Timestamp: now_(),
     SeasonId: seasonId,
     ReferenceId: referenceId,
@@ -75,15 +79,25 @@ function submitSafetyReport(payload) {
     DivisiDilaporkan: divisi,
     JenisLaporan: jenis,
     Deskripsi: clean_(payload.deskripsi),
-    BuktiUrl: buktiUrlFinal, //clean_(payload.buktiUrl),
+    BuktiUrl: buktiUrlFinal,
     Severity: severity,
     Status: status,
     AdminFeedback: '',
     Points: points,
     PeriodKey: periodKey,
     ReviewedBy: '',
-    ReviewedAt: ''
-  });
+    ReviewedAt: '',
+    Location: clean_(payload.location),
+    EvidenceUrl: clean_(payload.evidenceUrl)
+  };
+  if (jenis === 'ST' || jenis === 'SW') {
+    record.AdditionalNote = clean_(payload.additionalNote);
+  } else { // Hazard
+    record.Domain = clean_(payload.domain || 'Safety');
+    record.Category = clean_(payload.category);
+    record.InitialRecommendation = clean_(payload.initialRecommendation);
+  }
+  appendObjectRow_(EHS.sheets.safetyReports, record);
 
   // ST langsung masuk Points Ledger karena auto-approve.
   if (jenis === 'ST') {

@@ -109,10 +109,12 @@ function pickRecommendedMission_(missions) {
 }
 
 /**
- * Klaim mission generik (untuk mission yang belum punya form detail khusus —
- * validasi Auto/langsung disetujui). Mission yang butuh EvidenceRequirement
- * kompleks (foto/lokasi/before-after) tetap perlu form & handler submit
- * khusus terpisah — ini baseline dulu.
+ * Klaim mission — mendukung payload kaya sesuai FormType-nya:
+ *  - LogActivity: payload.detail = {activityType, durationMinutes, steps, activeMinutes, distanceKm, hydrationMl, caption}
+ *  - SubmitMission: payload.detail = {location, evidenceUrl, additionalNote}, payload.note = deskripsi "what did you do"
+ *  - CreateFinding: payload.detail = {domain, category, location, riskLevel, evidenceUrl, initialRecommendation}, payload.note = deskripsi
+ *  - Lainnya (Legacy/Quiz/dst): cukup payload.note.
+ * payload.buktiBase64/buktiMime/buktiFileName opsional untuk semua jenis.
  */
 function submitMissionClaim(payload) {
   validateRequired_(payload, ['nik', 'missionId']);
@@ -133,21 +135,40 @@ function submitMissionClaim(payload) {
   const claimNumber = availability.used + 1;
   const referenceId = [seasonId, mission.MissionId, nik, availability.periodKey, claimNumber].join(':');
 
-  const points = awardPoints_(
-    user, pillar, mission.MissionId, referenceId,
-    Number(mission.BaseXP || 0), 'Klaim ' + mission.Title, '', seasonId,
-    Number(mission.DomainXP || 0), Number(mission.RewardCoin || 0)
-  );
+  let buktiUrl = '';
+  if (payload.buktiBase64) {
+    buktiUrl = uploadPhotoToDrive_(payload.buktiBase64, payload.buktiMime, payload.buktiFileName);
+  }
+
+  const needsReview = clean_(mission.ValidationMethod) !== 'Auto';
+  const status = needsReview ? 'Pending' : 'Claimed';
+  const points = Number(mission.BaseXP || 0);
+  if (!needsReview) {
+    awardPoints_(
+      user, pillar, mission.MissionId, referenceId,
+      points, 'Klaim ' + mission.Title, '', seasonId,
+      Number(mission.DomainXP || 0), Number(mission.RewardCoin || 0)
+    );
+  } else {
+    notifyAdmins_('Mission Baru: ' + mission.Title, user.nama + ' submit "' + mission.Title + '", menunggu verifikasi.', 'review-queue', referenceId);
+  }
 
   appendObjectRow_(EHS.sheets.taskClaims, {
     Timestamp: now_(), SeasonId: seasonId, Pillar: pillar, NIK: nik, Nama: user.nama, Divisi: user.divisi,
-    TaskId: mission.MissionId, Status: points > 0 ? 'Claimed' : 'Duplicate', Points: points,
+    TaskId: mission.MissionId, Status: status, Points: points,
     Note: clean_(payload.note || mission.Title), PeriodKey: availability.periodKey,
-    FrequencyType: availability.frequencyType, NextAvailableAt: getNextAvailableLabel_(availability.frequencyType)
+    FrequencyType: availability.frequencyType, NextAvailableAt: getNextAvailableLabel_(availability.frequencyType),
+    BuktiUrl: buktiUrl, Detail: JSON.stringify(payload.detail || {})
   });
 
-  updateUserStreak_(nik);
-  return { ok: true, message: 'Mission "' + mission.Title + '" berhasil dikirim, +' + points + ' poin.', points: points };
+  updateUserStreak_(nik); // streak dihitung dari aktivitas submit hari ini, bukan nunggu approval
+  return {
+    ok: true,
+    message: needsReview
+      ? 'Mission "' + mission.Title + '" berhasil dikirim, menunggu review Admin/Supervisor.'
+      : 'Mission "' + mission.Title + '" berhasil dikirim, +' + points + ' poin.',
+    points: points
+  };
 }
 
 // ---------- Challenges ----------

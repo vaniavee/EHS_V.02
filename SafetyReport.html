@@ -14,16 +14,42 @@
     <label>Divisi yang Dilaporkan</label>
     <select id="divisi-select"></select>
 
-    <label>Deskripsi</label>
+    <label>Deskripsi <span class="report-meta">(What did you do / What is happening?)</span></label>
     <textarea id="deskripsi" placeholder="Jelaskan singkat apa yang dilakukan/ditemukan..."></textarea>
 
+    <div id="finding-block" style="display:none;">
+      <label>Domain</label>
+      <select id="finding-domain">
+        <option value="Safety">Safety</option><option value="Energy">Energy</option>
+        <option value="Health">Health</option><option value="Sustainability">Sustainability</option>
+      </select>
+      <label>Category</label>
+      <input id="finding-category" placeholder="Hazard / Leak / Ergonomic / Opportunity">
+    </div>
+
     <div id="severity-block" style="display:none;">
-      <label>Tingkat Keparahan</label>
+      <label>Tingkat Keparahan <span class="report-meta">(Risk/Impact Level)</span></label>
       <div class="pill-group" id="severity-pills">
         <div class="pill" data-value="Low">Rendah</div>
         <div class="pill" data-value="Medium">Sedang</div>
         <div class="pill" data-value="High">Tinggi</div>
       </div>
+    </div>
+
+    <label>Lokasi <span class="report-meta">(opsional)</span></label>
+    <input id="report-location" placeholder="Area / unit">
+
+    <label>Evidence URL <span class="report-meta">(opsional, link Drive/foto)</span></label>
+    <input id="report-evidence-url" placeholder="Optional Drive/photo URL">
+
+    <div id="mission-extra-block">
+      <label>Catatan Tambahan / Refleksi <span class="report-meta">(opsional)</span></label>
+      <textarea id="report-additional-note" placeholder="Short evidence note / reflection"></textarea>
+    </div>
+
+    <div id="finding-extra-block" style="display:none;">
+      <label>Rekomendasi Awal <span class="report-meta">(opsional)</span></label>
+      <textarea id="finding-recommendation" placeholder="Safe initial recommendation"></textarea>
     </div>
 
     <label>Bukti (foto)</label>
@@ -49,7 +75,16 @@
     safetySelectedSeverity = 'Low';
     document.getElementById('deskripsi').value = '';
     document.getElementById('bukti-file').value = '';
+    document.getElementById('report-location').value = '';
+    document.getElementById('report-evidence-url').value = '';
+    document.getElementById('report-additional-note').value = '';
+    document.getElementById('finding-domain').value = 'Safety';
+    document.getElementById('finding-category').value = '';
+    document.getElementById('finding-recommendation').value = '';
     document.getElementById('severity-block').style.display = 'none';
+    document.getElementById('finding-block').style.display = 'none';
+    document.getElementById('finding-extra-block').style.display = 'none';
+    document.getElementById('mission-extra-block').style.display = 'block';
     document.querySelectorAll('#jenis-pills .pill').forEach(function(p, idx) {
       p.classList.toggle('active', idx === 0);
     });
@@ -102,7 +137,11 @@
       document.querySelectorAll('#jenis-pills .pill').forEach(function(p) { p.classList.remove('active'); });
       el.classList.add('active');
       safetySelectedJenis = el.dataset.value;
-      document.getElementById('severity-block').style.display = safetySelectedJenis === 'Hazard' ? 'block' : 'none';
+      const isHazard = safetySelectedJenis === 'Hazard';
+      document.getElementById('severity-block').style.display = isHazard ? 'block' : 'none';
+      document.getElementById('finding-block').style.display = isHazard ? 'block' : 'none';
+      document.getElementById('finding-extra-block').style.display = isHazard ? 'block' : 'none';
+      document.getElementById('mission-extra-block').style.display = isHazard ? 'none' : 'block';
     });
   });
 
@@ -160,7 +199,13 @@
       jenisLaporan: safetySelectedJenis,
       divisiDilaporkan: document.getElementById('divisi-select').value,
       deskripsi: deskripsi,
-      severity: safetySelectedSeverity
+      severity: safetySelectedSeverity,
+      location: document.getElementById('report-location').value.trim(),
+      evidenceUrl: document.getElementById('report-evidence-url').value.trim(),
+      additionalNote: document.getElementById('report-additional-note').value.trim(),
+      domain: document.getElementById('finding-domain').value,
+      category: document.getElementById('finding-category').value.trim(),
+      initialRecommendation: document.getElementById('finding-recommendation').value.trim()
     };
 
     const fileInput = document.getElementById('bukti-file');
@@ -176,6 +221,11 @@
         btn.disabled = false; btn.textContent = 'Kirim Laporan';
         showSafetyReportToast(res.message, 'success');
         document.getElementById('deskripsi').value = '';
+        document.getElementById('report-location').value = '';
+        document.getElementById('report-evidence-url').value = '';
+        document.getElementById('report-additional-note').value = '';
+        document.getElementById('finding-category').value = '';
+        document.getElementById('finding-recommendation').value = '';
         fileInput.value = '';
         loadMySafetyReports();
       })

@@ -49,7 +49,13 @@ function getUnifiedReviewQueue(payload) {
       items.push({
         source: 'safety', referenceId: r.ReferenceId, pillar: 'Safety', typeLabel: r.JenisLaporan,
         nik: r.SupervisorNik, nama: r.SupervisorNama, divisi: r.DivisiDilaporkan, title: r.Deskripsi,
-        timestamp: r.Timestamp, points: r.Points || 0, detail: JSON.stringify({ severity: r.Severity }), buktiUrl: r.BuktiUrl,
+        timestamp: r.Timestamp, points: r.Points || 0,
+        detail: JSON.stringify({
+          severity: r.Severity, location: r.Location, evidenceUrl: r.EvidenceUrl,
+          additionalNote: r.AdditionalNote, domain: r.Domain, category: r.Category,
+          initialRecommendation: r.InitialRecommendation
+        }),
+        buktiUrl: r.BuktiUrl,
         status: r.Status
       });
     });

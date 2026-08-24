@@ -88,7 +88,7 @@
       try {
         const parsed = JSON.parse(item.detail);
         detailHtml = '<div class="card" style="padding:12px;margin-top:10px;">' +
-          Object.keys(parsed).map(function(k) {
+          Object.keys(parsed).filter(function(k) { return parsed[k] !== '' && parsed[k] !== null && parsed[k] !== undefined; }).map(function(k) {
             const val = parsed[k];
             return '<div class="report-meta"><b>' + k + ':</b> ' + (Array.isArray(val) ? val.join(', ') : val) + '</div>';
           }).join('') + '</div>';
