@@ -71,7 +71,6 @@
       const buttonLabel = m.available ? 'Isi Data' : 'Kuota Habis';
       const reasonLine = !m.available && m.reason ? '<div class="report-meta" style="color:var(--danger);margin-top:4px;">' + m.reason + '</div>' : '';
       return '<div class="card" style="padding:14px;margin-bottom:10px;">' + pmlObligationBadge_(m.obligationLevel) +
-        '<span class="report-meta" style="margin-left:8px;">[' + m.formType + ']</span><br>' +
         '<b>' + m.title + '</b>' +
         '<div class="report-meta">' + (m.description || '') + '</div>' +
         '<div class="report-meta">Kuota: ' + quota + ' · +' + m.points + ' XP' + (m.coin ? ' · +' + m.coin + ' Coin' : '') + '</div>' +
@@ -194,7 +193,7 @@
   }
 
   function pmlValidationNote_(mission) {
-    return mission.validationMethod !== 'Auto'
+    return mission.validationMethod.toLowerCase() !== 'auto'
       ? '<p class="sub" style="margin-top:8px;">Mission ini butuh verifikasi (' + mission.validationMethod + ') — akan masuk antrian review Admin/Supervisor.</p>'
       : '<p class="sub" style="margin-top:8px;">Mission ini auto-approve begitu dikirim.</p>';
   }
@@ -210,7 +209,7 @@
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
-    return { base64: base64, mime: file.type, name: file.name };
+    return { base64: base64, mime: file.type, name: file.name, takenAt: new Date(file.lastModified).toISOString() };
   }
 
   async function pmlSubmitModal() {
@@ -231,7 +230,7 @@
         hydrationMl: document.getElementById('pml-la-hydration').value
       };
       const photo = await pmlFileToBase64_(document.getElementById('pml-la-photo'));
-      if (photo) { payload.buktiBase64 = photo.base64; payload.buktiMime = photo.mime; payload.buktiFileName = photo.name; }
+      if (photo) { payload.buktiBase64 = photo.base64; payload.buktiMime = photo.mime; payload.buktiFileName = photo.name; payload.photoTakenAt = photo.takenAt; }
     } else if (formType === 'SubmitMission') {
       const desc = document.getElementById('pml-sm-desc').value.trim();
       if (!desc) { showPmlToast('"What did you do?" wajib diisi.', 'error'); btn.disabled = false; btn.textContent = 'Kirim'; return; }
@@ -242,7 +241,7 @@
         additionalNote: document.getElementById('pml-sm-note').value.trim()
       };
       const photo = await pmlFileToBase64_(document.getElementById('pml-sm-photo'));
-      if (photo) { payload.buktiBase64 = photo.base64; payload.buktiMime = photo.mime; payload.buktiFileName = photo.name; }
+      if (photo) { payload.buktiBase64 = photo.base64; payload.buktiMime = photo.mime; payload.buktiFileName = photo.name; payload.photoTakenAt = photo.takenAt; }
     } else if (formType === 'CreateFinding') {
       const desc = document.getElementById('pml-cf-desc').value.trim();
       if (!desc) { showPmlToast('Description wajib diisi.', 'error'); btn.disabled = false; btn.textContent = 'Kirim'; return; }
@@ -256,7 +255,7 @@
         initialRecommendation: document.getElementById('pml-cf-recommendation').value.trim()
       };
       const photo = await pmlFileToBase64_(document.getElementById('pml-cf-photo'));
-      if (photo) { payload.buktiBase64 = photo.base64; payload.buktiMime = photo.mime; payload.buktiFileName = photo.name; }
+      if (photo) { payload.buktiBase64 = photo.base64; payload.buktiMime = photo.mime; payload.buktiFileName = photo.name; payload.photoTakenAt = photo.takenAt; }
     } else {
       payload.note = document.getElementById('pml-note').value.trim();
     }

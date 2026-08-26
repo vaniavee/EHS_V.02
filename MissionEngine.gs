@@ -140,7 +140,14 @@ function submitMissionClaim(payload) {
     buktiUrl = uploadPhotoToDrive_(payload.buktiBase64, payload.buktiMime, payload.buktiFileName);
   }
 
-  const needsReview = clean_(mission.ValidationMethod) !== 'Auto';
+  // Foto bukti (kalau ada) harus dari hari ini — kalau tidak, mission ini
+  // "turun" jadi butuh review manual, sama seperti perilaku task Health lama.
+  // Sumber tanggalnya file.lastModified dari browser (bukan EXIF asli), jadi
+  // ini sinyal lunak, bukan validasi anti-spoof yang keras.
+  const photoTakenAt = payload.photoTakenAt ? new Date(payload.photoTakenAt) : null;
+  const photoDateValid = !payload.buktiBase64 || (photoTakenAt instanceof Date && !isNaN(photoTakenAt) && isSameDay_(photoTakenAt, new Date()));
+
+  const needsReview = clean_(mission.ValidationMethod).toLowerCase() !== 'auto' || !photoDateValid;
   const status = needsReview ? 'Pending' : 'Claimed';
   const points = Number(mission.BaseXP || 0);
   if (!needsReview) {
@@ -150,7 +157,8 @@ function submitMissionClaim(payload) {
       Number(mission.DomainXP || 0), Number(mission.RewardCoin || 0)
     );
   } else {
-    notifyAdmins_('Mission Baru: ' + mission.Title, user.nama + ' submit "' + mission.Title + '", menunggu verifikasi.', 'review-queue', referenceId);
+    const reason = !photoDateValid ? ' (foto bukan dari hari ini, perlu verifikasi manual)' : '';
+    notifyAdmins_('Mission Baru: ' + mission.Title, user.nama + ' submit "' + mission.Title + '", menunggu verifikasi' + reason + '.', 'review-queue', referenceId);
   }
 
   appendObjectRow_(EHS.sheets.taskClaims, {
