@@ -269,3 +269,95 @@ function markAwarenessComplete(payload) {
   }
   return { ok: true, message: 'Konten "' + content.Title + '" ditandai selesai.', points: lightXp };
 }
+// ---------- Observasi Individu/Kelompok ----------
+// Skema sama persis dengan 07_Master_SurveyQuestions (Likert 1-5), jadi UI
+// klien mereplikasi pola form Survey yang sudah ada (lihat EnergyTask.html).
+
+function getObsIndividuQuestions() {
+  return readObjects_(getSpreadsheet_().getSheetByName('19_Master_ObsIndividu'))
+    .filter(function(q) { return clean_(q.Status) === 'Active'; })
+    .sort(function(a, b) { return Number(a.Order) - Number(b.Order); });
+}
+
+function getObsKelompokQuestions() {
+  return readObjects_(getSpreadsheet_().getSheetByName('09_Master_ObsKelompok'))
+    .filter(function(q) { return clean_(q.Status) === 'Active'; })
+    .sort(function(a, b) { return Number(a.Order) - Number(b.Order); });
+}
+
+/**
+ * Submit hasil observasi (individu atau kelompok) untuk sebuah Mission
+ * dengan FormType 'ObsIndividual'/'ObsGroup'. Kelompok: poin diberikan ke
+ * pelapor + semua anggota (pola sama dengan submitAwarenessSurvey group mode).
+ */
+function submitObservation(payload) {
+  validateRequired_(payload, ['nik', 'missionId', 'mode', 'jawaban']);
+  const nik = normalizeNik_(payload.nik);
+  const user = getUserProfile_(nik);
+  if (!user.active) throw new Error('NIK tidak terdaftar atau tidak aktif.');
+  const seasonId = normalizeSeasonId_(payload.seasonId);
+
+  const mission = readObjects_(getSpreadsheet_().getSheetByName('21_Master_MissionTemplates'))
+    .find(function(m) { return clean_(m.MissionId) === clean_(payload.missionId) && clean_(m.SeasonId) === seasonId && clean_(m.Status).toLowerCase() === 'active'; });
+  if (!mission) throw new Error('Mission tidak ditemukan atau tidak aktif: ' + payload.missionId);
+
+  const pseudoTask = { TaskId: mission.MissionId, FrequencyType: mission.FrequencyType, FrequencyLimit: mission.FrequencyLimit };
+  const availability = getTaskAvailability_(pseudoTask, nik, seasonId);
+  if (!availability.available) throw new Error(availability.reason);
+
+  const pillar = clean_(mission.DomainTags).split(',')[0].trim();
+  const points = Number(mission.BaseXP || 0);
+  const needsReview = clean_(mission.ValidationMethod).toLowerCase() !== 'auto';
+  const status = needsReview ? 'Pending' : 'Approved';
+  const claimNumber = availability.used + 1;
+  const referenceId = [seasonId, mission.MissionId, nik, availability.periodKey, claimNumber].join(':');
+
+  if (payload.mode === 'Kelompok') {
+    const anggotaNiks = (payload.anggotaKelompok || []).map(function(n) { return normalizeNikLenient_(n); }).filter(Boolean);
+
+    appendObjectRow_(EHS.sheets.taskClaims, {
+      Timestamp: now_(), SeasonId: seasonId, Pillar: pillar, NIK: nik, Nama: user.nama, Divisi: user.divisi,
+      TaskId: mission.MissionId, Status: status, Points: needsReview ? 0 : points,
+      Note: 'Observasi Kelompok: ' + mission.Title, PeriodKey: availability.periodKey,
+      FrequencyType: availability.frequencyType, NextAvailableAt: getNextAvailableLabel_(availability.frequencyType),
+      Detail: JSON.stringify({ mode: 'Kelompok', anggotaKelompok: anggotaNiks, jawaban: payload.jawaban })
+    });
+
+    if (!needsReview) {
+      awardPoints_(user, pillar, mission.MissionId, referenceId, points, 'Observasi Kelompok: ' + mission.Title, '', seasonId,
+        Number(mission.DomainXP || 0), Number(mission.RewardCoin || 0));
+      anggotaNiks.forEach(function(anggotaNik, idx) {
+        if (anggotaNik === nik) return;
+        const anggotaUser = getUserProfile_(anggotaNik);
+        if (!anggotaUser.found || !anggotaUser.active) return;
+        awardPoints_(anggotaUser, pillar, mission.MissionId, referenceId + ':MEMBER:' + idx, points, 'Observasi Kelompok (anggota): ' + mission.Title, '', seasonId,
+          Number(mission.DomainXP || 0), Number(mission.RewardCoin || 0));
+      });
+    } else {
+      notifyAdmins_('Observasi Kelompok Baru: ' + mission.Title, user.nama + ' + ' + anggotaNiks.length + ' anggota submit observasi, menunggu verifikasi.', 'review-queue', referenceId);
+    }
+  } else {
+    appendObjectRow_(EHS.sheets.taskClaims, {
+      Timestamp: now_(), SeasonId: seasonId, Pillar: pillar, NIK: nik, Nama: user.nama, Divisi: user.divisi,
+      TaskId: mission.MissionId, Status: status, Points: needsReview ? 0 : points,
+      Note: 'Observasi Individu: ' + mission.Title, PeriodKey: availability.periodKey,
+      FrequencyType: availability.frequencyType, NextAvailableAt: getNextAvailableLabel_(availability.frequencyType),
+      Detail: JSON.stringify({ mode: 'Individu', jawaban: payload.jawaban })
+    });
+    if (!needsReview) {
+      awardPoints_(user, pillar, mission.MissionId, referenceId, points, 'Observasi Individu: ' + mission.Title, '', seasonId,
+        Number(mission.DomainXP || 0), Number(mission.RewardCoin || 0));
+    } else {
+      notifyAdmins_('Observasi Individu Baru: ' + mission.Title, user.nama + ' submit observasi, menunggu verifikasi.', 'review-queue', referenceId);
+    }
+  }
+
+  updateUserStreak_(nik);
+  return {
+    ok: true,
+    message: needsReview
+      ? 'Observasi "' + mission.Title + '" berhasil dikirim, menunggu review Admin/Supervisor.'
+      : 'Observasi "' + mission.Title + '" berhasil dikirim, +' + points + ' poin.',
+    points: needsReview ? 0 : points
+  };
+}

@@ -132,8 +132,7 @@
     SurveyIndividual: { view: 'energy', fn: 'initEnergyTask', label: 'Halaman Energy Task' },
     SurveyGroup: { view: 'energy', fn: 'initEnergyTask', label: 'Halaman Energy Task' },
     MiniProject: { view: 'energy', fn: 'initEnergyTask', label: 'Halaman Energy Task (Mini Project)' },
-    SafetyReport: { view: 'safety-report', fn: 'initSafetyReportForm', label: 'Halaman Lapor Safety' },
-    ObsIndividual: null, ObsGroup: null // belum ada form-nya sama sekali
+    SafetyReport: { view: 'safety-report', fn: 'initSafetyReportForm', label: 'Halaman Lapor Safety' }
   };
 
   function pmlOpenModal(mission) {
@@ -177,19 +176,59 @@
         '<label>Foto Bukti (opsional)</label><input id="pml-cf-photo" type="file" accept="image/*" capture="environment">' +
         '<label>Initial Recommendation (opsional)</label><textarea id="pml-cf-recommendation" placeholder="Safe initial recommendation"></textarea>' +
         pmlValidationNote_(mission);
+    } else if (mission.formType === 'ObsIndividual' || mission.formType === 'ObsGroup') {
+      body.innerHTML = '<p class="sub">Memuat pertanyaan observasi...</p>';
+      submitBtn.style.display = 'none';
+      const fetchFn = mission.formType === 'ObsIndividual' ? 'getObsIndividuQuestions' : 'getObsKelompokQuestions';
+      google.script.run
+        .withSuccessHandler(function(questions) { pmlRenderObsForm_(mission, questions); })
+        .withFailureHandler(function(err) { body.innerHTML = '<p class="sub" style="color:var(--danger);">' + (err.message || String(err)) + '</p>'; })
+        [fetchFn]();
     } else if (PML_REDIRECT_PAGES.hasOwnProperty(mission.formType)) {
       const target = PML_REDIRECT_PAGES[mission.formType];
       submitBtn.style.display = 'none';
-      body.innerHTML = target
-        ? '<p class="sub">Mission jenis ini diisi lewat halaman terpisah. Klik tombol di bawah untuk membukanya.</p>' +
-          '<button class="btn-primary" onclick="pmlCloseModal(); showView(\'' + target.view + '\'); ' + target.fn + '(pmlCurrentNik);">' + target.label + '</button>'
-        : '<p class="sub">Form untuk jenis mission ini (' + mission.formType + ') belum tersedia. Hubungi Admin EHS.</p>';
+      body.innerHTML = '<p class="sub">Mission jenis ini diisi lewat halaman terpisah. Klik tombol di bawah untuk membukanya.</p>' +
+        '<button class="btn-primary" onclick="pmlCloseModal(); showView(\'' + target.view + '\'); ' + target.fn + '(pmlCurrentNik);">' + target.label + '</button>';
     } else { // Legacy / fallback
       body.innerHTML =
         '<label>What did you do?</label><textarea id="pml-note" placeholder="Ceritakan apa yang kamu lakukan..."></textarea>' +
         pmlValidationNote_(mission);
     }
     document.getElementById('pml-modal-overlay').classList.add('show');
+  }
+
+  // Mode ('Individu'/'Kelompok') ditentukan dari FormType mission-nya sendiri,
+  // bukan dipilih user — beda dengan form Survey lama yang pilihan modenya bebas.
+  function pmlRenderObsForm_(mission, questions) {
+    const isGroup = mission.formType === 'ObsGroup';
+    let html = isGroup
+      ? '<label>NIK Anggota Kelompok Lainnya (tidak perlu isi NIK Anda sendiri, pisah koma)</label>' +
+        '<input id="pml-obs-anggota" placeholder="Contoh: 00181, 00182">'
+      : '';
+
+    if (!questions.length) {
+      html += '<p class="sub" style="margin-top:16px;">Belum ada pertanyaan observasi untuk mission ini.</p>';
+    } else {
+      questions.forEach(function(q) {
+        html += '<label style="margin-top:16px;">' + q.QuestionText + '</label>' +
+          '<div class="pill-group" data-question-id="' + q.QuestionId + '">' +
+            [1, 2, 3, 4, 5].map(function(n) {
+              return '<div class="pill" data-value="' + n + '" onclick="pmlSelectLikert_(this)">' + n + '</div>';
+            }).join('') +
+          '</div>';
+      });
+    }
+    html += pmlValidationNote_(mission);
+
+    document.getElementById('pml-modal-body').innerHTML = html;
+    const submitBtn = document.getElementById('pml-modal-submit-btn');
+    submitBtn.style.display = questions.length ? '' : 'none';
+  }
+
+  function pmlSelectLikert_(el) {
+    const group = el.parentElement;
+    group.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
+    el.classList.add('active');
   }
 
   function pmlValidationNote_(mission) {
@@ -256,6 +295,33 @@
       };
       const photo = await pmlFileToBase64_(document.getElementById('pml-cf-photo'));
       if (photo) { payload.buktiBase64 = photo.base64; payload.buktiMime = photo.mime; payload.buktiFileName = photo.name; payload.photoTakenAt = photo.takenAt; }
+    } else if (formType === 'ObsIndividual' || formType === 'ObsGroup') {
+      const jawaban = {};
+      let allAnswered = true;
+      document.querySelectorAll('#pml-modal-body [data-question-id]').forEach(function(group) {
+        const active = group.querySelector('.pill.active');
+        if (!active) allAnswered = false;
+        jawaban[group.dataset.questionId] = active ? active.dataset.value : null;
+      });
+      if (!allAnswered) { showPmlToast('Jawab semua pertanyaan dulu.', 'error'); btn.disabled = false; btn.textContent = 'Kirim'; return; }
+      payload.mode = formType === 'ObsGroup' ? 'Kelompok' : 'Individu';
+      payload.jawaban = jawaban;
+      if (formType === 'ObsGroup') {
+        payload.anggotaKelompok = document.getElementById('pml-obs-anggota').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+      }
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.disabled = false; btn.textContent = 'Kirim';
+          pmlCloseModal();
+          showPmlToast(res.message, 'success');
+          pmlLoad();
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false; btn.textContent = 'Kirim';
+          showPmlToast(err.message || String(err), 'error');
+        })
+        .submitObservation(payload);
+      return;
     } else {
       payload.note = document.getElementById('pml-note').value.trim();
     }
