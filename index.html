@@ -35,12 +35,13 @@
     <div id="view-missionhub" ><?!= include('MissionHub'); ?></div>
     <div id="view-pillar-mission-list" ><?!= include('PillarMissionList'); ?></div>
     <div id="view-reward" ><?!= include('RewardCatalogPage'); ?></div>
+    <div id="view-rewardqueue" ><?!= include('RedemptionQueue'); ?></div>
     <div id="view-review-queue" style="display:none;"><?!= include('ReviewQueue'); ?></div>
     <div id="view-analytics" style="display:none;"><?!= include('AnalyticsPage'); ?></div>
 
   <script>
     let EHS_CURRENT_NIK = null;
-    const EHS_VIEWS = ['login', 'register', 'dashboard', 'bmi', 'safety-report', 'safety-review', 'admin', 'monitor', 'health', 'energy', 'miniproject', 'leaderboard', 'help', 'admin-help', 'missionhub', 'pillar-mission-list', 'reward', 'review-queue', 'analytics']; // 'task-review'
+    const EHS_VIEWS = ['login', 'register', 'dashboard', 'bmi', 'safety-report', 'safety-review', 'admin', 'monitor', 'health', 'energy', 'miniproject', 'leaderboard', 'help', 'admin-help', 'missionhub', 'pillar-mission-list', 'reward', 'rewardqueue', 'review-queue', 'analytics']; // 'task-review'
     //let EHS_CURRENT_NIK = null;
     let EHS_CURRENT_IS_ADMIN = false;
 
@@ -129,6 +130,7 @@
         bmi: function() { showView('bmi'); initBmiForm(EHS_CURRENT_NIK); },
         health: function() { showView('health'); initHealthTask(EHS_CURRENT_NIK); },
         energy: function() { showView('energy'); initEnergyTask(EHS_CURRENT_NIK); },
+        sustainability: function() { showView('missionhub'); initMissionHub(EHS_CURRENT_NIK, 'Sustainability'); setShellActiveNav('sustainability'); },
         'safety-report': function() { showView('safety-report'); initSafetyReportForm(EHS_CURRENT_NIK); },
         'safety-review': function() { showView('safety-review'); initSafetyReviewQueue(EHS_CURRENT_NIK); },
         admin: function() { showView('admin'); initAdminDashboard(EHS_CURRENT_NIK); },
@@ -139,6 +141,7 @@
         help: function() { showView('help'); initHelpPage(EHS_CURRENT_NIK, EHS_CURRENT_IS_ADMIN); },
         'admin-help': function() { showView('admin-help'); initAdminHelpQueue(EHS_CURRENT_NIK); },
         reward: function() { showView('reward'); initRewardCatalogPage(EHS_CURRENT_NIK); },
+        rewardqueue: function() { showView('rewardqueue'); initRewardQueuePage(EHS_CURRENT_NIK); },
         'review-queue': function() { showView('review-queue'); initReviewQueue(EHS_CURRENT_NIK); },
         analytics: function() { showView('analytics'); initAnalyticsPage(EHS_CURRENT_NIK, EHS_CURRENT_IS_ADMIN); },
       };

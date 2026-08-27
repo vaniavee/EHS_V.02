@@ -1,0 +1,74 @@
+<div id="rewardqueue-page">
+  <button class="btn-ghost" style="width:auto;padding:8px 14px;margin-bottom:12px;" onclick="backToDashboard()">← Kembali</button>
+  <h2>Redemption Queue</h2>
+  <p class="sub">Riwayat penukaran Coin oleh karyawan. Reward sekarang auto-redeem (langsung terpotong &amp; selesai) — halaman ini untuk memantau riwayat dan membatalkan/refund kalau ada masalah stok fisik.</p>
+
+  <div class="card">
+    <label>Filter Status</label>
+    <select id="rewardqueue-filter-status" onchange="loadRewardQueueList()">
+      <option value="">Semua</option>
+      <option value="Fulfilled">Selesai (Auto-redeem)</option>
+      <option value="Cancelled">Dibatalkan</option>
+      <option value="Pending">Menunggu (legacy)</option>
+    </select>
+  </div>
+  <div id="rewardqueue-list"></div>
+</div>
+
+<div id="toast-rewardqueue" class="toast"></div>
+
+<script>
+  let rewardQueueCurrentNik = null;
+
+  function initRewardQueuePage(nik) {
+    rewardQueueCurrentNik = nik;
+    loadRewardQueueList();
+  }
+
+  function loadRewardQueueList() {
+    document.getElementById('rewardqueue-list').innerHTML = '<p class="sub">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(renderRewardQueueList)
+      .withFailureHandler(showRewardQueueError)
+      .listRewardRedemptions({ nik: rewardQueueCurrentNik, statusFilter: document.getElementById('rewardqueue-filter-status').value });
+  }
+
+  function renderRewardQueueList(rows) {
+    const el = document.getElementById('rewardqueue-list');
+    if (!rows || !rows.length) { el.innerHTML = '<p class="sub">Belum ada riwayat redemption.</p>'; return; }
+
+    el.innerHTML = rows.map(function(r) {
+      const statusClass = r.Status === 'Fulfilled' ? 'Approved' : (r.Status === 'Cancelled' ? 'Revise' : 'Pending');
+      const cancelBtn = r.Status !== 'Cancelled'
+        ? '<div class="feedback-box"><input type="text" id="reason-' + r.ReferenceId + '" placeholder="Alasan pembatalan..."><button class="btn-ghost" onclick="cancelRewardQueueItem(\'' + r.ReferenceId + '\')">Batalkan &amp; Refund</button></div>'
+        : '<p class="report-meta" style="margin-top:6px;">Dibatalkan oleh ' + (r.FulfilledBy || '-') + ': ' + (r.Notes || '-') + '</p>';
+
+      return '<div class="report-item">' +
+        '<span class="badge-status ' + statusClass + '">' + r.Status + '</span> ' +
+        '<b>' + r.Nama + '</b> (' + r.NIK + ') — ' + r.Divisi +
+        '<div class="report-meta">' + r.Timestamp + '</div>' +
+        '<p style="margin-top:6px;"><b>' + r.RewardTitle + '</b> — ' + r.CoinCost + ' Coin</p>' +
+        cancelBtn +
+      '</div>';
+    }).join('');
+  }
+
+  function cancelRewardQueueItem(referenceId) {
+    const reasonEl = document.getElementById('reason-' + referenceId);
+    const reason = reasonEl ? reasonEl.value.trim() : '';
+    if (!reason) { showRewardQueueToast('Isi alasan pembatalan dulu.', 'error'); return; }
+    if (!confirm('Batalkan redemption ini? Coin & stok akan dikembalikan ke user.')) return;
+
+    google.script.run
+      .withSuccessHandler(function(res) { showRewardQueueToast(res.message, 'success'); loadRewardQueueList(); })
+      .withFailureHandler(showRewardQueueError)
+      .cancelRewardRedemption({ adminNik: rewardQueueCurrentNik, referenceId: referenceId, reason: reason });
+  }
+
+  function showRewardQueueToast(msg, type) {
+    const t = document.getElementById('toast-rewardqueue');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    if (type !== 'error') setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+  function showRewardQueueError(err) { showRewardQueueToast(err.message || String(err), 'error'); }
+</script>
