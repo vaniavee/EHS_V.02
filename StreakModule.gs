@@ -30,5 +30,18 @@ function updateUserStreak_(nik) {
 function getUserStreak_(nik) {
   const users = readObjects_(getSpreadsheet_().getSheetByName(EHS.sheets.users));
   const user = users.find(function(u) { return normalizeNikLenient_(u.NIK) === nik; });
-  return user ? Number(user.StreakCount || 0) : 0;
+  if (!user) return 0;
+
+  const storedStreak = Number(user.StreakCount || 0);
+  const lastActive = clean_(user.LastActiveDate);
+  if (!lastActive) return 0;
+
+  const today = Utilities.formatDate(new Date(), EHS.timezone, 'yyyy-MM-dd');
+  const yesterday = Utilities.formatDate(new Date(Date.now() - 86400000), EHS.timezone, 'yyyy-MM-dd');
+
+  // Streak masih hidup kalau terakhir aktif hari ini atau kemarin (belum lewat 1 hari penuh
+  // tanpa aktivitas). Kalau lebih lama dari itu, streak-nya putus — tampilkan 0 SEKARANG JUGA,
+  // jangan nunggu sampai user submit sesuatu lagi baru ke-reset di database.
+  if (lastActive === today || lastActive === yesterday) return storedStreak;
+  return 0;
 }

@@ -77,6 +77,7 @@ function submitQuizAnswers(payload) {
   });
 
   awardPoints_(user, 'Energy', task.TaskId, referenceId, points, 'Quiz: ' + correctCount + '/' + questions.length, '', seasonId);
+  updateUserStreak_(nik);
   return { ok: true, correctCount: correctCount, total: questions.length, points: points, message: 'Quiz selesai! ' + correctCount + '/' + questions.length + ' benar, +' + points + ' poin.' };
 }
 
@@ -145,6 +146,7 @@ function submitAwarenessSurvey(payload) {
     awardPoints_(user, 'Energy', task.TaskId, referenceId, points, 'Survey: ' + title, campaignId, seasonId);
   }
 
+  updateUserStreak_(nik);
   return { ok: true, points: points, message: 'Survey terkirim, +' + points + ' poin untuk semua anggota.' };
 }
 
