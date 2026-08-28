@@ -128,10 +128,10 @@
     function navigateTo(page) {
       const route = {
         bmi: function() { showView('bmi'); initBmiForm(EHS_CURRENT_NIK); },
-        health: function() { showView('health'); initHealthTask(EHS_CURRENT_NIK); },
-        energy: function() { showView('energy'); initEnergyTask(EHS_CURRENT_NIK); },
+        health: function() { showView('missionhub'); initMissionHub(EHS_CURRENT_NIK, 'Health'); setShellActiveNav('health'); },
+        energy: function() { showView('missionhub'); initMissionHub(EHS_CURRENT_NIK, 'Energy'); setShellActiveNav('energy'); },
         sustainability: function() { showView('missionhub'); initMissionHub(EHS_CURRENT_NIK, 'Sustainability'); setShellActiveNav('sustainability'); },
-        'safety-report': function() { showView('safety-report'); initSafetyReportForm(EHS_CURRENT_NIK); },
+        'safety-report': function() { showView('missionhub'); initMissionHub(EHS_CURRENT_NIK, 'Safety'); setShellActiveNav('safety-report'); },
         'safety-review': function() { showView('safety-review'); initSafetyReviewQueue(EHS_CURRENT_NIK); },
         admin: function() { showView('admin'); initAdminDashboard(EHS_CURRENT_NIK); },
         'health-monitor': function() { showView('monitor'); initAdminMonitor(EHS_CURRENT_NIK, 'health'); },

@@ -44,7 +44,7 @@ const EHS_SCHEMA = {
   '03_Master_Task': [
     'TaskId', 'Pillar', 'Category', 'Level', 'Title', 'Points','DomainXP', 'CoinReward',
     'Description', 'FrequencyType', 'FrequencyLimit', 'Validation',
-    'ObligationLevel', 'Status', 'SeasonId', 'CampaignId'
+    'ObligationLevel', 'Status', 'SeasonId', 'CampaignId', 'GroupTag','FormType'
   ],
   '04_Master_BMI_ScoringRule': ['KategoriLama', 'KategoriBaru', 'KriteriaPoin', 'Poin'
   ],
@@ -53,9 +53,9 @@ const EHS_SCHEMA = {
     'NIK', 'Nama', 'Divisi', 'ReferenceId', 'Points', 'DomainXP', 'Coin', 'Note'
   ],
   '05_Master_QuizBank': [
-  'QuizId', 'TaskId', 'Question', 'OptionA', 'OptionB', 'OptionC', 'OptionD',
-  'CorrectOption', 'Explanation', 'Status', 'SeasonId', 'CampaignId', 'QuizScope', 'PeriodType',
-  'Difficulty', 'SortOrder', 'ShuffleOptions', 'Source'
+    'QuizId', 'TaskId', 'QuestionText', 'OptionA', 'OptionB', 'OptionC', 'OptionD',
+    'CorrectOption', 'Explanation', 'Status', 'SeasonId', 'CampaignId', 'QuizScope', 'PeriodType',
+    'Difficulty', 'SortOrder', 'ShuffleOptions', 'Source', 'PointMappingId', 'Points'
   ],
   '18_Master_Departments': ['DepartmentId', 'Name', 'Note'
   ],

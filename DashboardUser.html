@@ -16,8 +16,6 @@
   </div>
 
   <div id="domain-grid" style="display:none;"></div>
-  <p class="section-title">Menu Utama</p>
-  <div class="menu-grid" id="menu-grid"></div>
 </div>
 
 <style>
@@ -109,7 +107,6 @@
   }
 
   function handleDomainClick(pillar) {
-    if (pillar === 'Sustainability') { alert('Fitur Sustainability Journey (Integrated Challenges) akan segera hadir.'); return; }
     showView('missionhub');
     initMissionHub(EHS_CURRENT_NIK, pillar);
   }

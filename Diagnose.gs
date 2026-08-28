@@ -201,3 +201,28 @@ function TEST_migrate_streak_columns() {
   ensureSheet_(ss, EHS.sheets.users, EHS_SCHEMA[EHS.sheets.users]);
   Logger.log('Kolom Streak siap.');
 }
+function TEST_migrate_task_formtype_column() {
+  const ss = getSpreadsheet_();
+  ensureSheet_(ss, '03_Master_Task', EHS_SCHEMA['03_Master_Task']);
+  Logger.log('Kolom ApprovedBy/GroupTag/FormType di 03_Master_Task siap.');
+}
+function TEST_migrate_quizbank_columns() {
+  const ss = getSpreadsheet_();
+  ensureSheet_(ss, '05_Master_QuizBank', EHS_SCHEMA['05_Master_QuizBank']);
+
+  // Kolom lama 'Question' (kalau ada isinya) dipindah ke 'QuestionText' yang baru,
+  // supaya soal-soal yang sempat kesimpan sebelumnya (kalau ada) tidak hilang.
+  const sh = ss.getSheetByName('05_Master_QuizBank');
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const oldCol = headers.indexOf('Question') + 1;
+  const newCol = headers.indexOf('QuestionText') + 1;
+  const lastRow = sh.getLastRow();
+
+  if (oldCol > 0 && newCol > 0 && oldCol !== newCol && lastRow > 1) {
+    const oldValues = sh.getRange(2, oldCol, lastRow - 1, 1).getValues();
+    const newValues = sh.getRange(2, newCol, lastRow - 1, 1).getValues();
+    const merged = oldValues.map(function(row, i) { return [newValues[i][0] || row[0] || '']; });
+    sh.getRange(2, newCol, lastRow - 1, 1).setValues(merged);
+  }
+  Logger.log('Migrasi 05_Master_QuizBank selesai.');
+}

@@ -2186,4 +2186,40 @@ function deleteChallenge(id) {
     .withFailureHandler(showAdminError)
     .deleteMasterRecord({ nik: adminCurrentNik, masterType: 'challenge', id: id });
 }
+// function importQuizFile() {
+//   const input = document.getElementById('quiz-import-file');
+//   if (!input.files.length) { showAdminToast('Pilih file dulu.', 'error'); return; }
+//   const file = input.files[0];
+//   const ext = file.name.split('.').pop().toLowerCase();
+
+//   if (ext === 'xlsx') {
+//     const reader = new FileReader();
+//     reader.onload = function() {
+//       const base64 = reader.result.split(',')[1];
+//       google.script.run
+//         .withSuccessHandler(function(res) {
+//           showAdminToast('Import selesai: ' + res.countCreated + ' dibuat, ' + res.countUpdated + ' diperbarui.', 'success');
+//           input.value = '';
+//           loadQuizList();
+//         })
+//         .withFailureHandler(showAdminError)
+//         .bulkImportQuizFromExcel({ nik: adminCurrentNik, base64Data: base64 });
+//     };
+//     reader.readAsDataURL(file);
+//   } else {
+//     const format = ext === 'json' ? 'json' : (ext === 'csv' ? 'csv' : 'txt');
+//     const reader = new FileReader();
+//     reader.onload = function() {
+//       google.script.run
+//         .withSuccessHandler(function(res) {
+//           showAdminToast('Import selesai: ' + res.countCreated + ' dibuat, ' + res.countUpdated + ' diperbarui.', 'success');
+//           input.value = '';
+//           loadQuizList();
+//         })
+//         .withFailureHandler(showAdminError)
+//         .bulkImportQuizFromText({ nik: adminCurrentNik, format: format, content: reader.result });
+//     };
+//     reader.readAsText(file);
+//   }
+// }
 </script>
