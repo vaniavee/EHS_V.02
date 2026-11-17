@@ -23,6 +23,7 @@
   let energyCurrentNik = null;
   let energyCurrentTask = null;
   let energySurveyQuestions = [];
+  let energyQuizKeyMaps = {};
 
   function initEnergyTask(nik) {
     energyCurrentNik = nik;
@@ -106,6 +107,8 @@
           document.getElementById('energy-modal-body').innerHTML = '<p class="sub">Belum ada soal untuk quiz ini.</p>';
           return;
         }
+        energyQuizKeyMaps = {};
+        questions.forEach(function(q) { energyQuizKeyMaps[q.quizId] = q.keyMap; });
         document.getElementById('energy-modal-body').innerHTML = questions.map(function(q, idx) {
           return '<div class="quiz-question-block">' +
             '<label>' + (idx + 1) + '. ' + q.question + '</label>' +
@@ -125,8 +128,7 @@
   }
 
   function selectQuizOption_(el) {
-    const group = el.parentElement;
-    group.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
+    el.parentElement.querySelectorAll('.quiz-option-row').forEach(function(r) { r.classList.remove('active'); });
     el.classList.add('active');
   }
 
@@ -226,10 +228,15 @@
 
   function submitQuizModal_() {
     const answers = {};
-    document.querySelectorAll('#energy-modal-body [data-quiz-id]').forEach(function(group) {
-      const active = group.querySelector('.pill.active');
+    const groups = document.querySelectorAll('#energy-modal-body [data-quiz-id]');
+    groups.forEach(function(group) {
+      const active = group.querySelector('.quiz-option-row.active');
       if (active) answers[group.dataset.quizId] = active.dataset.value;
     });
+    if (Object.keys(answers).length < groups.length) {
+      showEnergyToast('Jawab semua soal dulu.', 'error');
+      return;
+    }
     const btn = document.getElementById('energy-modal-submit-btn');
     btn.disabled = true; btn.textContent = 'Mengirim...';
 
@@ -241,7 +248,7 @@
         loadEnergyTasks();
       })
       .withFailureHandler(function(err) { btn.disabled = false; btn.textContent = 'Kirim'; showEnergyToast(err.message || String(err), 'error'); })
-      .submitQuizAnswers({ nik: energyCurrentNik, taskId: energyCurrentTask.taskId, answers: answers });
+      .submitQuizAnswers({ nik: energyCurrentNik, taskId: energyCurrentTask.taskId, answers: answers, keyMaps: energyQuizKeyMaps });
   }
 
   function submitSurveyModal_() {

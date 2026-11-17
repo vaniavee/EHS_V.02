@@ -86,14 +86,20 @@ function readObjects_(sh) {
   return result;
 }
 
-// Menambahkan satu baris data berdasarkan nama header
+// Menambahkan satu baris data berdasarkan nama header.
+// Urutan kolom diambil dari header ASLI sheet (baris 1), bukan dari EHS_SCHEMA,
+// supaya data tidak bergeser kalau urutan kolom di sheet berbeda dari Config.gs.
 function appendObjectRow_(sheetName, valuesByHeader) {
   const sh = getSpreadsheet_().getSheetByName(sheetName);
-  const headers = EHS_SCHEMA[sheetName];
+  const lastCol = sh.getLastColumn();
+  let headers = lastCol ? sh.getRange(1, 1, 1, lastCol).getValues()[0].map(clean_) : [];
+  while (headers.length && !headers[headers.length - 1]) headers.pop();
+  if (!headers.length) headers = EHS_SCHEMA[sheetName]; // fallback kalau sheet masih kosong
+
   const targetRow = sh.getLastRow() + 1;
 
   headers.forEach(function(h, i) {
-    if (h.toUpperCase().indexOf('NIK') !== -1) {
+    if (h && h.toUpperCase().indexOf('NIK') !== -1) {
       sh.getRange(targetRow, i + 1).setNumberFormat('@');
     }
   });

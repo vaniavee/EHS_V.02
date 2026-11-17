@@ -45,6 +45,11 @@ function submitQuizAnswers(payload) {
   const availability = getTaskAvailability_(task, nik, seasonId);
   if (!availability.available) throw new Error(availability.reason);
 
+  // Jangan habiskan kuota kalau tidak ada satu pun jawaban yang terkirim.
+  if (!payload.answers || !Object.keys(payload.answers).length) {
+    throw new Error('Belum ada jawaban yang terkirim. Coba ulangi.');
+  }
+
   const campaignId = clean_(task.CampaignId);
   const questions = readObjects_(getSpreadsheet_().getSheetByName('05_Master_QuizBank'))
     .filter(function(q) { return clean_(q.CampaignId) === campaignId; });

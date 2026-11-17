@@ -148,10 +148,10 @@ function submitMissionClaim(payload) {
   const photoDateValid = !payload.buktiBase64 || (photoTakenAt instanceof Date && !isNaN(photoTakenAt) && isSameDay_(photoTakenAt, new Date()));
 
   const needsReview = clean_(mission.ValidationMethod).toLowerCase() !== 'auto' || !photoDateValid;
-  const status = needsReview ? 'Pending' : 'Claimed';
   const points = Number(mission.BaseXP || 0);
+  let awarded = 0;
   if (!needsReview) {
-    awardPoints_(
+    awarded = awardPoints_(
       user, pillar, mission.MissionId, referenceId,
       points, 'Klaim ' + mission.Title, '', seasonId,
       Number(mission.DomainXP || 0), Number(mission.RewardCoin || 0)
@@ -161,9 +161,13 @@ function submitMissionClaim(payload) {
     notifyAdmins_('Mission Baru: ' + mission.Title, user.nama + ' submit "' + mission.Title + '", menunggu verifikasi' + reason + '.', 'review-queue', referenceId);
   }
 
+  // awardPoints_ mengembalikan 0 kalau ReferenceId sudah ada di ledger (duplikat).
+  const duplicate = !needsReview && points > 0 && awarded === 0;
+  const status = needsReview ? 'Pending' : (duplicate ? 'Duplicate' : 'Claimed');
+
   appendObjectRow_(EHS.sheets.taskClaims, {
     Timestamp: now_(), SeasonId: seasonId, Pillar: pillar, NIK: nik, Nama: user.nama, Divisi: user.divisi,
-    TaskId: mission.MissionId, Status: status, Points: points,
+    TaskId: mission.MissionId, ReferenceId: referenceId, Status: status, Points: duplicate ? 0 : points,
     Note: clean_(payload.note || mission.Title), PeriodKey: availability.periodKey,
     FrequencyType: availability.frequencyType, NextAvailableAt: getNextAvailableLabel_(availability.frequencyType),
     BuktiUrl: buktiUrl, Detail: JSON.stringify(payload.detail || {})
@@ -172,10 +176,12 @@ function submitMissionClaim(payload) {
   updateUserStreak_(nik); // streak dihitung dari aktivitas submit hari ini, bukan nunggu approval
   return {
     ok: true,
-    message: needsReview
-      ? 'Mission "' + mission.Title + '" berhasil dikirim, menunggu review Admin/Supervisor.'
-      : 'Mission "' + mission.Title + '" berhasil dikirim, +' + points + ' poin.',
-    points: points
+    message: duplicate
+      ? 'Mission "' + mission.Title + '" sudah tercatat sebelumnya, poin tidak ditambah dua kali.'
+      : (needsReview
+          ? 'Mission "' + mission.Title + '" berhasil dikirim, menunggu review Admin/Supervisor.'
+          : 'Mission "' + mission.Title + '" berhasil dikirim, +' + points + ' poin.'),
+    points: duplicate ? 0 : (needsReview ? 0 : points)
   };
 }
 
